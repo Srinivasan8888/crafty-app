@@ -1,10 +1,16 @@
 import { prisma } from "@/lib/db";
 import { getCityBySlug } from "@/lib/cities";
 import { StoreCard } from "@/components/Cards";
+import { BottomNav } from "@/components/BottomNav";
+import { EmptyState } from "@/components/EmptyState";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
+import { StoreFilters, type AppliedFilter } from "./_components/Filters";
 
 export const revalidate = 60;
+
+const PAGE_SIZE = 24;
 
 export default async function StoresListing({
   params, searchParams,
@@ -20,48 +26,201 @@ export default async function StoresListing({
     ...(activeCat ? { supply_categories: { some: { category: { slug: activeCat } } } } : {}),
   };
   const stores = await prisma.store.findMany({
-    where, take: 24,
+    where, take: PAGE_SIZE,
     orderBy: [{ is_featured: "desc" }, { created_at: "desc" }],
     include: { supply_categories: { include: { category: true } } },
   });
 
+  const totalCount = await prisma.store.count({ where });
+
+  const activeCatLabel = activeCat ? cats.find((c) => c.slug === activeCat)?.display_name : undefined;
+  const appliedFilters: AppliedFilter[] = activeCatLabel
+    ? [{ key: `category:${activeCat}`, label: activeCatLabel }]
+    : [];
+
+  const baseHref = `/${city.slug}/stores`;
+  const visibleCats = cats.slice(0, 7);
+
   return (
-    <div className="container py-8">
-      <header className="mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Supply stores in {city.display_name}</h1>
-        <p className="mt-1 text-sm text-ink-muted">{stores.length} stores listed</p>
-      </header>
-      <div className="snap-rail no-scrollbar -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
-        <Link href={`/${city.slug}/stores`} className="chip whitespace-nowrap" data-active={!activeCat}>All</Link>
-        {cats.map((c) => (
-          <Link key={c.id} href={`/${city.slug}/stores?category=${c.slug}`} className="chip whitespace-nowrap" data-active={activeCat === c.slug}>
+    <>
+      <div className="container">
+        <nav className="breadcrumb">
+          <Link href={`/${city.slug}`}>{city.display_name}</Link>
+          <span className="sep">/</span>
+          <span className="ink">Stores</span>
+        </nav>
+
+        <header className="page-hdr-m md:hidden">
+          <div className="eyebrow">{city.display_name.toUpperCase()}</div>
+          <h1>
+            Supply stores in <em>{city.display_name}</em>
+          </h1>
+          <div className="sub">
+            {totalCount} {totalCount === 1 ? "store" : "stores"} listed · free to browse
+          </div>
+        </header>
+
+        <header className="hidden items-end justify-between gap-10 py-6 md:flex" style={{ paddingTop: 24, paddingBottom: 28 }}>
+          <div>
+            <div
+              style={{
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: "rgb(var(--mustard-dark))",
+                letterSpacing: "2.6px",
+                textTransform: "uppercase",
+                marginBottom: 12,
+                fontFamily: "var(--font-body)",
+              }}
+            >
+              {city.display_name.toUpperCase()}
+            </div>
+            <h1
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 44,
+                fontWeight: 800,
+                lineHeight: 1.04,
+                letterSpacing: "-1.4px",
+                color: "rgb(var(--ink))",
+              }}
+            >
+              Supply stores in{" "}
+              <em
+                style={{
+                  color: "rgb(var(--magenta))",
+                  fontStyle: "italic",
+                  fontWeight: 600,
+                }}
+              >
+                {city.display_name}
+              </em>
+            </h1>
+          </div>
+          <div className="flex flex-col items-end gap-3">
+            <div
+              style={{
+                fontFamily: "var(--font-display)",
+                fontStyle: "italic",
+                fontSize: 16,
+                color: "rgb(var(--muted))",
+              }}
+            >
+              <strong
+                style={{
+                  fontStyle: "normal",
+                  fontWeight: 700,
+                  color: "rgb(var(--ink))",
+                  fontSize: 22,
+                  display: "block",
+                  marginBottom: 2,
+                }}
+              >
+                {totalCount} stores
+              </strong>
+              and counting · free to browse
+            </div>
+            <Link href="/list-your-profile" className="btn btn-primary btn-sm">
+              List your store
+            </Link>
+          </div>
+        </header>
+      </div>
+
+      <StoreFilters
+        city={city.slug}
+        cityDisplayName={city.display_name}
+        categories={cats.map((c) => ({ slug: c.slug, display_name: c.display_name }))}
+        activeCategorySlug={activeCat}
+        appliedFilters={appliedFilters}
+        total={totalCount}
+      />
+
+      <div className="filter-bar">
+        <Link href={baseHref} className={`pill${!activeCat ? " active" : ""}`}>
+          All
+        </Link>
+        {visibleCats.map((c) => (
+          <Link
+            key={c.id}
+            href={`${baseHref}?category=${c.slug}`}
+            className={`pill${activeCat === c.slug ? " active" : ""}`}
+          >
             {c.display_name}
           </Link>
         ))}
+        <Link
+          href={`${baseHref}?category=online`}
+          className={`pill${activeCat === "online" ? " active" : ""}`}
+        >
+          Online only
+        </Link>
+        <span
+          className="pill"
+          style={{
+            background: "rgb(var(--cream-2))",
+            borderColor: "rgb(var(--mustard-dark))",
+            color: "rgb(var(--mustard-dark))",
+            fontWeight: 700,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          More <ChevronDown size={12} />
+        </span>
       </div>
+
       {stores.length === 0 ? (
-        <EmptyStores city={city.display_name} />
+        <div className="container py-8">
+          <EmptyState
+            variant="mustard"
+            glyph="❋"
+            title={`No stores match these filters in ${city.display_name} yet.`}
+            body="Try clearing filters, or list a store you know."
+            ctaLabel="List your store"
+            ctaHref="/list-your-profile"
+          />
+        </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {stores.map((s) => (
+        <div className="listing-grid">
+          {stores.map((s, i) => (
             <StoreCard
-              key={s.id} city={city.slug} slug={s.slug} name={s.name}
-              logo_photo={s.logo_photo} address={s.address}
+              key={s.id}
+              city={city.slug}
+              slug={s.slug}
+              name={s.name}
+              logo_photo={s.logo_photo}
+              address={s.address}
               categories={s.supply_categories.map((j) => j.category.display_name)}
-              is_online_only={s.is_online_only} is_claimed={s.is_claimed}
+              is_online_only={s.is_online_only}
+              is_claimed={s.is_claimed}
+              priority={i < 4}
             />
           ))}
         </div>
       )}
-    </div>
-  );
-}
 
-function EmptyStores({ city }: { city: string }) {
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line bg-canvas-sunken/40 p-12 text-center">
-      <p className="text-ink-muted">No stores match these filters in {city} yet.</p>
-      <Link href="/list-your-profile" className="btn btn-primary">List your store</Link>
-    </div>
+      <div className="container" style={{ padding: "6px 18px 32px", textAlign: "center" }}>
+        <div
+          style={{
+            fontFamily: "var(--font-display)",
+            fontStyle: "italic",
+            color: "rgb(var(--muted))",
+            fontSize: 13,
+            marginBottom: 12,
+          }}
+        >
+          Showing {stores.length} of {totalCount} {totalCount === 1 ? "store" : "stores"}
+        </div>
+        {totalCount > stores.length && (
+          <Link href={`${baseHref}?page=2${activeCat ? `&category=${activeCat}` : ""}`} className="btn btn-secondary btn-block">
+            Load more stores
+          </Link>
+        )}
+      </div>
+
+      <BottomNav city={city.slug} active="explore" />
+    </>
   );
 }

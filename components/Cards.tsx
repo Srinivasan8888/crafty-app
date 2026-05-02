@@ -1,18 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Calendar, Sparkles, Heart } from "lucide-react";
-import { formatDateShort, formatINR } from "@/lib/util";
+import { Heart } from "lucide-react";
+import { formatINR } from "@/lib/util";
 
 const CARD_SIZES = "(max-width:768px) 50vw, 25vw";
 
-function HeartPlaceholder() {
-  // Server-rendered placeholder. A follow-up will swap this for a client SaveButton.
+function HeartOverlay() {
   return (
-    <span
-      aria-hidden="true"
-      className="pointer-events-none absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-canvas/95 text-ink shadow-md ring-1 ring-line"
-    >
-      <Heart size={16} />
+    <span className="heart" aria-hidden="true">
+      <Heart size={15} />
     </span>
   );
 }
@@ -29,38 +25,50 @@ type CrafterCardProps = {
   priority?: boolean;
 };
 
-export function CrafterCard({ city, slug, name, tagline, profile_photo, categories, is_featured, offers_classes, priority }: CrafterCardProps) {
+export function CrafterCard({
+  city,
+  slug,
+  name,
+  tagline,
+  profile_photo,
+  categories,
+  is_featured,
+  offers_classes,
+  priority,
+}: CrafterCardProps) {
+  const neighborhood = categories[0] ?? null;
+  const chips = categories.slice(neighborhood ? 1 : 0, neighborhood ? 4 : 3);
   return (
-    <Link href={`/${city}/crafters/${slug}`} className="card card-hover block">
-      <div className="relative aspect-square w-full overflow-hidden bg-canvas-sunken">
+    <Link href={`/${city}/crafters/${slug}`} className="card block">
+      <div className="img relative aspect-square">
         <Image
           src={profile_photo}
           alt={name}
-          width={240}
-          height={240}
+          fill
           sizes={CARD_SIZES}
-          className="h-full w-full object-cover"
+          className="object-cover"
           priority={priority}
           {...(priority ? { fetchPriority: "high" as const } : {})}
         />
-        {is_featured && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-1 text-xs font-bold">
-            <Sparkles size={12} /> Featured
-          </span>
+        {(is_featured || offers_classes) && (
+          <div className="badge-row">
+            {is_featured && <span className="badge feat">Featured</span>}
+            {offers_classes && <span className="badge classes">Teaches classes</span>}
+          </div>
         )}
-        <HeartPlaceholder />
+        <HeartOverlay />
       </div>
-      <div className="space-y-2 p-3">
-        <h3 className="line-clamp-1 text-base font-semibold">{name}</h3>
-        {tagline && <p className="line-clamp-2 text-sm text-ink-muted">{tagline}</p>}
-        <div className="flex flex-wrap gap-1">
-          {categories.slice(0, 3).map((c) => (
-            <span key={c} className="rounded-full bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{c}</span>
-          ))}
-          {offers_classes && (
-            <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold">Teaches</span>
-          )}
-        </div>
+      <div className="body">
+        <div className="title">{name}</div>
+        {tagline && <p className="muted text-sm line-clamp-2">{tagline}</p>}
+        {neighborhood && <div className="loc">{neighborhood}</div>}
+        {chips.length > 0 && (
+          <div className="chips">
+            {chips.map((c) => (
+              <span key={c} className="chip">{c}</span>
+            ))}
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -77,36 +85,49 @@ type StoreCardProps = {
   is_claimed?: boolean;
   priority?: boolean;
 };
-export function StoreCard({ city, slug, name, logo_photo, address, categories, is_online_only, is_claimed, priority }: StoreCardProps) {
+
+export function StoreCard({
+  city,
+  slug,
+  name,
+  logo_photo,
+  address,
+  categories,
+  is_online_only,
+  is_claimed,
+  priority,
+}: StoreCardProps) {
+  const locText = is_online_only ? "Online only" : address.split(",")[0];
   return (
-    <Link href={`/${city}/stores/${slug}`} className="card card-hover block">
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-canvas-sunken">
+    <Link href={`/${city}/stores/${slug}`} className="card block">
+      <div className="img relative aspect-square">
         <Image
           src={logo_photo}
           alt={name}
-          width={280}
-          height={210}
+          fill
           sizes={CARD_SIZES}
-          className="h-full w-full object-cover"
+          className="object-cover"
           priority={priority}
           {...(priority ? { fetchPriority: "high" as const } : {})}
         />
-        <HeartPlaceholder />
+        {(is_claimed === false || is_online_only) && (
+          <div className="badge-row">
+            {is_claimed === false && <span className="badge claim">Claim this listing</span>}
+            {is_online_only && <span className="badge online">Online only</span>}
+          </div>
+        )}
+        <HeartOverlay />
       </div>
-      <div className="space-y-2 p-3">
-        <h3 className="line-clamp-1 text-base font-semibold">{name}</h3>
-        <p className="flex items-center gap-1 text-xs text-ink-muted">
-          <MapPin size={12} />
-          {is_online_only ? "Online only" : address.split(",")[0]}
-        </p>
-        <div className="flex flex-wrap gap-1">
-          {categories.slice(0, 3).map((c) => (
-            <span key={c} className="rounded-full bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{c}</span>
-          ))}
-          {is_claimed === false && (
-            <span className="rounded-full bg-canvas-sunken px-2 py-0.5 text-xs italic text-ink-subtle">unclaimed</span>
-          )}
-        </div>
+      <div className="body">
+        <div className="title">{name}</div>
+        <div className="loc">{locText}</div>
+        {categories.length > 0 && (
+          <div className="chips">
+            {categories.slice(0, 3).map((c) => (
+              <span key={c} className="chip">{c}</span>
+            ))}
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -118,38 +139,48 @@ type StudioCardProps = {
   name: string;
   logo_photo: string;
   address: string;
-  age_group: string | null;
+  age_group?: string | null;
   disciplines: string[];
   priority?: boolean;
 };
-export function StudioCard({ city, slug, name, logo_photo, address, age_group, disciplines, priority }: StudioCardProps) {
+
+export function StudioCard({
+  city,
+  slug,
+  name,
+  logo_photo,
+  address,
+  age_group,
+  disciplines,
+  priority,
+}: StudioCardProps) {
   return (
-    <Link href={`/${city}/learn/${slug}`} className="card card-hover block">
-      <div className="relative aspect-square w-full overflow-hidden bg-canvas-sunken">
+    <Link href={`/${city}/learn/${slug}`} className="card block">
+      <div className="img relative aspect-square">
         <Image
           src={logo_photo}
           alt={name}
-          width={240}
-          height={240}
+          fill
           sizes={CARD_SIZES}
-          className="h-full w-full object-cover"
+          className="object-cover"
           priority={priority}
           {...(priority ? { fetchPriority: "high" as const } : {})}
         />
-        <HeartPlaceholder />
-      </div>
-      <div className="space-y-2 p-3">
-        <h3 className="line-clamp-1 text-base font-semibold">{name}</h3>
-        <p className="flex items-center gap-1 text-xs text-ink-muted">
-          <MapPin size={12} />
-          {address.split(",")[0]}
-        </p>
-        <div className="flex flex-wrap gap-1">
-          {disciplines.slice(0, 3).map((d) => (
-            <span key={d} className="rounded-full bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{d}</span>
-          ))}
-          {age_group && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs">{age_group}</span>}
+        <div className="badge-row">
+          <span className="badge classes">{age_group ?? "All ages"}</span>
         </div>
+        <HeartOverlay />
+      </div>
+      <div className="body">
+        <div className="title">{name}</div>
+        <div className="loc">{address.split(",")[0]}</div>
+        {disciplines.length > 0 && (
+          <div className="chips">
+            {disciplines.slice(0, 3).map((d) => (
+              <span key={d} className="chip">{d}</span>
+            ))}
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -164,36 +195,54 @@ type EventCardProps = {
   venue_name: string;
   is_free: boolean;
   price_amount?: string | number | null;
-  event_type: string;
+  event_type?: string;
   priority?: boolean;
 };
-export function EventCard({ city, slug, name, cover_image, start_at, venue_name, is_free, price_amount, event_type, priority }: EventCardProps) {
+
+export function EventCard({
+  city,
+  slug,
+  name,
+  cover_image,
+  start_at,
+  venue_name,
+  is_free,
+  price_amount,
+  priority,
+}: EventCardProps) {
+  const date = new Date(start_at);
+  const day = date.toLocaleDateString("en-IN", { day: "2-digit" });
+  const dow = date.toLocaleDateString("en-IN", { weekday: "short" }).toUpperCase();
+  const mon = date.toLocaleDateString("en-IN", { month: "short" }).toUpperCase();
+  const priceLabel = is_free
+    ? "Free"
+    : price_amount != null && price_amount !== ""
+      ? formatINR(Number(price_amount))
+      : "Paid";
+
   return (
-    <Link href={`/${city}/events/${slug}`} className="card card-hover block">
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-canvas-sunken">
+    <Link href={`/${city}/events/${slug}`} className="card block">
+      <div className="img relative aspect-[16/9]">
         <Image
           src={cover_image}
           alt={name}
-          width={280}
-          height={158}
+          fill
           sizes={CARD_SIZES}
-          className="h-full w-full object-cover"
+          className="object-cover"
           priority={priority}
           {...(priority ? { fetchPriority: "high" as const } : {})}
         />
-        <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-canvas px-2 py-1 text-xs font-bold">
-          <Calendar size={12} /> {formatDateShort(new Date(start_at))}
-        </span>
-        <HeartPlaceholder />
+        <div className="date-badge">
+          <span className="d">{day}</span>
+          {dow} {mon}
+        </div>
+        <HeartOverlay />
       </div>
-      <div className="space-y-2 p-3">
-        <h3 className="line-clamp-1 text-base font-semibold">{name}</h3>
-        <p className="line-clamp-1 text-xs text-ink-muted"><MapPin size={12} className="-mt-0.5 inline" /> {venue_name}</p>
-        <div className="flex items-center justify-between">
-          <span className="rounded-full bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{event_type.toLowerCase()}</span>
-          <span className="text-xs font-bold">
-            {is_free ? "Free" : (price_amount ? formatINR(Number(price_amount)) : "Paid")}
-          </span>
+      <div className="body">
+        <div className="title">{name}</div>
+        <div className="loc">{venue_name}</div>
+        <div className="chips">
+          <span className={is_free ? "price-pill free" : "price-pill"}>{priceLabel}</span>
         </div>
       </div>
     </Link>

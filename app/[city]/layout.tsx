@@ -16,7 +16,7 @@ export default async function CityLayout({
   return (
     <>
       <AppHeader city={params.city} />
-      <main id="main">{children}</main>
+      <main id="main" className="min-h-screen">{children}</main>
       <AppFooter />
     </>
   );

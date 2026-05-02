@@ -3,10 +3,10 @@ import { getCities, getCityBySlug } from "@/lib/cities";
 import { CitySelector } from "@/components/CitySelector";
 import { DiscoveryRail } from "@/components/DiscoveryRail";
 import { CrafterCard, StoreCard, StudioCard, EventCard } from "@/components/Cards";
+import { BottomNav } from "@/components/BottomNav";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
-// Issue 4.3: ISR with on-demand revalidation; 60s safety net.
 export const revalidate = 60;
 
 export async function generateStaticParams() {
@@ -21,7 +21,6 @@ export default async function CityHome({ params }: { params: { city: string } })
   const cities = await getCities();
   const where = { city_id: city.id, status: "PUBLISHED" as const };
 
-  // Limit fields via `select` to only what the cards render.
   const [crafters, stores, studios, events] = await Promise.all([
     prisma.crafter.findMany({
       where,
@@ -91,36 +90,116 @@ export default async function CityHome({ params }: { params: { city: string } })
     }),
   ]);
 
+  const collageImages = crafters
+    .filter((c) => c.profile_photo)
+    .slice(0, 4)
+    .map((c) => c.profile_photo as string);
+  const fallbackImages = [
+    "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=600&q=75&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1615529182904-14819c35db37?w=600&q=75&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1577985043696-8bd54d9f093f?w=600&q=75&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&q=75&fit=crop&auto=format",
+  ];
+  const heroTiles = [0, 1, 2, 3].map((i) => collageImages[i] || fallbackImages[i]);
+
   return (
     <>
-      {/* Hero */}
-      <section className="container py-10 sm:py-14">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Discover India&apos;s craft community,
-            <br />
-            <span className="text-accent">one city at a time.</span>
-          </h1>
-          <p className="mt-4 text-base text-ink-muted sm:text-lg">
-            Crafters, supply stores, studios and craft events in {city.display_name}.
-            Free to list, free to browse.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href={`/${city.slug}/crafters`} className="btn btn-primary">
-              Explore crafters in {city.display_name}
-            </Link>
-            <Link href="/list-your-profile" className="btn">List your profile</Link>
+      <section className="hero md:hidden">
+        <h1>
+          Discover India&apos;s craft community,
+          <span className="magenta">one city at a time.</span>
+        </h1>
+        <p>
+          Crafters, supply stores, studios and craft events in {city.display_name}. Free to list, free to browse.
+        </p>
+        <div className="ctas">
+          <Link href={`/${city.slug}/crafters`} className="btn btn-primary">
+            Explore crafters in {city.display_name}
+          </Link>
+          <Link href="/list-your-profile" className="btn btn-secondary">
+            List your profile
+          </Link>
+        </div>
+      </section>
+
+      <section className="hero-web hidden md:block">
+        <div className="row">
+          <div>
+            <span
+              className="font-display text-xs font-bold uppercase tracking-[3px] text-mustard-dark mb-4 inline-block pb-1.5 border-b border-mustard"
+            >
+              Issue 01 &middot; {city.display_name}
+            </span>
+            <h1>
+              Discover India&apos;s craft community, <em>one city at a time.</em>
+            </h1>
+            <p>
+              Crafters, supply stores, studios and craft events in {city.display_name}. Free to list, free to browse. A
+              handpicked Sunday-bazaar guide to the people making things by hand in your city.
+            </p>
+            <div className="ctas">
+              <Link href={`/${city.slug}/crafters`} className="btn btn-primary btn-lg">
+                Explore crafters in {city.display_name}
+              </Link>
+              <Link href="/list-your-profile" className="btn btn-secondary btn-lg">
+                List your profile
+              </Link>
+            </div>
+          </div>
+          <div>
+            <div
+              className="relative w-full grid gap-3.5"
+              style={{
+                gridTemplateColumns: "1fr 1fr",
+                gridTemplateRows: "220px 220px",
+                minHeight: "460px",
+              }}
+            >
+              <div
+                className="bg-cover bg-center rounded-lg shadow-soft-lg border border-line-strong"
+                style={{
+                  backgroundImage: `url('${heroTiles[0]}')`,
+                  transform: "rotate(-2deg)",
+                  marginTop: "14px",
+                }}
+              />
+              <div
+                className="bg-cover bg-center rounded-lg shadow-soft-lg border border-line-strong"
+                style={{
+                  backgroundImage: `url('${heroTiles[1]}')`,
+                  transform: "rotate(1.5deg)",
+                }}
+              />
+              <div
+                className="bg-cover bg-center rounded-lg shadow-soft-lg border border-line-strong"
+                style={{
+                  backgroundImage: `url('${heroTiles[2]}')`,
+                  transform: "rotate(2deg)",
+                  marginTop: "-8px",
+                }}
+              />
+              <div
+                className="bg-cover bg-center rounded-lg shadow-soft-lg border border-line-strong"
+                style={{
+                  backgroundImage: `url('${heroTiles[3]}')`,
+                  transform: "rotate(-1.5deg)",
+                  marginTop: "-2px",
+                }}
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* City selector */}
-      <div className="container">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-subtle">Pick your city</h2>
+      <div className="container py-4">
+        <div className="text-xs uppercase tracking-wider text-mustard-dark font-display font-semibold mb-2">
+          Pick your city
+        </div>
         <CitySelector cities={cities} current={city.slug} />
       </div>
 
-      {/* Discovery rails */}
+      <div className="motif"></div>
+
       <DiscoveryRail
         title={`Crafters in ${city.display_name}`}
         seeAllHref={`/${city.slug}/crafters`}
@@ -146,6 +225,8 @@ export default async function CityHome({ params }: { params: { city: string } })
         ))}
       </DiscoveryRail>
 
+      <div className="motif forest"></div>
+
       <DiscoveryRail
         title={`Stores in ${city.display_name}`}
         seeAllHref={`/${city.slug}/stores`}
@@ -169,6 +250,8 @@ export default async function CityHome({ params }: { params: { city: string } })
         ))}
       </DiscoveryRail>
 
+      <div className="motif magenta dots"></div>
+
       <DiscoveryRail
         title={`Learn in ${city.display_name}`}
         seeAllHref={`/${city.slug}/learn`}
@@ -190,6 +273,8 @@ export default async function CityHome({ params }: { params: { city: string } })
           </div>
         ))}
       </DiscoveryRail>
+
+      <div className="motif forest zigzag"></div>
 
       <DiscoveryRail
         title={`Events in ${city.display_name}`}
@@ -214,6 +299,57 @@ export default async function CityHome({ params }: { params: { city: string } })
           </div>
         ))}
       </DiscoveryRail>
+
+      <section className="hidden md:block py-16">
+        <div className="container">
+          <div className="text-center">
+            <div className="font-display text-xs font-bold uppercase tracking-[3px] text-mustard-dark mb-2">
+              Why Crafty
+            </div>
+            <h2 className="font-display text-4xl font-extrabold tracking-tight leading-tight mb-2">
+              Built for the people <em className="not-italic text-magenta font-semibold italic">making things by hand.</em>
+            </h2>
+            <p className="text-ink-muted text-base max-w-xl mx-auto mb-10">
+              Not a marketplace. Not a directory of stock photos. A real, city-by-city guide to Indian craft &mdash;
+              written for crafters, by Crafty.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-7">
+            <div className="bg-cream border border-line-strong rounded-lg p-8 shadow-soft">
+              <div className="text-3xl text-mustard mb-4 leading-none">!</div>
+              <h3 className="font-display text-xl font-bold leading-tight tracking-tight mb-2.5 text-ink">
+                Always <em className="text-magenta font-semibold">free</em> to list
+              </h3>
+              <p className="text-sm leading-relaxed text-ink-muted">
+                Always free for crafters and supply stores. We don&apos;t take a cut. No commissions, no ads, no algorithm
+                pushing you down. Just a clean profile your customers can find.
+              </p>
+            </div>
+            <div className="bg-cream border border-line-strong rounded-lg p-8 shadow-soft">
+              <div className="text-3xl text-mustard mb-4 leading-none">☀</div>
+              <h3 className="font-display text-xl font-bold leading-tight tracking-tight mb-2.5 text-ink">
+                City-localized, <em className="text-magenta font-semibold">not generic</em>
+              </h3>
+              <p className="text-sm leading-relaxed text-ink-muted">
+                We start with your city, not a global feed. Discover what&apos;s near you. We know the neighbourhoods, and
+                so do the customers searching for you.
+              </p>
+            </div>
+            <div className="bg-cream border border-line-strong rounded-lg p-8 shadow-soft">
+              <div className="text-3xl text-mustard mb-4 leading-none">❋</div>
+              <h3 className="font-display text-xl font-bold leading-tight tracking-tight mb-2.5 text-ink">
+                Real photos, <em className="text-magenta font-semibold">real makers</em>
+              </h3>
+              <p className="text-sm leading-relaxed text-ink-muted">
+                Every profile is a real person. Most are within an auto&apos;s reach. No drop-shipped stock &mdash; the
+                images you see are the things that turn up when you order.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <BottomNav city={city.slug} active="home" />
     </>
   );
 }
