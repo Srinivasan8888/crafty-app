@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -25,6 +25,7 @@ type Props = {
 
 export function MobileDrawer({ cities, currentCity }: Props) {
   const [open, setOpen] = useState(false);
+  const dialogRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -39,6 +40,40 @@ export function MobileDrawer({ cities, currentCity }: Props) {
     return () => {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  // Focus trap: trap Tab / Shift+Tab inside the drawer while open;
+  // restore focus to the previously-focused element on close.
+  useEffect(() => {
+    if (!open) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const focusables = dialog.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    first?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      previouslyFocused?.focus?.();
     };
   }, [open]);
 
@@ -79,6 +114,7 @@ export function MobileDrawer({ cities, currentCity }: Props) {
             aria-hidden="true"
           />
           <aside
+            ref={dialogRef}
             className="drawer"
             role="dialog"
             aria-modal="true"
@@ -87,7 +123,7 @@ export function MobileDrawer({ cities, currentCity }: Props) {
             <div className="flex items-start justify-between">
               <div className="me">
                 <div>
-                  <div className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+                  <div className="text-xs text-muted">
                     Welcome to
                   </div>
                   <Logo size="sm" />
@@ -117,13 +153,12 @@ export function MobileDrawer({ cities, currentCity }: Props) {
             </nav>
 
             <div
-              className="font-display"
+              className="font-display text-forest"
               style={{
                 fontWeight: 600,
                 fontSize: 12,
                 textTransform: "uppercase",
                 letterSpacing: "1.5px",
-                color: "rgb(var(--forest))",
                 marginTop: 18,
                 marginBottom: 6,
                 padding: "0 6px",

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
+import { SafeImage } from "@/components/SafeImage";
 
 type Props = {
   href: string;
@@ -13,12 +14,9 @@ type Props = {
 export function HCard({ href, imageSrc, title, meta, rightSlot, showHeart }: Props) {
   return (
     <Link href={href} className="hcard block">
-      <div
-        className="img"
-        style={{ backgroundImage: `url(${imageSrc})` }}
-        role="img"
-        aria-label={title}
-      />
+      <div className="img relative shrink-0 overflow-hidden">
+        <SafeImage src={imageSrc} alt={title} fill sizes="96px" className="object-cover" />
+      </div>
       <div className="info">
         <div className="ttl">{title}</div>
         <div className="meta">{meta}</div>

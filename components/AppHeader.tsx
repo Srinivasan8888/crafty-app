@@ -27,54 +27,107 @@ export async function AppHeader({ city }: { city: string }) {
         Skip to content
       </a>
 
-      <header className="app-hdr md:hidden">
-        <MobileDrawer cities={drawerCities} currentCity={current.slug} />
-        <Link href={`/${current.slug}`} className="city-pill inline-flex items-center gap-1">
-          <span>{current.display_name}</span>
-          <ChevronDown size={14} aria-hidden="true" />
-        </Link>
-        <Link
-          href={`/${current.slug}/search`}
-          className="icon-btn justify-self-end"
-          aria-label="Search"
+      <header
+        className="sticky top-0 z-50"
+        style={{
+          background: "rgb(var(--cream))",
+          borderBottom: "1px solid var(--line)",
+        }}
+      >
+        <div
+          className="flex items-center gap-3 md:gap-6 px-[18px] md:px-[var(--container-pad)] py-3 md:py-[18px] mx-auto"
+          style={{ maxWidth: "var(--container-max)" }}
         >
-          <Search size={16} aria-hidden="true" />
-        </Link>
-      </header>
+          {/* Mobile: hamburger drawer */}
+          <div className="md:hidden">
+            <MobileDrawer cities={drawerCities} currentCity={current.slug} />
+          </div>
 
-      <header className="web-hdr hidden md:block">
-        <div className="row">
-          <Link href={`/${current.slug}`} className="inline-flex items-center">
+          {/* Logo (always visible) */}
+          <Link
+            href={`/${current.slug}`}
+            className="inline-flex items-center"
+            aria-label="Crafty home"
+          >
             <Logo size="md" />
           </Link>
-          <nav>
+
+          {/* Desktop primary nav */}
+          <nav
+            className="hidden md:flex flex-1 gap-6"
+            aria-label="Primary"
+          >
             {navLinks.map(([label, href]) => (
-              <Link key={label} href={href} className="font-display">
+              <Link
+                key={label}
+                href={href}
+                className="font-display font-semibold text-[15px]"
+                style={{ color: "rgb(var(--ink))" }}
+              >
                 {label}
               </Link>
             ))}
           </nav>
-          <div className="actions">
+
+          {/* Mobile city pill (centered) */}
+          <Link
+            href={`/${current.slug}`}
+            className="md:hidden city-pill inline-flex items-center gap-1 mx-auto"
+          >
+            <span>{current.display_name}</span>
+            <ChevronDown size={14} aria-hidden="true" />
+          </Link>
+
+          {/* Right-side actions */}
+          <div className="ml-auto flex items-center gap-2 md:gap-3">
+            {/* Search: icon on mobile, pill on desktop */}
             <Link
               href={`/${current.slug}/search`}
-              className="search inline-flex items-center gap-2"
+              className="icon-btn md:hidden"
+              aria-label="Search"
+            >
+              <Search size={16} aria-hidden="true" />
+            </Link>
+            <Link
+              href={`/${current.slug}/search`}
+              className="hidden md:inline-flex items-center gap-2"
               aria-label="Search Crafty"
+              style={{
+                background: "rgb(var(--cream-2))",
+                border: "1px solid var(--line-strong)",
+                borderRadius: "var(--r-pill)",
+                padding: "8px 16px",
+                fontSize: 13,
+                color: "rgb(var(--muted))",
+                minWidth: 220,
+              }}
             >
               <Search size={14} aria-hidden="true" />
               <span>Search crafters, stores, events…</span>
             </Link>
+
+            {/* City pill: desktop only (mobile pill is centered above) */}
             <Link
               href={`/${current.slug}`}
-              className="city-pill inline-flex items-center gap-1"
+              className="city-pill hidden md:inline-flex items-center gap-1"
             >
               <span>{current.display_name}</span>
               <ChevronDown size={14} aria-hidden="true" />
             </Link>
+
             <ThemeToggle />
-            <Link href="/sign-in" className="btn btn-ghost btn-sm">
+
+            {/* Desktop-only auth + CTA */}
+            <Link
+              href="/sign-in"
+              className="hidden md:inline-flex btn btn-ghost btn-sm"
+            >
               Sign in
             </Link>
-            <Link href="/list-your-profile" className="btn btn-primary btn-sm">
+            <Link
+              href="/list-your-profile"
+              className="hidden md:inline-flex btn btn-primary btn-sm"
+            >
               List your profile
             </Link>
           </div>

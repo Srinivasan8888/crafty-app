@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronDown, X } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
@@ -119,23 +119,19 @@ export function StudioFilters({
     setDraftSort("newest");
   };
 
-  const sheetFooter = useMemo(
-    () => (
-      <div>
-        <button type="button" className="btn btn-primary btn-block" onClick={onApply}>
-          Apply (showing {total})
-        </button>
-        <button
-          type="button"
-          onClick={clearDrafts}
-          className="mt-3 block w-full text-center text-xs font-semibold uppercase tracking-[1px]"
-          style={{ color: "rgb(var(--magenta))" }}
-        >
-          Clear all
-        </button>
-      </div>
-    ),
-    [onApply, total],
+  const sheetFooter = (
+    <div>
+      <button type="button" className="btn btn-primary btn-block" onClick={onApply}>
+        Apply (showing {total})
+      </button>
+      <button
+        type="button"
+        onClick={clearDrafts}
+        className="mt-3 block w-full text-center text-xs font-semibold uppercase tracking-[1px] text-magenta"
+      >
+        Clear all
+      </button>
+    </div>
   );
 
   return (
@@ -146,7 +142,8 @@ export function StudioFilters({
             <Search
               size={16}
               aria-hidden="true"
-              style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgb(var(--subtle))" }}
+              className="text-subtle"
+              style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}
             />
             <input
               className="search-input"
@@ -158,15 +155,10 @@ export function StudioFilters({
           </label>
           <button
             type="button"
-            className="icon-btn"
+            className="icon-btn bg-magenta text-cream border-magenta"
             aria-label="Open filters"
             onClick={() => setOpen(true)}
-            style={{
-              background: "rgb(var(--magenta))",
-              color: "rgb(var(--cream))",
-              borderColor: "rgb(var(--magenta))",
-              fontWeight: 700,
-            }}
+            style={{ fontWeight: 700 }}
           >
             <ChevronDown size={16} />
           </button>
@@ -216,9 +208,9 @@ export function StudioFilters({
                 <button
                   key={d.slug}
                   type="button"
-                  className={`pill${isActive ? " active" : ""}`}
+                  className={`pill w-full${isActive ? " active" : ""}`}
                   onClick={() => setDraftDiscipline(isActive ? undefined : d.slug)}
-                  style={{ width: "100%", padding: "9px 6px", fontSize: 12, minHeight: 38 }}
+                  style={{ padding: "9px 6px", fontSize: 12, minHeight: 38 }}
                 >
                   {d.display_name}
                 </button>
@@ -235,8 +227,8 @@ export function StudioFilters({
                     key={a.slug}
                     type="button"
                     onClick={() => toggleAge(a.slug)}
-                    className={`pill${checked ? " active" : ""}`}
-                    style={{ width: "100%", padding: "9px 8px", fontSize: 12 }}
+                    className={`pill w-full${checked ? " active" : ""}`}
+                    style={{ padding: "9px 8px", fontSize: 12 }}
                   >
                     {a.label}
                   </button>
@@ -254,9 +246,9 @@ export function StudioFilters({
                   className="flex items-center justify-between border-b py-3 last:border-b-0"
                   style={{ borderColor: "var(--line)" }}
                 >
-                  <span className="text-sm font-medium" style={{ color: "rgb(var(--ink))" }}>
+                  <span className="text-sm font-medium text-ink">
                     {n.label}{" "}
-                    <span style={{ color: "rgb(var(--subtle))", fontSize: 11.5, fontWeight: 500 }}>{n.count}</span>
+                    <span className="text-subtle" style={{ fontSize: 11.5, fontWeight: 500 }}>{n.count}</span>
                   </span>
                   <span className="toggle">
                     <input
@@ -287,8 +279,8 @@ export function StudioFilters({
                     key={s.id}
                     type="button"
                     onClick={() => setDraftSort(s.id)}
-                    className={`pill${isActive ? " active" : ""}`}
-                    style={{ width: "100%", padding: "9px 8px", fontSize: 12 }}
+                    className={`pill w-full${isActive ? " active" : ""}`}
+                    style={{ padding: "9px 8px", fontSize: 12 }}
                   >
                     {s.label}
                   </button>
@@ -337,7 +329,7 @@ function ToggleRow({
       className="flex items-center justify-between border-b py-3 last:border-b-0"
       style={{ borderColor: "var(--line)" }}
     >
-      <span className="text-sm font-medium" style={{ color: "rgb(var(--ink))" }}>
+      <span className="text-sm font-medium text-ink">
         {label}
       </span>
       <span className="toggle">

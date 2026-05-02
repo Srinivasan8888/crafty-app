@@ -50,79 +50,52 @@ export default async function LearnListing({
           <span className="ink">Learn</span>
         </nav>
 
-        <header className="page-hdr-m md:hidden">
-          <div className="eyebrow">{city.display_name.toUpperCase()}</div>
-          <h1>
-            Learn a craft in <em>{city.display_name}</em>
-          </h1>
-          <div className="sub">
-            {totalCount} {totalCount === 1 ? "studio" : "studios & academies"} listed · free to browse
-          </div>
-        </header>
-
-        <header className="hidden items-end justify-between gap-10 py-6 md:flex" style={{ paddingTop: 24, paddingBottom: 28 }}>
-          <div>
-            <div
-              style={{
-                fontSize: 11.5,
-                fontWeight: 700,
-                color: "rgb(var(--mustard-dark))",
-                letterSpacing: "2.6px",
-                textTransform: "uppercase",
-                marginBottom: 12,
-                fontFamily: "var(--font-body)",
-              }}
-            >
-              {city.display_name.toUpperCase()}
-            </div>
-            <h1
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 44,
-                fontWeight: 800,
-                lineHeight: 1.04,
-                letterSpacing: "-1.4px",
-                color: "rgb(var(--ink))",
-              }}
-            >
-              Studios &amp; academies in{" "}
-              <em
+        <header className="page-hdr-m md:py-7 md:px-0">
+          <div className="md:flex md:items-end md:justify-between md:gap-10">
+            <div>
+              <div className="eyebrow tracked">{city.display_name.toUpperCase()}</div>
+              <h1 className="md:!text-[44px] md:!leading-[1.04] md:!tracking-[-1.4px]">
+                <span className="md:hidden">Learn a craft in </span>
+                <span className="hidden md:inline">Studios &amp; academies in </span>
+                <em
+                  className="italic"
+                  style={{ color: "rgb(var(--magenta))", fontWeight: 600 }}
+                >
+                  {city.display_name}
+                </em>
+              </h1>
+              <div className="sub md:hidden">
+                {totalCount} {totalCount === 1 ? "studio" : "studios & academies"} listed · free to browse
+              </div>
+              <div
+                className="hidden md:block mt-2"
                 style={{
-                  color: "rgb(var(--magenta))",
+                  fontFamily: "var(--font-display)",
                   fontStyle: "italic",
-                  fontWeight: 600,
+                  fontSize: 16,
+                  color: "rgb(var(--muted))",
                 }}
               >
-                {city.display_name}
-              </em>
-            </h1>
-          </div>
-          <div className="flex flex-col items-end gap-3">
-            <div
-              style={{
-                fontFamily: "var(--font-display)",
-                fontStyle: "italic",
-                fontSize: 16,
-                color: "rgb(var(--muted))",
-              }}
-            >
-              <strong
-                style={{
-                  fontStyle: "normal",
-                  fontWeight: 700,
-                  color: "rgb(var(--ink))",
-                  fontSize: 22,
-                  display: "block",
-                  marginBottom: 2,
-                }}
-              >
-                {totalCount} studios
-              </strong>
-              and counting · classes weekly
+                <strong
+                  style={{
+                    fontStyle: "normal",
+                    fontWeight: 700,
+                    color: "rgb(var(--ink))",
+                    fontSize: 22,
+                    display: "block",
+                    marginBottom: 2,
+                  }}
+                >
+                  {totalCount} {totalCount === 1 ? "studio" : "studios"}
+                </strong>
+                and counting · classes weekly
+              </div>
             </div>
-            <Link href="/list-your-profile" className="btn btn-primary btn-sm">
-              List your studio
-            </Link>
+            <div className="hidden md:block">
+              <Link href="/list-your-profile" className="btn btn-primary btn-sm">
+                List your studio
+              </Link>
+            </div>
           </div>
         </header>
       </div>

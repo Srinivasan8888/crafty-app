@@ -14,6 +14,7 @@ const remotePatterns = [
   // Dev image seeds
   { protocol: "https", hostname: "picsum.photos" },
   { protocol: "https", hostname: "fastly.picsum.photos" },
+  { protocol: "https", hostname: "images.unsplash.com" },
   ...(isProd
     ? []
     : [

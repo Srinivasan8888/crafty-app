@@ -8,9 +8,30 @@ export function AppFooter() {
     <footer className="app-footer">
       <Logo size="lg" cream />
       <div className="socials">
-        <a aria-label="Instagram" href="#"><span>IG</span></a>
-        <a aria-label="Facebook" href="#"><span>FB</span></a>
-        <a aria-label="X" href="#"><span>X</span></a>
+        <a
+          aria-label="Instagram"
+          href="https://instagram.com/crafty.in"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>IG</span>
+        </a>
+        <a
+          aria-label="Facebook"
+          href="https://facebook.com/crafty.in"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>FB</span>
+        </a>
+        <a
+          aria-label="X"
+          href="https://x.com/crafty_in"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>X</span>
+        </a>
       </div>
       <div className="links">
         <Link href="/contact">About</Link>

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Heart } from "lucide-react";
+import { SafeImage } from "@/components/SafeImage";
 
 type BadgeVariant = "feat" | "classes" | "claim" | "online";
 
@@ -43,15 +43,16 @@ export function FeaturedCard({
   badges,
 }: Props) {
   return (
-    <article className="featured-card relative">
+    <article className="featured-card relative overflow-hidden">
       <Link href={href} aria-label={title} className="block">
-        <div className="img relative">
-          <Image
+        <div className="img relative w-full aspect-[16/10] overflow-hidden" style={{ backgroundColor: "rgb(var(--cream-2))" }}>
+          <SafeImage
             src={imageSrc}
             alt={title}
             fill
             sizes="(max-width:768px) 100vw, 720px"
             className="object-cover"
+            priority
           />
         </div>
       </Link>

@@ -11,15 +11,13 @@ export default function NotFound() {
       <div className="relative">
         <span
           aria-hidden
-          className="pointer-events-none absolute -left-10 -top-4 text-[26px] opacity-55"
-          style={{ color: "rgb(var(--mustard))" }}
+          className="pointer-events-none absolute -left-10 -top-4 text-[26px] opacity-55 text-mustard"
         >
           ❋
         </span>
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-10 -bottom-2 text-[26px] opacity-50"
-          style={{ color: "rgb(var(--magenta))" }}
+          className="pointer-events-none absolute -right-10 -bottom-2 text-[26px] opacity-50 text-magenta"
         >
           ✿
         </span>
@@ -27,13 +25,13 @@ export default function NotFound() {
           className="font-display font-extrabold leading-none tracking-tight"
           style={{ fontSize: "80px", letterSpacing: "-3px" }}
         >
-          4<em className="italic font-semibold" style={{ color: "rgb(var(--magenta))" }}>0</em>4
+          4<em className="italic font-semibold text-magenta">0</em>4
         </h1>
       </div>
 
       <p
-        className="mt-3 font-display italic"
-        style={{ fontSize: "22px", color: "rgb(var(--muted))" }}
+        className="mt-3 font-display italic text-muted"
+        style={{ fontSize: "22px" }}
       >
         Looks like this craft got lost.
       </p>
@@ -53,15 +51,14 @@ export default function NotFound() {
       </div>
 
       <p
-        className="mt-12 font-display italic"
-        style={{ fontSize: "13px", color: "rgb(var(--muted))" }}
+        className="mt-12 font-display italic text-muted"
+        style={{ fontSize: "13px" }}
       >
         If you think this is a bug,{" "}
         <Link
           href="/contact"
-          className="not-italic font-semibold"
+          className="not-italic font-semibold text-forest"
           style={{
-            color: "rgb(var(--forest))",
             borderBottom: "1.5px solid rgb(var(--mustard))",
             paddingBottom: "1px",
           }}

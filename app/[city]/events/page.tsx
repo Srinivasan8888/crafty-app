@@ -78,7 +78,7 @@ export default async function EventsListing({
               fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: "2.2px",
-              color: "rgb(var(--mustard-dark))",
+              color: "rgb(var(--forest))",
               marginBottom: 6,
             }}
           >

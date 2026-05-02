@@ -16,6 +16,8 @@ import type { Metadata } from "next";
 import { GalleryStrip } from "@/components/GalleryStrip";
 import { HCard } from "@/components/HCard";
 import { StickyCTA } from "@/components/StickyCTA";
+import { SaveButton } from "@/components/SaveButton";
+import { ShareButton } from "@/components/ShareButton";
 import { MobileTabs } from "./_components/MobileTabs";
 import { formatINR } from "@/lib/util";
 
@@ -152,12 +154,12 @@ export default async function CrafterDetail({
       </h3>
       {c.bio ? (
         c.bio.split("\n\n").map((p, i) => (
-          <p key={i} className={i > 0 ? "mt-2.5" : undefined} style={{ color: "rgb(var(--muted))", lineHeight: 1.65, fontSize: 14 }}>
+          <p key={i} className={`text-muted ${i > 0 ? "mt-2.5" : ""}`.trim()} style={{ lineHeight: 1.65, fontSize: 14 }}>
             {p}
           </p>
         ))
       ) : (
-        <p style={{ color: "rgb(var(--muted))", lineHeight: 1.65, fontSize: 14 }}>
+        <p className="text-muted" style={{ lineHeight: 1.65, fontSize: 14 }}>
           {c.tagline ?? `${c.name} hasn't added a bio yet.`}
         </p>
       )}
@@ -174,7 +176,7 @@ export default async function CrafterDetail({
       <section className="seg-section">
         <div className="sec-head flex items-baseline justify-between mb-2.5">
           <h3 className="font-display text-lg font-bold">Portfolio</h3>
-          <span className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+          <span className="text-xs text-muted">
             {c.portfolio_photos.length} photos
           </span>
         </div>
@@ -182,7 +184,7 @@ export default async function CrafterDetail({
       </section>
     ) : (
       <section className="seg-section">
-        <p style={{ color: "rgb(var(--muted))", fontSize: 14 }}>No portfolio photos yet.</p>
+        <p className="text-muted" style={{ fontSize: 14 }}>No portfolio photos yet.</p>
       </section>
     );
 
@@ -191,7 +193,7 @@ export default async function CrafterDetail({
       <section className="seg-section">
         <div className="sec-head flex items-baseline justify-between mb-2.5">
           <h3 className="font-display text-lg font-bold">Products on order</h3>
-          <span className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+          <span className="text-xs text-muted">
             {products.length} items
           </span>
         </div>
@@ -212,7 +214,7 @@ export default async function CrafterDetail({
       </section>
     ) : (
       <section className="seg-section">
-        <p style={{ color: "rgb(var(--muted))", fontSize: 14 }}>
+        <p className="text-muted" style={{ fontSize: 14 }}>
           {c.name.split(" ")[0]} doesn&rsquo;t list ready products yet — DM on WhatsApp for custom orders.
         </p>
       </section>
@@ -274,12 +276,15 @@ export default async function CrafterDetail({
                   {dow}
                   <span className="d">{day}</span>
                 </div>
-                <div
-                  className="img"
-                  style={{ backgroundImage: `url(${e.cover_image})` }}
-                  role="img"
-                  aria-label={e.name}
-                />
+                <div className="img relative overflow-hidden">
+                  <Image
+                    src={e.cover_image}
+                    alt={e.name}
+                    fill
+                    sizes="44px"
+                    className="object-cover"
+                  />
+                </div>
                 <div className="info">
                   <div className="ttl">{e.name}</div>
                   <div className="meta">
@@ -302,7 +307,7 @@ export default async function CrafterDetail({
       </section>
     ) : (
       <section className="seg-section">
-        <p style={{ color: "rgb(var(--muted))", fontSize: 14 }}>No classes or workshops listed.</p>
+        <p className="text-muted" style={{ fontSize: 14 }}>No classes or workshops listed.</p>
       </section>
     );
 
@@ -335,12 +340,20 @@ export default async function CrafterDetail({
             <ArrowLeft size={16} />
           </Link>
           <div className="spacer flex-1" />
-          <button type="button" className="icon-btn dark" aria-label="Share">
-            <Share2 size={16} />
-          </button>
-          <button type="button" className="icon-btn dark" aria-label="Save">
-            <Heart size={16} />
-          </button>
+          <ShareButton
+            title={c.name}
+            text={c.tagline ?? c.bio ?? c.name}
+            className="icon-btn dark"
+          >
+            <Share2 size={16} aria-hidden="true" />
+          </ShareButton>
+          <SaveButton
+            entityType="crafter"
+            entityId={c.id}
+            variant="icon"
+            className="icon-btn dark"
+          />
+          {/* trailing-anchor for layout parity */}
         </header>
 
         <div className="name-block">
@@ -368,24 +381,26 @@ export default async function CrafterDetail({
       </section>
 
       <div className="md:hidden">
-        <div className="stat-row mt-4">
-          <div className="stat">
-            <span className="num">{savesPlaceholder}</span>
-            <span className="lbl">Saves</span>
-          </div>
-          <div className="stat">
-            <span className="num">—</span>
-            <span className="lbl">Sales</span>
-          </div>
-          <div className="stat">
-            <span className="num">—</span>
-            <span className="lbl">Contacts</span>
-          </div>
-          <div className="stat">
-            <span className="num">{responsePlaceholder}</span>
-            <span className="lbl">Response</span>
-          </div>
-        </div>
+        {(() => {
+          // Hide tiles with no data so the strip doesn't render bare em-dashes
+          // ("— SALES", "— CONTACTS"). Grid collapses to populated cells only.
+          const tiles = [
+            { lbl: "Saves", num: String(savesPlaceholder) },
+            { lbl: "Response", num: responsePlaceholder },
+            { lbl: "Listed", num: listedSince },
+          ].filter((t) => t.num && t.num !== "—");
+          if (tiles.length === 0) return null;
+          return (
+            <div className="stat-row mt-4">
+              {tiles.map((t) => (
+                <div className="stat" key={t.lbl}>
+                  <span className="num">{t.num}</span>
+                  <span className="lbl">{t.lbl}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
 
         <MobileTabs
           aboutContent={aboutBlock}
@@ -403,12 +418,15 @@ export default async function CrafterDetail({
                   href={`/${c.city.slug}/stores/${otherStore.slug}`}
                   className="hcard"
                 >
-                  <div
-                    className="img"
-                    style={{ backgroundImage: `url(${otherStore.logo_photo})` }}
-                    role="img"
-                    aria-label={otherStore.name}
-                  />
+                  <div className="img relative shrink-0 overflow-hidden">
+                    <Image
+                      src={otherStore.logo_photo}
+                      alt={otherStore.name}
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                    />
+                  </div>
                   <div className="info">
                     <div className="ttl">{otherStore.name}</div>
                     <div className="meta">Store · {c.city.display_name}</div>
@@ -420,12 +438,15 @@ export default async function CrafterDetail({
                   href={`/${c.city.slug}/learn/${otherStudio.slug}`}
                   className="hcard"
                 >
-                  <div
-                    className="img"
-                    style={{ backgroundImage: `url(${otherStudio.logo_photo})` }}
-                    role="img"
-                    aria-label={otherStudio.name}
-                  />
+                  <div className="img relative shrink-0 overflow-hidden">
+                    <Image
+                      src={otherStudio.logo_photo}
+                      alt={otherStudio.name}
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                    />
+                  </div>
                   <div className="info">
                     <div className="ttl">{otherStudio.name}</div>
                     <div className="meta">Studio · {c.city.display_name}</div>
@@ -436,12 +457,15 @@ export default async function CrafterDetail({
           </section>
         )}
 
-        <section className="px-[18px] py-3 italic" style={{ color: "rgb(var(--subtle))", fontSize: 12.5 }}>
+        <section className="px-[18px] py-3 italic text-subtle" style={{ fontSize: 12.5 }}>
           <p>
             Something off about this profile?{" "}
-            <a href="#" style={{ borderBottom: "1px dotted rgb(var(--subtle))" }}>
+            <Link
+              href={`/contact?ref=report&type=crafter&slug=${c.slug}`}
+              style={{ borderBottom: "1px dotted rgb(var(--subtle))" }}
+            >
               Report this listing
-            </a>{" "}
+            </Link>{" "}
             — we read every report.
           </p>
         </section>
@@ -469,7 +493,9 @@ export default async function CrafterDetail({
           <div className="grid gap-10 pt-8 pb-14 lg:grid-cols-[1.5fr_1fr]">
             <div className="flex flex-col gap-10">
               <header>
-                <h1
+                <div
+                  role="heading"
+                  aria-level={1}
                   className="font-display"
                   style={{
                     fontFamily: "var(--font-display)",
@@ -480,8 +506,8 @@ export default async function CrafterDetail({
                   }}
                 >
                   {c.name}
-                </h1>
-                <div className="loc mt-1.5 text-sm font-semibold" style={{ color: "rgb(var(--forest))" }}>
+                </div>
+                <div className="loc mt-1.5 text-sm font-semibold text-forest">
                   {locText}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -552,7 +578,7 @@ export default async function CrafterDetail({
                     >
                       Portfolio
                     </h3>
-                    <span className="text-sm" style={{ color: "rgb(var(--muted))" }}>
+                    <span className="text-sm text-muted">
                       {c.portfolio_photos.length} photos
                     </span>
                   </div>
@@ -663,12 +689,15 @@ export default async function CrafterDetail({
                             {dow}
                             <span className="d">{day}</span>
                           </div>
-                          <div
-                            className="img"
-                            style={{ backgroundImage: `url(${e.cover_image})` }}
-                            role="img"
-                            aria-label={e.name}
-                          />
+                          <div className="img relative overflow-hidden">
+                            <Image
+                              src={e.cover_image}
+                              alt={e.name}
+                              fill
+                              sizes="44px"
+                              className="object-cover"
+                            />
+                          </div>
                           <div className="info">
                             <div className="ttl">{e.name}</div>
                             <div className="meta">{e.venue_name}</div>
@@ -716,10 +745,10 @@ export default async function CrafterDetail({
                         href={whatsappHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-forest btn-block"
+                        className="btn btn-forest btn-block flex items-center gap-2"
                       >
                         <MessageCircle size={16} />
-                        <span className="ml-2 font-bold">WhatsApp</span>
+                        <span className="font-bold">WhatsApp</span>
                         {c.contact_whatsapp && (
                           <span className="ml-auto text-xs opacity-90">{c.contact_whatsapp}</span>
                         )}
@@ -730,10 +759,10 @@ export default async function CrafterDetail({
                         href={instagramHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-primary btn-block"
+                        className="btn btn-primary btn-block flex items-center gap-2"
                       >
                         <Instagram size={16} />
-                        <span className="ml-2 font-bold">Instagram</span>
+                        <span className="font-bold">Instagram</span>
                         {c.contact_instagram && (
                           <span className="ml-auto text-xs opacity-90">@{c.contact_instagram.replace(/^@/, "")}</span>
                         )}
@@ -744,10 +773,10 @@ export default async function CrafterDetail({
                         href={websiteHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-secondary btn-block"
+                        className="btn btn-secondary btn-block flex items-center gap-2"
                       >
                         <Globe size={16} />
-                        <span className="ml-2 font-bold">Website</span>
+                        <span className="font-bold">Website</span>
                       </a>
                     )}
                   </div>
@@ -800,7 +829,7 @@ export default async function CrafterDetail({
                         >
                           {otherStore.name}
                         </div>
-                        <div className="text-sm" style={{ color: "rgb(var(--muted))" }}>
+                        <div className="text-sm text-muted">
                           Store · {c.city.display_name}
                         </div>
                         <span
@@ -827,7 +856,7 @@ export default async function CrafterDetail({
                         >
                           {otherStudio.name}
                         </div>
-                        <div className="text-sm" style={{ color: "rgb(var(--muted))" }}>
+                        <div className="text-sm text-muted">
                           Studio · {c.city.display_name}
                         </div>
                         <span
@@ -850,9 +879,12 @@ export default async function CrafterDetail({
                   style={{ color: "rgb(var(--subtle))", lineHeight: 1.5 }}
                 >
                   Something off about this profile?{" "}
-                  <a href="#" style={{ borderBottom: "1px dotted rgb(var(--subtle))" }}>
+                  <Link
+                    href={`/contact?ref=report&type=crafter&slug=${c.slug}`}
+                    style={{ borderBottom: "1px dotted rgb(var(--subtle))" }}
+                  >
                     Report this listing
-                  </a>{" "}
+                  </Link>{" "}
                   — we read every report.
                 </div>
               </div>
@@ -867,10 +899,23 @@ export default async function CrafterDetail({
           primaryHref={whatsappHref}
           primaryVariant="forest"
           primaryIcon={<MessageCircle size={16} />}
-          iconButtons={[
-            { ariaLabel: "Save", icon: <Heart size={16} /> },
-            { ariaLabel: "Share", icon: <Share2 size={16} /> },
-          ]}
+          iconActions={
+            <>
+              <SaveButton
+                entityType="crafter"
+                entityId={c.id}
+                variant="icon"
+                className="icon-btn"
+              />
+              <ShareButton
+                title={c.name}
+                text={c.tagline ?? c.bio ?? c.name}
+                className="icon-btn"
+              >
+                <Share2 size={16} aria-hidden="true" />
+              </ShareButton>
+            </>
+          }
         />
       )}
     </article>

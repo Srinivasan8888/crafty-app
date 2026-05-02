@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export type BottomSheetProps = {
@@ -23,6 +23,7 @@ export function BottomSheet({
   showHandle = true,
 }: BottomSheetProps) {
   const [mounted, setMounted] = useState(false);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -44,6 +45,40 @@ export function BottomSheet({
     };
   }, [open, onClose]);
 
+  // Focus trap: trap Tab / Shift+Tab inside the dialog while open;
+  // restore focus to the previously-focused element on close.
+  useEffect(() => {
+    if (!open) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const focusables = dialog.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    first?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      previouslyFocused?.focus?.();
+    };
+  }, [open]);
+
   if (!open || !mounted) return null;
 
   const stop = (e: React.MouseEvent) => e.stopPropagation();
@@ -55,6 +90,7 @@ export function BottomSheet({
       role="presentation"
     >
       <div
+        ref={dialogRef}
         className={`sheet sheet-anim flex flex-col${showHandle ? "" : " no-handle"}`}
         onClick={stop}
         role="dialog"

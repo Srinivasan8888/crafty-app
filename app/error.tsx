@@ -19,15 +19,13 @@ export default function GlobalError({
       <div className="relative">
         <span
           aria-hidden
-          className="pointer-events-none absolute -left-10 -top-4 text-[26px] opacity-55"
-          style={{ color: "rgb(var(--mustard))" }}
+          className="pointer-events-none absolute -left-10 -top-4 text-[26px] opacity-55 text-mustard"
         >
           ❋
         </span>
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-10 -bottom-2 text-[26px] opacity-50"
-          style={{ color: "rgb(var(--magenta))" }}
+          className="pointer-events-none absolute -right-10 -bottom-2 text-[26px] opacity-50 text-magenta"
         >
           ✿
         </span>
@@ -36,10 +34,7 @@ export default function GlobalError({
           style={{ fontSize: "44px", letterSpacing: "-1.4px" }}
         >
           Something{" "}
-          <em
-            className="italic font-semibold"
-            style={{ color: "rgb(var(--magenta))" }}
-          >
+          <em className="italic font-semibold text-magenta">
             dropped a stitch.
           </em>
         </h1>
@@ -60,15 +55,14 @@ export default function GlobalError({
       </div>
 
       <p
-        className="mt-10 font-display italic"
-        style={{ fontSize: "13px", color: "rgb(var(--muted))" }}
+        className="mt-10 font-display italic text-muted"
+        style={{ fontSize: "13px" }}
       >
         If this keeps happening, email{" "}
         <a
           href="mailto:hi@crafty.app"
-          className="not-italic font-semibold"
+          className="not-italic font-semibold text-forest"
           style={{
-            color: "rgb(var(--forest))",
             borderBottom: "1.5px solid rgb(var(--mustard))",
             paddingBottom: "1px",
           }}
@@ -80,12 +74,11 @@ export default function GlobalError({
 
       {error?.digest ? (
         <p
-          className="mt-6 italic"
+          className="mt-6 italic text-subtle"
           style={{
             fontFamily:
               "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
             fontSize: "11px",
-            color: "rgb(var(--subtle))",
           }}
         >
           ref: {error.digest}

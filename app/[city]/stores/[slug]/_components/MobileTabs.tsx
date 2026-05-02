@@ -24,8 +24,8 @@ export function MobileTabs({ about, catalogue, hours, findUs }: Props) {
 
   return (
     <div className="md:hidden">
-      <div className="seg-wrap" style={{ padding: "18px 18px 6px" }}>
-        <SegmentedControl tabs={TABS} active={active} onChange={setActive} />
+      <div className="seg-wrap" style={{ padding: "18px 18px 0" }}>
+        <SegmentedControl tabs={TABS} active={active} onChange={setActive} variant="tabs" />
       </div>
       <section className="seg-section" hidden={active !== "about"}>
         {about}

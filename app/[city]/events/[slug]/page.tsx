@@ -2,12 +2,15 @@ import { prisma } from "@/lib/db";
 import { getCityBySlug } from "@/lib/cities";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Share2, Heart } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, MapPin, Share2, Heart } from "lucide-react";
 import { formatINR } from "@/lib/util";
 import { EventCard } from "@/components/Cards";
 import { HCard } from "@/components/HCard";
 import { StickyCTA } from "@/components/StickyCTA";
 import { BottomNav } from "@/components/BottomNav";
+import { SaveButton } from "@/components/SaveButton";
+import { ShareButton } from "@/components/ShareButton";
 
 export const revalidate = 60;
 
@@ -114,6 +117,16 @@ export default async function EventDetail({
   const typeLabel =
     EVENT_TYPE_LABEL[e.event_type] ?? e.event_type.toLowerCase();
 
+  // Dedupe city out of venue strings — seed venues like
+  // "Cubbon Park, Bengaluru" already include the city, so naively
+  // appending city would render "Cubbon Park, Bengaluru, Bengaluru".
+  const cityName = e.city.display_name;
+  const venueAlreadyHasCity = (s: string) =>
+    s.toLowerCase().includes(cityName.toLowerCase());
+  const venueWithCity = venueAlreadyHasCity(e.venue_name)
+    ? e.venue_name
+    : `${e.venue_name}, ${cityName}`;
+
   const paragraphs = e.description.split(/\n{2,}/).filter(Boolean);
 
   const bringList = [
@@ -131,11 +144,17 @@ export default async function EventDetail({
           position: "relative",
           aspectRatio: "16 / 9",
           backgroundColor: "rgb(var(--cream-2))",
-          backgroundImage: `url(${e.cover_image})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          overflow: "hidden",
         }}
       >
+        <Image
+          src={e.cover_image}
+          alt=""
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover"
+        />
         <div
           className="nav-photo md:hidden"
           style={{
@@ -157,14 +176,14 @@ export default async function EventDetail({
           >
             <ArrowLeft size={18} />
           </Link>
-          <button
+          <ShareButton
+            title={e.name}
+            text={e.name}
             className="icon-btn right"
-            aria-label="Share"
             style={{ pointerEvents: "auto" }}
-            type="button"
           >
-            <Share2 size={18} />
-          </button>
+            <Share2 size={18} aria-hidden="true" />
+          </ShareButton>
         </div>
 
         <div
@@ -270,7 +289,7 @@ export default async function EventDetail({
                   fontFamily: "var(--font-display)",
                 }}
               >
-                {e.venue_name}, {e.city.display_name}
+                {venueWithCity}
               </div>
               <div
                 className="tag-row"
@@ -417,27 +436,62 @@ export default async function EventDetail({
                   fontSize: 15,
                 }}
               >
-                <strong style={{ color: "rgb(var(--forest))" }}>
+                <strong className="text-forest">
                   {e.venue_name}
                 </strong>
                 {e.venue_address ? ` — ${e.venue_address}` : ""}
               </p>
               <div
+                aria-label="Map embed coming soon"
                 style={{
                   marginTop: 12,
                   aspectRatio: "16 / 8",
                   background: "rgb(var(--cream-2))",
-                  border: "1px dashed var(--line-strong)",
+                  border: "1px solid var(--line)",
                   borderRadius: "var(--r-lg)",
                   display: "grid",
                   placeItems: "center",
-                  color: "rgb(var(--forest))",
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 700,
-                  fontSize: 14,
+                  color: "rgb(var(--muted))",
+                  padding: "16px 20px",
                 }}
               >
-                📍 Map placeholder
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 8,
+                    textAlign: "center",
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      background: "rgb(var(--cream))",
+                      border: "1px solid var(--line)",
+                      display: "grid",
+                      placeItems: "center",
+                      color: "rgb(var(--forest))",
+                    }}
+                  >
+                    <MapPin size={18} />
+                  </span>
+                  <p
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontStyle: "italic",
+                      fontSize: 13.5,
+                      lineHeight: 1.45,
+                      maxWidth: 320,
+                      color: "rgb(var(--muted))",
+                    }}
+                  >
+                    Map embed coming soon — see venue address above.
+                  </p>
+                </div>
               </div>
             </section>
 
@@ -477,13 +531,15 @@ export default async function EventDetail({
                 />
               ) : (
                 <div className="hcard">
-                  <div
-                    className="img"
-                    style={{
-                      backgroundImage: `url(${organizerPhoto})`,
-                    }}
-                    aria-hidden="true"
-                  />
+                  <div className="img relative shrink-0 overflow-hidden" aria-hidden="true">
+                    <Image
+                      src={organizerPhoto}
+                      alt=""
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                    />
+                  </div>
                   <div className="info">
                     <div className="ttl">{organizerName}</div>
                     <div className="meta">{organizerRole}</div>
@@ -601,7 +657,7 @@ export default async function EventDetail({
                         textTransform: "uppercase",
                       }}
                     >
-                      {dayShort}, {monthYear.toUpperCase()}
+                      {monthYear.toUpperCase()}
                     </em>
                   </span>
                 </div>
@@ -667,18 +723,18 @@ export default async function EventDetail({
                     href={e.registration_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn btn-primary"
-                    style={{ width: "100%", padding: 14 }}
+                    className="btn btn-primary w-full"
+                    style={{ padding: 14 }}
                   >
                     I&apos;ll be there →
                   </a>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ width: "100%", padding: 14 }}
-                  >
-                    <Heart size={14} /> Save for later
-                  </button>
+                  <SaveButton
+                    entityType="event"
+                    entityId={e.id}
+                    variant="button"
+                    className="btn btn-secondary w-full"
+                    style={{ padding: 14 }}
+                  />
                 </div>
 
                 <div
@@ -690,8 +746,10 @@ export default async function EventDetail({
                     borderTop: "1px solid var(--line)",
                   }}
                 >
-                  <button
-                    type="button"
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`${e.name} — ${city.display_name} on Crafty`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="share-btn"
                     style={{
                       flex: 1,
@@ -703,12 +761,15 @@ export default async function EventDetail({
                       fontSize: 12,
                       fontWeight: 600,
                       fontFamily: "var(--font-display)",
+                      textAlign: "center",
                     }}
                   >
                     WhatsApp
-                  </button>
-                  <button
-                    type="button"
+                  </a>
+                  <a
+                    href="https://instagram.com/crafty.in"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="share-btn"
                     style={{
                       flex: 1,
@@ -720,12 +781,14 @@ export default async function EventDetail({
                       fontSize: 12,
                       fontWeight: 600,
                       fontFamily: "var(--font-display)",
+                      textAlign: "center",
                     }}
                   >
                     Instagram
-                  </button>
-                  <button
-                    type="button"
+                  </a>
+                  <ShareButton
+                    title={e.name}
+                    text={e.name}
                     className="share-btn"
                     style={{
                       flex: 1,
@@ -740,7 +803,7 @@ export default async function EventDetail({
                     }}
                   >
                     Copy link
-                  </button>
+                  </ShareButton>
                 </div>
 
                 <div
@@ -778,10 +841,23 @@ export default async function EventDetail({
         primaryLabel="I'll be there →"
         primaryHref={e.registration_url}
         primaryVariant="magenta"
-        iconButtons={[
-          { ariaLabel: "Save", icon: <Heart size={18} /> },
-          { ariaLabel: "Share", icon: <Share2 size={18} /> },
-        ]}
+        iconActions={
+          <>
+            <SaveButton
+              entityType="event"
+              entityId={e.id}
+              variant="icon"
+              className="icon-btn"
+            />
+            <ShareButton
+              title={e.name}
+              text={e.name}
+              className="icon-btn"
+            >
+              <Share2 size={18} aria-hidden="true" />
+            </ShareButton>
+          </>
+        }
       />
 
       <BottomNav city={city.slug} active="explore" />

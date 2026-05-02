@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SafeImage } from "@/components/SafeImage";
 
 export type GalleryProps = {
   images: string[];
@@ -45,17 +46,6 @@ export function GalleryStrip({ images, alt = "", aspectRatio = "1" }: GalleryPro
     return () => observer.disconnect();
   }, [images.length, active]);
 
-  const handleScroll = () => {
-    const root = stripRef.current;
-    if (!root) return;
-    const w = root.clientWidth;
-    if (w === 0) return;
-    const idx = Math.round(root.scrollLeft / w);
-    if (idx !== active && idx >= 0 && idx < images.length) {
-      setActive(idx);
-    }
-  };
-
   const ratioStyle: React.CSSProperties = { aspectRatio };
 
   if (!images || images.length === 0) return null;
@@ -65,7 +55,6 @@ export function GalleryStrip({ images, alt = "", aspectRatio = "1" }: GalleryPro
       <div
         ref={stripRef}
         className="gallery-strip"
-        onScroll={handleScroll}
         role="region"
         aria-roledescription="carousel"
         aria-label={alt || "Gallery"}
@@ -77,12 +66,21 @@ export function GalleryStrip({ images, alt = "", aspectRatio = "1" }: GalleryPro
               slideRefs.current[i] = el;
             }}
             data-idx={i}
-            className="slide"
+            className="slide relative"
             role="group"
             aria-roledescription="slide"
             aria-label={`${alt || "Image"} ${i + 1} of ${images.length}`}
-            style={{ ...ratioStyle, backgroundImage: `url(${src})` }}
-          />
+            style={ratioStyle}
+          >
+            <SafeImage
+              src={src}
+              alt={alt ? `${alt} ${i + 1}` : `Slide ${i + 1}`}
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority={i === 0}
+            />
+          </div>
         ))}
       </div>
 

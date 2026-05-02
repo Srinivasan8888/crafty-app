@@ -8,6 +8,8 @@ import { Phone, MessageCircle, Globe, MapPin, Mail, Flag, Heart, Share2, Sparkle
 import type { Metadata } from "next";
 import { StickyCTA } from "@/components/StickyCTA";
 import { HCard } from "@/components/HCard";
+import { SaveButton } from "@/components/SaveButton";
+import { ShareButton } from "@/components/ShareButton";
 import { formatDateShort } from "@/lib/util";
 import { MobileTabs } from "./_components/MobileTabs";
 
@@ -83,12 +85,13 @@ export default async function StoreDetail({ params }: { params: { city: string; 
   const hours = readHours(s.operating_hours);
   const categoryNames = s.supply_categories.map((j) => j.category.display_name);
   const yearsListed = Math.max(0, new Date().getFullYear() - new Date(s.created_at).getFullYear());
+  // Only render tiles with real data — drop bare "—" placeholders
+  // (they made the platform look broken e.g. "— SAVES", "— HOURS").
   const stats = [
-    { label: "Saves", value: "—" },
     { label: "Years open", value: yearsListed > 0 ? `${yearsListed}+` : "New" },
-    { label: "Categories", value: String(categoryNames.length) },
-    { label: "Hours", value: s.operating_hours ? "Listed" : "—" },
-  ];
+    { label: "Categories", value: categoryNames.length > 0 ? String(categoryNames.length) : null },
+    { label: "Hours", value: s.operating_hours ? "Listed" : null },
+  ].filter((t): t is { label: string; value: string } => t.value !== null && t.value !== "—");
 
   const phoneDigits = s.contact_whatsapp?.replace(/[^0-9]/g, "") ?? s.contact_phone?.replace(/[^0-9]/g, "");
   const primaryHref = s.contact_whatsapp
@@ -242,12 +245,19 @@ export default async function StoreDetail({ params }: { params: { city: string; 
             ←
           </Link>
           <div style={{ flex: 1 }} />
-          <button className="icon-btn dark" aria-label="Share" type="button">
-            <Share2 size={16} />
-          </button>
-          <button className="icon-btn dark" aria-label="Save" type="button">
-            <Heart size={16} />
-          </button>
+          <ShareButton
+            title={s.name}
+            text={s.name}
+            className="icon-btn dark"
+          >
+            <Share2 size={16} aria-hidden="true" />
+          </ShareButton>
+          <SaveButton
+            entityType="store"
+            entityId={s.id}
+            variant="icon"
+            className="icon-btn dark"
+          />
         </header>
 
         <div className="name-block">
@@ -278,16 +288,18 @@ export default async function StoreDetail({ params }: { params: { city: string; 
         </div>
       </section>
 
-      <div className="md:hidden" style={{ padding: "14px 18px 0" }}>
-        <div className="stat-row">
-          {stats.map((st) => (
-            <div className="stat" key={st.label}>
-              <span className="num">{st.value}</span>
-              <span className="lbl">{st.label}</span>
-            </div>
-          ))}
+      {stats.length > 0 && (
+        <div className="md:hidden" style={{ padding: "14px 18px 0" }}>
+          <div className="stat-row">
+            {stats.map((st) => (
+              <div className="stat" key={st.label}>
+                <span className="num">{st.value}</span>
+                <span className="lbl">{st.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <MobileTabs about={aboutPane} catalogue={cataloguePane} hours={hoursPane} findUs={findUsPane} />
 
@@ -407,10 +419,13 @@ export default async function StoreDetail({ params }: { params: { city: string; 
             >
               <p>
                 Something off about this listing?{" "}
-                <a href="mailto:hello@crafty.app?subject=Report%20store" style={{ borderBottom: "1px dotted currentColor" }}>
+                <Link
+                  href={`/contact?ref=report&type=store&slug=${s.slug}`}
+                  style={{ borderBottom: "1px dotted currentColor" }}
+                >
                   <Flag size={12} style={{ display: "inline-block", marginRight: 3, verticalAlign: "-1px" }} />
                   Report this profile
-                </a>{" "}
+                </Link>{" "}
                 — we read every report.
               </p>
             </section>
@@ -532,10 +547,23 @@ export default async function StoreDetail({ params }: { params: { city: string; 
         primaryHref={primaryHref}
         primaryVariant="forest"
         primaryIcon={s.contact_whatsapp ? <MessageCircle size={16} /> : <Phone size={16} />}
-        iconButtons={[
-          { ariaLabel: "Save store", icon: <Heart size={18} /> },
-          { ariaLabel: "Share", icon: <Share2 size={18} /> },
-        ]}
+        iconActions={
+          <>
+            <SaveButton
+              entityType="store"
+              entityId={s.id}
+              variant="icon"
+              className="icon-btn"
+            />
+            <ShareButton
+              title={s.name}
+              text={s.name}
+              className="icon-btn"
+            >
+              <Share2 size={18} aria-hidden="true" />
+            </ShareButton>
+          </>
+        }
       />
 
       {phoneDigits === undefined ? null : null}

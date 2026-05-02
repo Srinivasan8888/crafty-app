@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Copy, Check, Mail, Instagram, MessageCircle, X } from "lucide-react";
 
@@ -15,6 +15,40 @@ export function CelebrationScreen({ city, url, name, onContinue }: CelebrationSc
   const [copied, setCopied] = useState(false);
   const [igCopied, setIgCopied] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  // Focus trap: CelebrationScreen is always "open" while mounted.
+  // Trap Tab / Shift+Tab inside the dialog and restore focus on unmount.
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const focusables = dialog.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    first?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      previouslyFocused?.focus?.();
+    };
+  }, []);
 
   // Confetti — dynamic import, optional dependency, respects reduced motion.
   // TODO(Lane 3): once canvas-confetti is in package.json, this will fire.
@@ -80,6 +114,7 @@ export function CelebrationScreen({ city, url, name, onContinue }: CelebrationSc
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="celebration-title"

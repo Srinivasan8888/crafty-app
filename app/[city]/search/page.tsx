@@ -219,13 +219,13 @@ export default async function SearchPage({
 
         <header className="listing-head" style={{ paddingBottom: 8 }}>
           <div
+            className="text-forest"
             style={{
               fontFamily: "var(--font-display)",
               fontSize: 11,
               fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: "2.2px",
-              color: "rgb(var(--mustard-dark))",
               marginBottom: 6,
             }}
           >
@@ -244,8 +244,8 @@ export default async function SearchPage({
               <>
                 Results for{" "}
                 <em
+                  className="text-magenta"
                   style={{
-                    color: "rgb(var(--magenta))",
                     fontStyle: "italic",
                     fontWeight: 600,
                   }}
@@ -254,8 +254,8 @@ export default async function SearchPage({
                 </em>{" "}
                 in{" "}
                 <em
+                  className="text-forest"
                   style={{
-                    color: "rgb(var(--forest))",
                     fontStyle: "italic",
                     fontWeight: 600,
                   }}
@@ -267,8 +267,8 @@ export default async function SearchPage({
               <>
                 Search Crafty in{" "}
                 <em
+                  className="text-magenta"
                   style={{
-                    color: "rgb(var(--magenta))",
                     fontStyle: "italic",
                     fontWeight: 600,
                   }}
@@ -280,10 +280,10 @@ export default async function SearchPage({
           </h1>
           {hasQuery && (
             <p
+              className="text-muted"
               style={{
                 fontFamily: "var(--font-display)",
                 fontStyle: "italic",
-                color: "rgb(var(--muted))",
                 marginTop: 6,
                 fontSize: 13,
               }}
@@ -305,22 +305,21 @@ export default async function SearchPage({
           <div style={{ position: "relative", flex: 1 }}>
             <Search
               size={16}
+              className="text-subtle"
               style={{
                 position: "absolute",
                 left: 14,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "rgb(var(--subtle))",
               }}
             />
             <input
-              autoFocus
               name="q"
               defaultValue={q}
               placeholder={`Search ${city.display_name} — try yarn, pottery, Cubbon meetup…`}
               type="search"
-              className="search-input"
-              style={{ width: "100%", paddingLeft: 38 }}
+              className="search-input w-full"
+              style={{ paddingLeft: 38 }}
             />
           </div>
           <button type="submit" className="btn btn-primary">

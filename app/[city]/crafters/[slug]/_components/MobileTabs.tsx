@@ -29,11 +29,12 @@ export function MobileTabs({
 
   return (
     <>
-      <div className="seg-wrap">
+      <div className="seg-wrap" style={{ padding: "18px 18px 0" }}>
         <SegmentedControl
           tabs={TABS}
           active={active}
           onChange={(id) => setActive(id as TabId)}
+          variant="tabs"
         />
       </div>
 

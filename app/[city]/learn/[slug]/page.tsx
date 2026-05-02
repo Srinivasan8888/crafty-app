@@ -8,6 +8,8 @@ import { Phone, MessageCircle, Globe, MapPin, Mail, Flag, Heart, Share2, Sparkle
 import type { Metadata } from "next";
 import { StickyCTA } from "@/components/StickyCTA";
 import { HCard } from "@/components/HCard";
+import { SaveButton } from "@/components/SaveButton";
+import { ShareButton } from "@/components/ShareButton";
 import { formatDateShort } from "@/lib/util";
 import { MobileTabs } from "./_components/MobileTabs";
 
@@ -93,12 +95,13 @@ export default async function StudioDetail({ params }: { params: { city: string;
   const hours = readHours(s.operating_hours);
   const courses = readCourses(s.ongoing_courses);
   const disciplineNames = s.craft_disciplines.map((j) => j.discipline.display_name);
+  // Only render tiles with real data — drop bare "—" placeholders
+  // (they made the platform look broken e.g. "— SAVES", "— STUDENTS").
   const stats = [
-    { label: "Saves", value: "—" },
-    { label: "Students", value: "—" },
-    { label: "Disciplines", value: String(disciplineNames.length) },
-    { label: "Age", value: s.age_group ?? "All" },
-  ];
+    { label: "Disciplines", value: disciplineNames.length > 0 ? String(disciplineNames.length) : null },
+    { label: "Age", value: s.age_group ?? "All ages" },
+    { label: "Format", value: s.is_online_only ? "Online" : "In-studio" },
+  ].filter((t): t is { label: string; value: string } => t.value !== null && t.value !== "—");
 
   const primaryHref = s.contact_whatsapp
     ? `https://wa.me/${s.contact_whatsapp.replace(/[^0-9]/g, "")}`
@@ -118,14 +121,14 @@ export default async function StudioDetail({ params }: { params: { city: string;
       <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
         About {s.name}
       </h3>
-      <p style={{ color: "rgb(var(--muted))", lineHeight: 1.65, fontSize: 14 }}>
+      <p className="text-muted" style={{ lineHeight: 1.65, fontSize: 14 }}>
         {s.is_online_only
           ? `${s.name} runs online classes — join from anywhere in India.`
           : `${s.name} is a craft studio in ${s.address}, ${s.city.display_name}.`}{" "}
         {s.age_group ? `Best suited for ${s.age_group.toLowerCase()}.` : "Open to all ages."}
       </p>
       {disciplineNames.length > 0 && (
-        <p style={{ color: "rgb(var(--muted))", lineHeight: 1.65, fontSize: 14, marginTop: 10 }}>
+        <p className="text-muted" style={{ lineHeight: 1.65, fontSize: 14, marginTop: 10 }}>
           Disciplines taught: {disciplineNames.join(", ")}.
         </p>
       )}
@@ -144,7 +147,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
         <span style={{ fontSize: 12, color: "rgb(var(--muted))" }}>{disciplineNames.length} taught</span>
       </div>
       {disciplineNames.length === 0 ? (
-        <p style={{ color: "rgb(var(--muted))", fontSize: 14 }}>No disciplines listed yet.</p>
+        <p className="text-muted" style={{ fontSize: 14 }}>No disciplines listed yet.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {disciplineNames.map((d) => (
@@ -206,7 +209,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
           ))}
         </ul>
       ) : (
-        <p style={{ color: "rgb(var(--muted))", fontSize: 14 }}>
+        <p className="text-muted" style={{ fontSize: 14 }}>
           {hours.length > 0
             ? "Course details coming soon. See opening hours below."
             : "Schedule not listed yet — message the studio to confirm timings."}
@@ -276,12 +279,19 @@ export default async function StudioDetail({ params }: { params: { city: string;
             ←
           </Link>
           <div style={{ flex: 1 }} />
-          <button className="icon-btn dark" aria-label="Share" type="button">
-            <Share2 size={16} />
-          </button>
-          <button className="icon-btn dark" aria-label="Save" type="button">
-            <Heart size={16} />
-          </button>
+          <ShareButton
+            title={s.name}
+            text={s.name}
+            className="icon-btn dark"
+          >
+            <Share2 size={16} aria-hidden="true" />
+          </ShareButton>
+          <SaveButton
+            entityType="studio"
+            entityId={s.id}
+            variant="icon"
+            className="icon-btn dark"
+          />
         </header>
 
         <div className="name-block">
@@ -313,16 +323,18 @@ export default async function StudioDetail({ params }: { params: { city: string;
         </div>
       </section>
 
-      <div className="md:hidden" style={{ padding: "14px 18px 0" }}>
-        <div className="stat-row">
-          {stats.map((st) => (
-            <div className="stat" key={st.label}>
-              <span className="num">{st.value}</span>
-              <span className="lbl">{st.label}</span>
-            </div>
-          ))}
+      {stats.length > 0 && (
+        <div className="md:hidden" style={{ padding: "14px 18px 0" }}>
+          <div className="stat-row">
+            {stats.map((st) => (
+              <div className="stat" key={st.label}>
+                <span className="num">{st.value}</span>
+                <span className="lbl">{st.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <MobileTabs about={aboutPane} disciplines={disciplinesPane} schedule={schedulePane} reviews={reviewsPane} />
 
@@ -359,7 +371,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
                 <span style={{ fontSize: 13, color: "rgb(var(--muted))" }}>{disciplineNames.length} disciplines</span>
               </div>
               {disciplineNames.length === 0 ? (
-                <p style={{ color: "rgb(var(--muted))", fontSize: 14 }}>No disciplines listed yet.</p>
+                <p className="text-muted" style={{ fontSize: 14 }}>No disciplines listed yet.</p>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {disciplineNames.map((d) => (
@@ -464,7 +476,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
             <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
               <h3 style={{ fontSize: 22, marginBottom: 14 }}>Crafters who teach here</h3>
               {sampleCrafters.length === 0 ? (
-                <p style={{ color: "rgb(var(--muted))", fontSize: 14 }}>No crafters tagged this studio yet.</p>
+                <p className="text-muted" style={{ fontSize: 14 }}>No crafters tagged this studio yet.</p>
               ) : (
                 <ul style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {sampleCrafters.map((c) => (
@@ -490,10 +502,13 @@ export default async function StudioDetail({ params }: { params: { city: string;
             >
               <p>
                 Something off about this listing?{" "}
-                <a href="mailto:hello@crafty.app?subject=Report%20studio" style={{ borderBottom: "1px dotted currentColor" }}>
+                <Link
+                  href={`/contact?ref=report&type=studio&slug=${s.slug}`}
+                  style={{ borderBottom: "1px dotted currentColor" }}
+                >
                   <Flag size={12} style={{ display: "inline-block", marginRight: 3, verticalAlign: "-1px" }} />
                   Report this profile
-                </a>{" "}
+                </Link>{" "}
                 — we read every report.
               </p>
             </section>
@@ -614,10 +629,23 @@ export default async function StudioDetail({ params }: { params: { city: string;
         primaryHref={primaryHref}
         primaryVariant="forest"
         primaryIcon={s.contact_whatsapp ? <MessageCircle size={16} /> : <Phone size={16} />}
-        iconButtons={[
-          { ariaLabel: "Save studio", icon: <Heart size={18} /> },
-          { ariaLabel: "Share", icon: <Share2 size={18} /> },
-        ]}
+        iconActions={
+          <>
+            <SaveButton
+              entityType="studio"
+              entityId={s.id}
+              variant="icon"
+              className="icon-btn"
+            />
+            <ShareButton
+              title={s.name}
+              text={s.name}
+              className="icon-btn"
+            >
+              <Share2 size={18} aria-hidden="true" />
+            </ShareButton>
+          </>
+        }
       />
     </article>
   );

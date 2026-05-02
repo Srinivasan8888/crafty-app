@@ -6,6 +6,7 @@ import { CrafterCard, StoreCard, StudioCard, EventCard } from "@/components/Card
 import { BottomNav } from "@/components/BottomNav";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export const revalidate = 60;
 
@@ -104,49 +105,32 @@ export default async function CityHome({ params }: { params: { city: string } })
 
   return (
     <>
-      <section className="hero md:hidden">
-        <h1>
-          Discover India&apos;s craft community,
-          <span className="magenta">one city at a time.</span>
-        </h1>
-        <p>
-          Crafters, supply stores, studios and craft events in {city.display_name}. Free to list, free to browse.
-        </p>
-        <div className="ctas">
-          <Link href={`/${city.slug}/crafters`} className="btn btn-primary">
-            Explore crafters in {city.display_name}
-          </Link>
-          <Link href="/list-your-profile" className="btn btn-secondary">
-            List your profile
-          </Link>
-        </div>
-      </section>
-
-      <section className="hero-web hidden md:block">
-        <div className="row">
+      <section className="hero md:py-16 lg:py-24 md:text-left">
+        <div className="md:grid md:grid-cols-[1.2fr_1fr] md:items-center md:gap-16 md:max-w-[var(--container-max)] md:mx-auto md:px-[var(--container-pad)]">
           <div>
-            <span
-              className="font-display text-xs font-bold uppercase tracking-[3px] text-mustard-dark mb-4 inline-block pb-1.5 border-b border-mustard"
-            >
+            <span className="hidden md:inline-block font-display text-xs font-bold uppercase tracking-[3px] text-forest mb-4 pb-1.5 border-b border-mustard">
               Issue 01 &middot; {city.display_name}
             </span>
-            <h1>
-              Discover India&apos;s craft community, <em>one city at a time.</em>
+            <h1 className="md:text-[56px] md:leading-[1.02] md:tracking-[-2px]">
+              Discover India&apos;s craft community,{" "}
+              <em className="text-magenta italic font-semibold block md:inline">
+                one city at a time.
+              </em>
             </h1>
-            <p>
-              Crafters, supply stores, studios and craft events in {city.display_name}. Free to list, free to browse. A
-              handpicked Sunday-bazaar guide to the people making things by hand in your city.
+            <p className="md:text-[17px] md:max-w-[520px] md:mt-6">
+              Crafters, supply stores, studios and craft events in {city.display_name}. Free to list, free to browse.
+              <span className="hidden md:inline"> A handpicked Sunday-bazaar guide to the people making things by hand in your city.</span>
             </p>
-            <div className="ctas">
-              <Link href={`/${city.slug}/crafters`} className="btn btn-primary btn-lg">
+            <div className="ctas md:justify-start">
+              <Link href={`/${city.slug}/crafters`} className="btn btn-primary md:btn-lg">
                 Explore crafters in {city.display_name}
               </Link>
-              <Link href="/list-your-profile" className="btn btn-secondary btn-lg">
+              <Link href="/list-your-profile" className="btn btn-secondary md:btn-lg">
                 List your profile
               </Link>
             </div>
           </div>
-          <div>
+          <div className="hidden md:block">
             <div
               className="relative w-full grid gap-3.5"
               style={{
@@ -156,43 +140,61 @@ export default async function CityHome({ params }: { params: { city: string } })
               }}
             >
               <div
-                className="bg-cover bg-center rounded-lg shadow-soft-lg border border-line-strong"
-                style={{
-                  backgroundImage: `url('${heroTiles[0]}')`,
-                  transform: "rotate(-2deg)",
-                  marginTop: "14px",
-                }}
-              />
+                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden"
+                style={{ transform: "rotate(-2deg)", marginTop: "14px" }}
+              >
+                <Image
+                  src={heroTiles[0]}
+                  alt=""
+                  fill
+                  sizes="(min-width:768px) 25vw, 50vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
               <div
-                className="bg-cover bg-center rounded-lg shadow-soft-lg border border-line-strong"
-                style={{
-                  backgroundImage: `url('${heroTiles[1]}')`,
-                  transform: "rotate(1.5deg)",
-                }}
-              />
+                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden"
+                style={{ transform: "rotate(1.5deg)" }}
+              >
+                <Image
+                  src={heroTiles[1]}
+                  alt=""
+                  fill
+                  sizes="(min-width:768px) 25vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
               <div
-                className="bg-cover bg-center rounded-lg shadow-soft-lg border border-line-strong"
-                style={{
-                  backgroundImage: `url('${heroTiles[2]}')`,
-                  transform: "rotate(2deg)",
-                  marginTop: "-8px",
-                }}
-              />
+                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden"
+                style={{ transform: "rotate(2deg)", marginTop: "-8px" }}
+              >
+                <Image
+                  src={heroTiles[2]}
+                  alt=""
+                  fill
+                  sizes="(min-width:768px) 25vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
               <div
-                className="bg-cover bg-center rounded-lg shadow-soft-lg border border-line-strong"
-                style={{
-                  backgroundImage: `url('${heroTiles[3]}')`,
-                  transform: "rotate(-1.5deg)",
-                  marginTop: "-2px",
-                }}
-              />
+                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden"
+                style={{ transform: "rotate(-1.5deg)", marginTop: "-2px" }}
+              >
+                <Image
+                  src={heroTiles[3]}
+                  alt=""
+                  fill
+                  sizes="(min-width:768px) 25vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <div className="container py-4">
-        <div className="text-xs uppercase tracking-wider text-mustard-dark font-display font-semibold mb-2">
+        <div className="text-xs uppercase tracking-wider text-forest font-display font-semibold mb-2">
           Pick your city
         </div>
         <CitySelector cities={cities} current={city.slug} />
@@ -209,7 +211,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         priorityFirstCard
       >
         {crafters.map((c, idx) => (
-          <div key={c.id} className="w-[240px] shrink-0">
+          <div key={c.id} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
             <CrafterCard
               city={city.slug}
               slug={c.slug}
@@ -235,7 +237,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         emptyCta={{ href: "/list-your-profile", label: "Add your store" }}
       >
         {stores.map((s) => (
-          <div key={s.id} className="w-[260px] shrink-0">
+          <div key={s.id} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
             <StoreCard
               city={city.slug}
               slug={s.slug}
@@ -260,7 +262,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         emptyCta={{ href: "/list-your-profile", label: "Add your studio" }}
       >
         {studios.map((s) => (
-          <div key={s.id} className="w-[260px] shrink-0">
+          <div key={s.id} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
             <StudioCard
               city={city.slug}
               slug={s.slug}
@@ -284,7 +286,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         emptyCta={{ href: "/list-your-profile", label: "Host an event" }}
       >
         {events.map((e) => (
-          <div key={e.id} className="w-[300px] shrink-0">
+          <div key={e.id} className="shrink-0" style={{ width: "var(--rail-card-w-wide)" }}>
             <EventCard
               city={city.slug}
               slug={e.slug}
@@ -303,7 +305,7 @@ export default async function CityHome({ params }: { params: { city: string } })
       <section className="hidden md:block py-16">
         <div className="container">
           <div className="text-center">
-            <div className="font-display text-xs font-bold uppercase tracking-[3px] text-mustard-dark mb-2">
+            <div className="font-display text-xs font-bold uppercase tracking-[3px] text-forest mb-2">
               Why Crafty
             </div>
             <h2 className="font-display text-4xl font-extrabold tracking-tight leading-tight mb-2">

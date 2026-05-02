@@ -71,8 +71,8 @@ export default async function CraftersListing({
               <h1 className="md:!text-[44px] md:!leading-[1.04] md:!tracking-[-1.4px]">
                 Crafters in{" "}
                 <em
-                  className="italic"
-                  style={{ color: "rgb(var(--magenta))", fontWeight: 600 }}
+                  className="italic text-magenta"
+                  style={{ fontWeight: 600 }}
                 >
                   {city.display_name}
                 </em>
@@ -98,24 +98,6 @@ export default async function CraftersListing({
         appliedFilters={appliedFilters}
         total={totalCount}
       />
-
-      <div className="filter-bar hidden md:flex">
-        <Link
-          href={cityHref}
-          className={`pill${!activeCatSlug ? " active" : ""}`}
-        >
-          All
-        </Link>
-        {categories.map((c) => (
-          <Link
-            key={c.id}
-            href={`${cityHref}?category=${c.slug}`}
-            className={`pill${activeCatSlug === c.slug ? " active" : ""}`}
-          >
-            {c.display_name}
-          </Link>
-        ))}
-      </div>
 
       <div className="container pb-10">
         {crafters.length === 0 ? (
@@ -177,11 +159,10 @@ export default async function CraftersListing({
 
             <div className="mt-8 flex flex-col items-center gap-3 border-t pt-6 text-center" style={{ borderColor: "var(--line)" }}>
               <p
-                className="text-sm"
+                className="text-sm text-muted"
                 style={{
                   fontFamily: "var(--font-display)",
                   fontStyle: "italic",
-                  color: "rgb(var(--muted))",
                 }}
               >
                 Showing {crafters.length} of {totalCount} crafters

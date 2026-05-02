@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Loader2, Upload, X } from "lucide-react";
 
 type Option = { id: string; display_name: string; slug: string };
@@ -154,7 +155,13 @@ export function CrafterForm({ cities, categories }: Props) {
             <label className="label">Profile photo *</label>
             <UploadField busy={profileBusy} onChange={onProfile} />
             {form.profile_photo && (
-              <img src={form.profile_photo} alt="" className="mt-3 h-24 w-24 rounded-md object-cover" />
+              <Image
+                src={form.profile_photo}
+                alt="Profile photo preview"
+                width={96}
+                height={96}
+                className="mt-3 h-24 w-24 rounded-md object-cover"
+              />
             )}
           </div>
           <div>
@@ -163,8 +170,14 @@ export function CrafterForm({ cities, categories }: Props) {
             {form.portfolio_photos.length > 0 && (
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {form.portfolio_photos.map((u, i) => (
-                  <div key={u} className="relative">
-                    <img src={u} alt="" className="h-24 w-full rounded-md object-cover" />
+                  <div key={u} className="relative h-24 w-full">
+                    <Image
+                      src={u}
+                      alt={`Portfolio photo ${i + 1}`}
+                      fill
+                      sizes="(max-width:640px) 33vw, 200px"
+                      className="rounded-md object-cover"
+                    />
                     <button type="button" onClick={() => set("portfolio_photos", form.portfolio_photos.filter((_, j) => j !== i))} className="absolute right-1 top-1 rounded-full bg-canvas/90 p-0.5 text-ink-muted hover:text-danger" aria-label="Remove">
                       <X size={14} />
                     </button>

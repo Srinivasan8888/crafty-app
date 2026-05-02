@@ -14,6 +14,8 @@ export type StickyCTAProps = {
   primaryOnClick?: () => void;
   primaryVariant?: "forest" | "magenta" | "mustard";
   iconButtons?: StickyCTAIconButton[];
+  /** Custom action nodes (rendered after iconButtons). Use for client islands like SaveButton/ShareButton. */
+  iconActions?: React.ReactNode;
   primaryIcon?: React.ReactNode;
 };
 
@@ -23,6 +25,7 @@ export function StickyCTA({
   primaryOnClick,
   primaryVariant = "magenta",
   iconButtons,
+  iconActions,
   primaryIcon,
 }: StickyCTAProps) {
   const variantClass =
@@ -70,6 +73,7 @@ export function StickyCTA({
           {b.icon}
         </button>
       ))}
+      {iconActions}
     </div>
   );
 }

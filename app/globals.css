@@ -25,7 +25,12 @@
   --indigo:       61 74 140;
   --ink:          26 26 26;
   --muted:        107 90 62;
-  --subtle:       155 137 112;
+  --subtle:       126 107 78;
+
+  /* Line color channels — bridged through Tailwind; flip in dark */
+  --line-rgb:           31 95 60;
+  --line-alpha:         0.18;
+  --line-strong-alpha:  0.30;
 
   /* Lines + tints (full rgba — not bridged through Tailwind) */
   --line:             rgba(31, 95, 60, 0.18);
@@ -90,6 +95,10 @@
   /* Layout */
   --container-max: 1200px;
   --container-pad: 24px;
+
+  /* Rail card widths (tokenized — replaces ad-hoc w-[240px], w-[260px], w-[300px]) */
+  --rail-card-w: 248px;
+  --rail-card-w-wide: 296px;
 }
 
 /* === DARK MODE — minimal redesign, charcoal palette flip === */
@@ -111,9 +120,25 @@
 .dark {
   --line:         rgba(96, 188, 130, 0.20);
   --line-strong:  rgba(96, 188, 130, 0.36);
+  --line-rgb:           96 188 130;
+  --line-alpha:         0.20;
+  --line-strong-alpha:  0.36;
   --tint-mustard: rgba(234, 178, 50, 0.08);
   --tint-forest:  rgba(96, 188, 130, 0.08);
   --tint-magenta: rgba(236, 90, 134, 0.08);
+  --soft-shadow:    0 4px 12px rgba(0, 0, 0, 0.45);
+  --soft-shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+/* Footer locked to forest-dark in dark mode (forest token flips bright) */
+.dark .app-footer { background: rgb(var(--forest-dark)); }
+
+/* Heart shadow needs darker shadow on charcoal canvas */
+.dark .heart,
+.dark .card .heart,
+.dark .featured-card .heart {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  background: rgb(var(--cream-2));
 }
 
 /* === BASE === */
@@ -392,12 +417,13 @@ html, body {
 }
 .card .img {
   width: 100%;
-  aspect-ratio: 4/5;
   background-size: cover;
   background-position: center;
   display: block;
   background-color: rgb(var(--cream-2));
 }
+/* Default aspect when caller doesn't supply a Tailwind aspect-* utility. */
+.card .img:not([class*="aspect-"]) { aspect-ratio: 4/5; }
 .card .img.wide { aspect-ratio: 16/10; }
 .card .body { padding: 12px 14px 16px; }
 .card .body .title {
@@ -979,6 +1005,11 @@ html, body {
   font-style: italic;
   font-weight: 600;
   margin-top: 4px;
+}
+.hero h1 em {
+  color: rgb(var(--magenta));
+  font-style: italic;
+  font-weight: 600;
 }
 .hero p {
   margin-top: 14px;
@@ -1615,7 +1646,7 @@ html, body {
 
 /* === ACTION SHEET === */
 .action-sheet {
-  background: rgba(255, 246, 229, 0.94);
+  background: rgb(var(--cream) / 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--r-lg);
@@ -1639,13 +1670,13 @@ html, body {
   font-size: 16px;
   font-weight: 600;
   color: rgb(var(--magenta));
-  border-top: 1px solid var(--line);
+  border-top: 1px solid rgb(var(--ink) / 0.08);
   font-family: var(--font-body);
   transition: background var(--t-fast);
 }
 .action-sheet a:first-child { border-top: 0; }
 .action-sheet .head + a { border-top: 0; }
-.action-sheet a:hover { background: rgba(255, 246, 229, 0.6); }
+.action-sheet a:hover { background: rgb(var(--cream) / 0.6); }
 .action-sheet a.danger {
   color: var(--error);
   font-weight: 700;
@@ -1685,6 +1716,54 @@ html, body {
   padding: 12px 18px 18px;
 }
 .seg-section[hidden] { display: none; }
+
+/* === DETAIL-PAGE TAB STRIP ===
+ * Shared underline-tabs for the four detail pages
+ * (crafter / store / studio / event sub-navigation). Replaces the bare,
+ * unspaced text run that previously rendered when SegmentedControl
+ * (which targeted .seg a, but renders <button>s) was used inside
+ * the per-page MobileTabs wrappers. Use via <SegmentedControl variant="tabs" />.
+ */
+.detail-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+  width: 100%;
+  border-bottom: 1px solid var(--line);
+  padding: 0;
+  background: transparent;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.detail-tabs::-webkit-scrollbar { display: none; }
+.detail-tabs button {
+  position: relative;
+  flex: 0 0 auto;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 6px 2px 10px;
+  margin-bottom: -1px; /* overlap container border so active underline aligns */
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: rgb(var(--muted));
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color var(--t-fast), border-color var(--t-fast);
+  white-space: nowrap;
+}
+.detail-tabs button:hover { color: rgb(var(--ink)); }
+.detail-tabs button:focus-visible {
+  outline: 2px solid rgb(var(--magenta));
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+.detail-tabs button.active {
+  color: rgb(var(--magenta));
+  border-bottom-color: rgb(var(--magenta));
+}
 
 /* === TOGGLE === */
 .toggle {
@@ -2216,7 +2295,7 @@ html, body {
 .page-hdr-m .eyebrow {
   font-size: 11px;
   font-weight: 700;
-  color: rgb(var(--mustard-dark));
+  color: rgb(var(--forest));
   text-transform: uppercase;
   letter-spacing: 2px;
   margin-bottom: 8px;
@@ -2369,7 +2448,7 @@ html, body {
 
 /* === TOUCH-TARGET SAFETY (MOBILE) === */
 @media (max-width: 720px) {
-  .btn {
+  .btn, .pill {
     min-height: 44px;
     padding-top: 12px;
     padding-bottom: 12px;
@@ -2377,24 +2456,19 @@ html, body {
     align-items: center;
     justify-content: center;
   }
-  .btn.btn-sm {
+  .btn.btn-sm, .btn-sm, .pill.sm {
     min-height: 36px;
     padding-top: 8px;
     padding-bottom: 8px;
   }
-  .pill {
-    min-height: 44px;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  .icon-btn { width: 44px; height: 44px; }
+  .icon-btn.lg { width: 48px; height: 48px; }
+  /* Extend .heart hit area to 36px on mobile (kept under 44px so doesn't dominate card) */
+  .card .heart, .featured-card .heart, .hcard .heart {
+    width: 36px; height: 36px; font-size: 16px;
   }
-  .pill.sm {
-    min-height: 36px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-  }
+  .applied-filters .filter-chip { min-height: 32px; padding: 6px 12px; }
+  .seg a { padding: 11px 14px; }
 }
 
 /* === BottomSheet animations (extracted from styled-jsx for SWC compat) === */
@@ -2403,3 +2477,46 @@ html, body {
 .sheet-backdrop-anim { animation: bs-fade-in 200ms ease-out both; }
 @keyframes bs-fade-in { from { opacity: 0; } to { opacity: 1; } }
 .sheet.no-handle::before { display: none; }
+
+/* === Tailwind .hidden override defense ===
+   globals.css comes after Tailwind base layers, so a class like
+   `.filter-bar { display: flex }` would beat `.hidden { display: none }`
+   when both are applied (e.g. `<div class="filter-bar hidden md:flex">`).
+   Force `.hidden` to win for any of our custom display-setting classes. */
+.app-hdr.hidden, .web-hdr.hidden, .bottom-nav.hidden, .sticky-cta.hidden,
+.applied-filters.hidden, .filter-bar.hidden, .rail.hidden, .pillrow.hidden,
+.hero.hidden, .hero-web.hidden, .seg.hidden, .stat-row.hidden, .hcard.hidden,
+.featured-card.hidden, .listing-grid.hidden, .stepper.hidden, .gallery-strip.hidden,
+.btn.hidden, .pill.hidden, .icon-btn.hidden, .chip.hidden, .badge.hidden,
+.tag.hidden, .heart.hidden, .seg.hidden, .toggle.hidden {
+  display: none !important;
+}
+
+/* Same defense for `display:` rules inside the mobile breakpoint —
+   .btn forced to inline-flex on mobile would beat Tailwind's hidden too. */
+@media (max-width: 720px) {
+  .btn.hidden, .pill.hidden, .icon-btn.hidden { display: none !important; }
+}
+
+/* === Global focus ring (WCAG 2.4.7) === */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid rgb(var(--magenta));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.btn:focus-visible, .pill:focus-visible, .chip:focus-visible,
+.icon-btn:focus-visible, .heart:focus-visible {
+  outline-offset: 3px;
+}
+.skip-link:focus-visible {
+  outline: 3px solid rgb(var(--mustard));
+  outline-offset: 2px;
+}
+
+/* === Section vertical rhythm helpers (opt-in) === */
+.section-y { padding-top: 32px; padding-bottom: 32px; }
+@media (min-width: 768px) {
+  .section-y { padding-top: 56px; padding-bottom: 56px; }
+}
+.section-y-tight { padding-top: 16px; padding-bottom: 16px; }

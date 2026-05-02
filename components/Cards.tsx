@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Heart } from "lucide-react";
+import { SafeImage } from "@/components/SafeImage";
 import { formatINR } from "@/lib/util";
 
 const CARD_SIZES = "(max-width:768px) 50vw, 25vw";
@@ -41,7 +41,7 @@ export function CrafterCard({
   return (
     <Link href={`/${city}/crafters/${slug}`} className="card block">
       <div className="img relative aspect-square">
-        <Image
+        <SafeImage
           src={profile_photo}
           alt={name}
           fill
@@ -101,7 +101,7 @@ export function StoreCard({
   return (
     <Link href={`/${city}/stores/${slug}`} className="card block">
       <div className="img relative aspect-square">
-        <Image
+        <SafeImage
           src={logo_photo}
           alt={name}
           fill
@@ -157,7 +157,7 @@ export function StudioCard({
   return (
     <Link href={`/${city}/learn/${slug}`} className="card block">
       <div className="img relative aspect-square">
-        <Image
+        <SafeImage
           src={logo_photo}
           alt={name}
           fill
@@ -223,7 +223,7 @@ export function EventCard({
   return (
     <Link href={`/${city}/events/${slug}`} className="card block">
       <div className="img relative aspect-[16/9]">
-        <Image
+        <SafeImage
           src={cover_image}
           alt={name}
           fill

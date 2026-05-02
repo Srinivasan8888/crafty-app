@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { SafeImage } from "@/components/SafeImage";
 
 type CrossLinkCardProps = {
   thumb: string;
@@ -22,7 +22,7 @@ export function CrossLinkCard({ thumb, name, href, type }: CrossLinkCardProps) {
       className="group flex items-center gap-3 rounded-lg border border-line bg-canvas-raised p-3 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-ink hover:shadow-[3px_3px_0_rgb(var(--ink))]"
     >
       <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-canvas-sunken">
-        <Image
+        <SafeImage
           src={thumb}
           alt={name}
           fill

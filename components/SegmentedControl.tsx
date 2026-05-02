@@ -7,14 +7,21 @@ export type SegProps = {
   active: string;
   onChange: (id: string) => void;
   size?: "md" | "sm";
+  /**
+   * Visual variant.
+   *  - "pills" (default): rounded pill control (legacy `.seg` styles).
+   *  - "tabs": underline tab strip used on detail pages (`.detail-tabs`).
+   */
+  variant?: "pills" | "tabs";
 };
 
-export function SegmentedControl({ tabs, active, onChange, size = "md" }: SegProps) {
+export function SegmentedControl({ tabs, active, onChange, size = "md", variant = "pills" }: SegProps) {
   const sizeStyle =
     size === "sm" ? ({ fontSize: 12, padding: 2 } as React.CSSProperties) : undefined;
+  const className = variant === "tabs" ? "detail-tabs" : "seg";
 
   return (
-    <nav className="seg" role="tablist" aria-orientation="horizontal" style={sizeStyle}>
+    <nav className={className} role="tablist" aria-orientation="horizontal" style={sizeStyle}>
       {tabs.map((t) => {
         const isActive = t.id === active;
         return (
