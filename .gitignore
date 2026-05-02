@@ -1,0 +1,14 @@
+node_modules
+.next
+.env
+.env.local
+.DS_Store
+public/uploads
+*.tsbuildinfo
+next-env.d.ts
+
+# Test artifacts
+playwright-report/
+test-results/
+coverage/
+.vitest-cache/

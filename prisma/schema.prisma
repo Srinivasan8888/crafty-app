@@ -1,0 +1,390 @@
+// Crafty V1 — Prisma schema
+// Embeds the 16 plan-eng-review decisions: status enum + deleted_at + hidden_by,
+// SlugRedirect day-one, Event 3-FK + CHECK, drop @unique on owner (app-enforced),
+// tsvector via raw migration, etc. Read § comments for traceability.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Lifecycle (Issue 1.4) ───────────────────────────────────────────
+enum ListingStatus {
+  PUBLISHED
+  UNPUBLISHED   // creator paused
+  HIDDEN        // admin moderation
+  DELETED       // tombstone
+}
+
+// ─── Core models ─────────────────────────────────────────────────────
+
+model User {
+  id                String    @id @default(cuid())
+  clerk_id          String?   @unique          // null in dev-stub mode
+  email             String    @unique
+  display_name      String?
+  profile_photo_url String?
+  is_admin          Boolean   @default(false)
+  is_banned         Boolean   @default(false)
+  email_bounced     Boolean   @default(false)  // Resend bounce flag (TODO §15)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  crafters Crafter[]
+  stores   Store[]
+  studios  Studio[]
+  events   Event[]
+  saves    Save[]
+  flags    Flag[]    @relation("FlaggedBy")
+
+  @@index([email])
+}
+
+// ─── Crafter ─────────────────────────────────────────────────────────
+
+model Crafter {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  // Issue 2.2 — drop @unique on owner_user_id; cap enforced in app code.
+  owner_user_id     String
+  owner             User      @relation(fields: [owner_user_id], references: [id], onDelete: Cascade)
+  name              String
+  tagline           String?
+  bio               String?
+  city_id           String
+  city              City      @relation(fields: [city_id], references: [id])
+  profile_photo     String
+  portfolio_photos  String[]  @default([])
+  contact_whatsapp  String?
+  contact_instagram String?
+  contact_website   String?
+  offers_classes    Boolean   @default(false)
+  classes_json      Json?     // [{name, format, price, description}]
+
+  // Issue 1.4 — lifecycle
+  status            ListingStatus @default(PUBLISHED)
+  deleted_at        DateTime?
+  hidden_by_user_id String?
+  is_featured       Boolean   @default(false)
+  is_claimed        Boolean   @default(true)
+
+  craft_categories  CraftCategoryOnCrafter[]
+  events            Event[]   @relation("EventCrafter")
+  flags             Flag[]    @relation("FlaggedCrafter")
+
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([city_id, status])
+  @@index([owner_user_id])
+}
+
+// ─── Store ───────────────────────────────────────────────────────────
+
+model Store {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  owner_user_id     String?
+  owner             User?     @relation(fields: [owner_user_id], references: [id], onDelete: SetNull)
+  name              String
+  logo_photo        String
+  city_id           String
+  city              City      @relation(fields: [city_id], references: [id])
+  address           String
+  is_online_only    Boolean   @default(false)
+  contact_phone     String?
+  contact_whatsapp  String?
+  contact_website   String?
+  operating_hours   Json?
+
+  status            ListingStatus @default(PUBLISHED)
+  deleted_at        DateTime?
+  hidden_by_user_id String?
+  is_featured       Boolean   @default(false)
+  is_claimed        Boolean   @default(true)
+
+  supply_categories SupplyCategoryOnStore[]
+  events            Event[]   @relation("EventStore")
+  flags             Flag[]    @relation("FlaggedStore")
+
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([city_id, status])
+  @@index([owner_user_id])
+}
+
+// ─── Studio (Learn) ──────────────────────────────────────────────────
+
+model Studio {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  owner_user_id     String?
+  owner             User?     @relation(fields: [owner_user_id], references: [id], onDelete: SetNull)
+  name              String
+  logo_photo        String
+  city_id           String
+  city              City      @relation(fields: [city_id], references: [id])
+  address           String
+  is_online_only    Boolean   @default(false)
+  age_group         String?
+  contact_phone     String?
+  contact_whatsapp  String?
+  contact_website   String?
+  operating_hours   Json?
+  ongoing_courses   Json?
+
+  status            ListingStatus @default(PUBLISHED)
+  deleted_at        DateTime?
+  hidden_by_user_id String?
+  is_featured       Boolean   @default(false)
+  is_claimed        Boolean   @default(true)
+
+  craft_disciplines DisciplineOnStudio[]
+  events            Event[]   @relation("EventStudio")
+  flags             Flag[]    @relation("FlaggedStudio")
+
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([city_id, status])
+  @@index([owner_user_id])
+}
+
+// ─── Event (Issue 1.2 — three nullable FKs + CHECK) ─────────────────
+
+enum EventType {
+  WORKSHOP
+  FAIR
+  EXHIBITION
+  CLASS
+  POPUP
+  OTHER
+}
+
+model Event {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  organizer_user_id String
+  organizer         User      @relation(fields: [organizer_user_id], references: [id], onDelete: Cascade)
+
+  // Issue 1.2 — exactly one of these is non-null. CHECK constraint added in raw SQL migration.
+  organizer_crafter_id String?
+  organizer_crafter    Crafter? @relation("EventCrafter", fields: [organizer_crafter_id], references: [id], onDelete: SetNull)
+  organizer_store_id   String?
+  organizer_store      Store?   @relation("EventStore",   fields: [organizer_store_id],   references: [id], onDelete: SetNull)
+  organizer_studio_id  String?
+  organizer_studio     Studio?  @relation("EventStudio",  fields: [organizer_studio_id],  references: [id], onDelete: SetNull)
+
+  name              String
+  description       String
+  cover_image       String
+  start_at          DateTime
+  end_at            DateTime
+  city_id           String
+  city              City      @relation(fields: [city_id], references: [id])
+  venue_name        String
+  venue_address     String?
+  is_online         Boolean   @default(false)
+  event_type        EventType
+  craft_category_id String?
+  craft_category    CraftCategory? @relation(fields: [craft_category_id], references: [id])
+  is_free           Boolean
+  price_amount      Decimal?  @db.Decimal(10, 2)
+  price_currency    String    @default("INR")
+  registration_url  String
+
+  status            ListingStatus @default(PUBLISHED)
+  deleted_at        DateTime?
+  hidden_by_user_id String?
+  is_featured       Boolean   @default(false)
+
+  flags             Flag[]    @relation("FlaggedEvent")
+
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([city_id, status, start_at])
+  @@index([start_at])
+}
+
+// ─── Taxonomies ──────────────────────────────────────────────────────
+
+model City {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  display_name  String
+  is_active     Boolean  @default(true)
+  display_order Int      @default(0)
+  created_at    DateTime @default(now())
+
+  crafters Crafter[]
+  stores   Store[]
+  studios  Studio[]
+  events   Event[]
+}
+
+model CraftCategory {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  display_name  String
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+  crafters      CraftCategoryOnCrafter[]
+  events        Event[]
+}
+
+model SupplyCategory {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  display_name  String
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+  stores        SupplyCategoryOnStore[]
+}
+
+model Discipline {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  display_name  String
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+  studios       DisciplineOnStudio[]
+}
+
+model CraftCategoryOnCrafter {
+  crafter_id  String
+  category_id String
+  crafter     Crafter       @relation(fields: [crafter_id], references: [id], onDelete: Cascade)
+  category    CraftCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  @@id([crafter_id, category_id])
+  @@index([category_id])
+}
+
+model SupplyCategoryOnStore {
+  store_id    String
+  category_id String
+  store       Store          @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  category    SupplyCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  @@id([store_id, category_id])
+  @@index([category_id])
+}
+
+model DisciplineOnStudio {
+  studio_id     String
+  discipline_id String
+  studio        Studio     @relation(fields: [studio_id], references: [id], onDelete: Cascade)
+  discipline    Discipline @relation(fields: [discipline_id], references: [id], onDelete: Cascade)
+  @@id([studio_id, discipline_id])
+  @@index([discipline_id])
+}
+
+// ─── Save / Flag / Audit / SlugRedirect ─────────────────────────────
+
+enum SavedEntityType {
+  CRAFTER
+  STORE
+  STUDIO
+  EVENT
+}
+
+enum FlagEntityType {
+  CRAFTER
+  STORE
+  STUDIO
+  EVENT
+}
+
+enum FlagReason {
+  INAPPROPRIATE
+  SPAM
+  MISLEADING
+  COPYRIGHT
+  OTHER
+}
+
+enum FlagStatus {
+  PENDING
+  DISMISSED
+  HIDDEN
+  DELETED
+}
+
+model Save {
+  id          String           @id @default(cuid())
+  user_id     String
+  user        User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  entity_type SavedEntityType
+  entity_id   String
+  created_at  DateTime         @default(now())
+  @@unique([user_id, entity_type, entity_id])
+  @@index([user_id, entity_type])
+  // Dashboard activity-strip "saves on entity X in last 7 days" query
+  @@index([entity_type, entity_id, created_at(sort: Desc)])
+}
+
+model Flag {
+  id               String         @id @default(cuid())
+  reporter_user_id String?
+  reporter         User?          @relation("FlaggedBy", fields: [reporter_user_id], references: [id], onDelete: SetNull)
+  reporter_email   String?
+  entity_type      FlagEntityType
+  entity_id        String
+  reason           FlagReason
+  note             String?
+  status           FlagStatus     @default(PENDING)
+  resolved_by      String?
+  resolved_at      DateTime?
+  created_at       DateTime       @default(now())
+
+  // Optional FKs for joined admin views
+  crafter Crafter? @relation("FlaggedCrafter", fields: [crafter_id], references: [id])
+  crafter_id String?
+  store   Store?   @relation("FlaggedStore",   fields: [store_id],   references: [id])
+  store_id String?
+  studio  Studio?  @relation("FlaggedStudio",  fields: [studio_id],  references: [id])
+  studio_id String?
+  event   Event?   @relation("FlaggedEvent",   fields: [event_id],   references: [id])
+  event_id String?
+
+  @@index([status, created_at])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actor_user_id String
+  action        String
+  entity_type   String?
+  entity_id     String?
+  metadata      Json?
+  created_at    DateTime @default(now())
+  @@index([actor_user_id])
+  @@index([entity_type, entity_id])
+}
+
+// Cron job observability — durability + alerting for scheduled jobs (PRD §14)
+model CronRun {
+  id            String   @id @default(cuid())
+  job_name      String
+  started_at    DateTime @default(now())
+  completed_at  DateTime?
+  status        String   // "running" | "success" | "error"
+  error_message String?
+  rows_affected Int?
+  @@index([job_name, started_at(sort: Desc)])
+}
+
+// Issue 1.5 — SlugRedirect from day one. UI ships V1.5; table exists now.
+model SlugRedirect {
+  id           String   @id @default(cuid())
+  entity_type  String   // "crafter" | "store" | "studio" | "event"
+  old_slug     String
+  new_slug     String
+  created_at   DateTime @default(now())
+  @@unique([entity_type, old_slug])
+  @@index([new_slug])
+}
