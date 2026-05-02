@@ -2396,3 +2396,10 @@ html, body {
     padding-bottom: 8px;
   }
 }
+
+/* === BottomSheet animations (extracted from styled-jsx for SWC compat) === */
+.sheet-anim { animation: bs-slide-up 200ms ease-out both; }
+@keyframes bs-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet-backdrop-anim { animation: bs-fade-in 200ms ease-out both; }
+@keyframes bs-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.sheet.no-handle::before { display: none; }

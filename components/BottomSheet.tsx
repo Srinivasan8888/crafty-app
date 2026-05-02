@@ -55,23 +55,12 @@ export function BottomSheet({
       role="presentation"
     >
       <div
-        className="sheet sheet-anim flex flex-col"
+        className={`sheet sheet-anim flex flex-col${showHandle ? "" : " no-handle"}`}
         onClick={stop}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        style={
-          showHandle ? undefined : ({ ["--bs-handle-display" as string]: "none" } as React.CSSProperties)
-        }
       >
-        {!showHandle && (
-          <style jsx>{`
-            div.sheet::before {
-              display: none;
-            }
-          `}</style>
-        )}
-
         {(title || subtitle) && (
           <div className="shrink-0">
             {title && <h3 className="serif font-bold">{title}</h3>}
@@ -92,33 +81,6 @@ export function BottomSheet({
             {footer}
           </div>
         )}
-
-        <style jsx>{`
-          .sheet-anim {
-            animation: bs-slide-up 200ms ease-out both;
-          }
-          @keyframes bs-slide-up {
-            from {
-              transform: translateY(100%);
-            }
-            to {
-              transform: translateY(0);
-            }
-          }
-        `}</style>
-        <style jsx global>{`
-          .sheet-backdrop-anim {
-            animation: bs-fade-in 200ms ease-out both;
-          }
-          @keyframes bs-fade-in {
-            from {
-              opacity: 0;
-            }
-            to {
-              opacity: 1;
-            }
-          }
-        `}</style>
       </div>
     </div>
   );
