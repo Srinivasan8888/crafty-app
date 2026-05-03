@@ -52,18 +52,24 @@ export function BottomSheet({
     const dialog = dialogRef.current;
     if (!dialog) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    const focusables = dialog.querySelectorAll<HTMLElement>(
+    // Initial focus on first focusable when sheet opens.
+    const initialFocusables = dialog.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
     );
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    first?.focus();
+    initialFocusables[0]?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;
+      // Re-query on every Tab so the trap stays correct when children change
+      // (e.g. filters expand/collapse, async content loads).
+      const focusables = dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
       if (focusables.length === 0) {
         e.preventDefault();
         return;
       }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
       if (e.shiftKey && document.activeElement === first) {
         e.preventDefault();
         last?.focus();

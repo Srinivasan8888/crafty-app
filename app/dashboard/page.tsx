@@ -69,7 +69,7 @@ export default async function DashboardOverview() {
             {(city?.display_name ?? "Bengaluru").toString()}
           </p>
 
-          <h1 className="mt-3 font-display text-3xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-4xl md:text-5xl">
+          <h1 className="mt-3 font-display text-3xl font-extrabold leading-[1.15] tracking-tight text-ink sm:text-4xl md:text-5xl">
             Welcome to Crafty,{" "}
             <em className="font-semibold italic text-magenta">
               {firstName}
@@ -77,7 +77,7 @@ export default async function DashboardOverview() {
             .
           </h1>
 
-          <p className="mt-4 max-w-xl font-display text-lg italic text-muted md:text-xl">
+          <p className="mt-6 max-w-xl font-display text-lg italic text-muted md:text-xl">
             Let&apos;s get your craft discovered. About five minutes to set
             up &mdash; goes live immediately.
           </p>
@@ -144,6 +144,7 @@ export default async function DashboardOverview() {
               {trendingCrafters.map((c) => (
                 <CrafterCard
                   key={c.id}
+                  id={c.id}
                   city={city.slug}
                   slug={c.slug}
                   name={c.name}

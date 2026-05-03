@@ -1,19 +1,28 @@
 import Link from "next/link";
-import { Heart } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
+import { SaveButton } from "@/components/SaveButton";
 import { formatINR } from "@/lib/util";
 
 const CARD_SIZES = "(max-width:768px) 50vw, 25vw";
 
-function HeartOverlay() {
+type SaveOverlayProps = {
+  entityType: "crafter" | "store" | "studio" | "event";
+  entityId: string;
+};
+
+function SaveOverlay({ entityType, entityId }: SaveOverlayProps) {
   return (
-    <span className="heart" aria-hidden="true">
-      <Heart size={15} />
-    </span>
+    <SaveButton
+      variant="icon"
+      entityType={entityType}
+      entityId={entityId}
+      className="heart absolute top-3 right-3 z-10"
+    />
   );
 }
 
 type CrafterCardProps = {
+  id: string;
   city: string;
   slug: string;
   name: string;
@@ -26,6 +35,7 @@ type CrafterCardProps = {
 };
 
 export function CrafterCard({
+  id,
   city,
   slug,
   name,
@@ -56,7 +66,7 @@ export function CrafterCard({
             {offers_classes && <span className="badge classes">Teaches classes</span>}
           </div>
         )}
-        <HeartOverlay />
+        <SaveOverlay entityType="crafter" entityId={id} />
       </div>
       <div className="body">
         <div className="title">{name}</div>
@@ -75,6 +85,7 @@ export function CrafterCard({
 }
 
 type StoreCardProps = {
+  id: string;
   city: string;
   slug: string;
   name: string;
@@ -87,6 +98,7 @@ type StoreCardProps = {
 };
 
 export function StoreCard({
+  id,
   city,
   slug,
   name,
@@ -116,7 +128,7 @@ export function StoreCard({
             {is_online_only && <span className="badge online">Online only</span>}
           </div>
         )}
-        <HeartOverlay />
+        <SaveOverlay entityType="store" entityId={id} />
       </div>
       <div className="body">
         <div className="title">{name}</div>
@@ -134,6 +146,7 @@ export function StoreCard({
 }
 
 type StudioCardProps = {
+  id: string;
   city: string;
   slug: string;
   name: string;
@@ -145,6 +158,7 @@ type StudioCardProps = {
 };
 
 export function StudioCard({
+  id,
   city,
   slug,
   name,
@@ -169,7 +183,7 @@ export function StudioCard({
         <div className="badge-row">
           <span className="badge classes">{age_group ?? "All ages"}</span>
         </div>
-        <HeartOverlay />
+        <SaveOverlay entityType="studio" entityId={id} />
       </div>
       <div className="body">
         <div className="title">{name}</div>
@@ -187,6 +201,7 @@ export function StudioCard({
 }
 
 type EventCardProps = {
+  id: string;
   city: string;
   slug: string;
   name: string;
@@ -200,6 +215,7 @@ type EventCardProps = {
 };
 
 export function EventCard({
+  id,
   city,
   slug,
   name,
@@ -236,7 +252,7 @@ export function EventCard({
           <span className="d">{day}</span>
           {dow} {mon}
         </div>
-        <HeartOverlay />
+        <SaveOverlay entityType="event" entityId={id} />
       </div>
       <div className="body">
         <div className="title">{name}</div>

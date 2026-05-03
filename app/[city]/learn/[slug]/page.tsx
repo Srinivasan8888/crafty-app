@@ -118,9 +118,9 @@ export default async function StudioDetail({ params }: { params: { city: string;
 
   const aboutPane = (
     <section className="seg-section about" style={{ padding: "14px 18px 18px" }}>
-      <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
+      <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
         About {s.name}
-      </h3>
+      </h2>
       <p className="text-muted" style={{ lineHeight: 1.65, fontSize: 14 }}>
         {s.is_online_only
           ? `${s.name} runs online classes — join from anywhere in India.`
@@ -143,8 +143,8 @@ export default async function StudioDetail({ params }: { params: { city: string;
   const disciplinesPane = (
     <section className="seg-section" style={{ padding: "14px 18px 18px" }}>
       <div className="sec-head" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-        <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>Disciplines</h3>
-        <span style={{ fontSize: 12, color: "rgb(var(--muted))" }}>{disciplineNames.length} taught</span>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>Disciplines</h2>
+        <span className="text-muted" style={{ fontSize: 12 }}>{disciplineNames.length} taught</span>
       </div>
       {disciplineNames.length === 0 ? (
         <p className="text-muted" style={{ fontSize: 14 }}>No disciplines listed yet.</p>
@@ -159,7 +159,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
                   height: 56,
                   borderRadius: "50%",
                   background: "var(--tint-mustard)",
-                  border: "1px solid rgba(230,168,23,0.5)",
+                  border: "1px solid rgb(var(--mustard) / 0.5)",
                   display: "grid",
                   placeItems: "center",
                   fontFamily: "var(--font-display)",
@@ -171,7 +171,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>{d}</div>
-                <div style={{ fontSize: 12, color: "rgb(var(--muted))" }}>Group classes · drop-in welcome</div>
+                <div className="text-muted" style={{ fontSize: 12 }}>Group classes · drop-in welcome</div>
               </div>
             </div>
           ))}
@@ -182,9 +182,9 @@ export default async function StudioDetail({ params }: { params: { city: string;
 
   const schedulePane = (
     <section className="seg-section" style={{ padding: "14px 18px 18px" }}>
-      <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
+      <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
         Schedule &amp; courses
-      </h3>
+      </h2>
       {courses.length > 0 ? (
         <ul style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {courses.map((c, i) => (
@@ -200,7 +200,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
               <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>
                 {c.name ?? c.discipline ?? "Ongoing course"}
               </div>
-              {c.schedule && <div style={{ fontSize: 12.5, color: "rgb(var(--muted))", marginTop: 3 }}>{c.schedule}</div>}
+              {c.schedule && <div className="text-muted" style={{ fontSize: 12.5, marginTop: 3 }}>{c.schedule}</div>}
               <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
                 {c.level && <span className="tag">{c.level}</span>}
                 {c.price && <span className="price-pill">{c.price}</span>}
@@ -230,7 +230,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
               }}
             >
               <span style={{ fontWeight: 600 }}>{d.label}</span>
-              <span style={{ color: "rgb(var(--muted))" }}>{d.value}</span>
+              <span className="text-muted">{d.value}</span>
             </li>
           ))}
         </ul>
@@ -240,7 +240,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
 
   const reviewsPane = (
     <section className="seg-section" style={{ padding: "14px 18px 18px" }}>
-      <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>Reviews</h3>
+      <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>Reviews</h2>
       <div
         style={{
           padding: "20px 16px",
@@ -272,7 +272,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
 
       <section className="profile-hero-v2">
         <div className="cover" style={{ aspectRatio: "16/9", position: "relative" }}>
-          <Image src={s.logo_photo} alt={s.name} fill priority sizes="100vw" className="object-cover" />
+          <Image src={s.logo_photo} alt={`${s.name} studio`} fill priority sizes="100vw" className="object-cover" />
         </div>
         <header className="nav-photo md:hidden">
           <Link href={`/${s.city.slug}/learn`} className="icon-btn dark" aria-label="Back">
@@ -345,7 +345,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
         <div className="grid gap-14 lg:grid-cols-3" style={{ alignItems: "flex-start" }}>
           <div className="lg:col-span-2">
             <section className="detail-section">
-              <h3 style={{ fontSize: 22, marginBottom: 14 }}>About {s.name}</h3>
+              <h2 style={{ fontSize: 22, marginBottom: 14 }}>About {s.name}</h2>
               <div className="about" style={{ fontSize: 15.5, lineHeight: 1.7 }}>
                 <p>
                   {s.is_online_only
@@ -367,8 +367,8 @@ export default async function StudioDetail({ params }: { params: { city: string;
 
             <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
               <div className="sec-head" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
-                <h3 style={{ fontSize: 22 }}>Disciplines taught</h3>
-                <span style={{ fontSize: 13, color: "rgb(var(--muted))" }}>{disciplineNames.length} disciplines</span>
+                <h2 style={{ fontSize: 22 }}>Disciplines taught</h2>
+                <span className="text-muted" style={{ fontSize: 13 }}>{disciplineNames.length} disciplines</span>
               </div>
               {disciplineNames.length === 0 ? (
                 <p className="text-muted" style={{ fontSize: 14 }}>No disciplines listed yet.</p>
@@ -405,7 +405,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
                       </div>
                       <div>
                         <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16 }}>{d}</div>
-                        <div style={{ fontSize: 12.5, color: "rgb(var(--muted))" }}>Group classes</div>
+                        <div className="text-muted" style={{ fontSize: 12.5 }}>Group classes</div>
                       </div>
                     </div>
                   ))}
@@ -415,7 +415,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
 
             {courses.length > 0 && (
               <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
-                <h3 style={{ fontSize: 22, marginBottom: 14 }}>Ongoing courses</h3>
+                <h2 style={{ fontSize: 22, marginBottom: 14 }}>Ongoing courses</h2>
                 <div className="grid grid-cols-2 gap-3">
                   {courses.map((c, i) => (
                     <div
@@ -432,7 +432,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
                         {c.name ?? c.discipline ?? "Course"}
                       </div>
                       {c.schedule && (
-                        <div style={{ fontSize: 13, color: "rgb(var(--muted))", marginTop: 4 }}>{c.schedule}</div>
+                        <div className="text-muted" style={{ fontSize: 13, marginTop: 4 }}>{c.schedule}</div>
                       )}
                       <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
                         {c.level && <span className="tag">{c.level}</span>}
@@ -447,8 +447,8 @@ export default async function StudioDetail({ params }: { params: { city: string;
             {upcomingEvents.length > 0 && (
               <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
                 <div className="sec-head" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
-                  <h3 style={{ fontSize: 22 }}>Upcoming events here</h3>
-                  <span style={{ fontSize: 13, color: "rgb(var(--muted))" }}>{upcomingEvents.length} scheduled</span>
+                  <h2 style={{ fontSize: 22 }}>Upcoming events here</h2>
+                  <span className="text-muted" style={{ fontSize: 13 }}>{upcomingEvents.length} scheduled</span>
                 </div>
                 <ul style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {upcomingEvents.map((e) => (
@@ -474,7 +474,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
             )}
 
             <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
-              <h3 style={{ fontSize: 22, marginBottom: 14 }}>Crafters who teach here</h3>
+              <h2 style={{ fontSize: 22, marginBottom: 14 }}>Crafters who teach here</h2>
               {sampleCrafters.length === 0 ? (
                 <p className="text-muted" style={{ fontSize: 14 }}>No crafters tagged this studio yet.</p>
               ) : (
@@ -491,14 +491,14 @@ export default async function StudioDetail({ params }: { params: { city: string;
                   ))}
                 </ul>
               )}
-              <p style={{ marginTop: 10, fontSize: 12, fontStyle: "italic", color: "rgb(var(--subtle))" }}>
+              <p className="text-subtle" style={{ marginTop: 10, fontSize: 12, fontStyle: "italic" }}>
                 Suggested crafters who teach in {s.city.display_name} — studio tagging coming soon.
               </p>
             </section>
 
             <section
-              className="detail-section"
-              style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24, fontStyle: "italic", color: "rgb(var(--subtle))", fontSize: 13 }}
+              className="detail-section text-subtle"
+              style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24, fontStyle: "italic", fontSize: 13 }}
             >
               <p>
                 Something off about this listing?{" "}
@@ -516,9 +516,9 @@ export default async function StudioDetail({ params }: { params: { city: string;
 
           <aside className="space-y-4" style={{ position: "sticky", top: 88 }}>
             <div className="card p-5">
-              <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 12 }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 12 }}>
                 Get in touch
-              </h3>
+              </h2>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {s.contact_whatsapp && (
                   <a
@@ -544,17 +544,17 @@ export default async function StudioDetail({ params }: { params: { city: string;
                   </a>
                 )}
                 {!s.contact_whatsapp && !s.contact_phone && !s.contact_website && (
-                  <p style={{ fontSize: 13, color: "rgb(var(--muted))" }}>No contact details listed yet.</p>
+                  <p className="text-muted" style={{ fontSize: 13 }}>No contact details listed yet.</p>
                 )}
               </div>
             </div>
 
             <div className="card p-5">
-              <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <Clock size={14} /> Studio hours
-              </h3>
+              </h2>
               {hours.length === 0 ? (
-                <p style={{ fontSize: 13, color: "rgb(var(--muted))" }}>Hours not listed yet.</p>
+                <p className="text-muted" style={{ fontSize: 13 }}>Hours not listed yet.</p>
               ) : (
                 <ul style={{ display: "flex", flexDirection: "column" }}>
                   {hours.map((d) => (
@@ -569,7 +569,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
                       }}
                     >
                       <span style={{ fontWeight: 600 }}>{d.label}</span>
-                      <span style={{ color: "rgb(var(--muted))" }}>{d.value}</span>
+                      <span className="text-muted">{d.value}</span>
                     </li>
                   ))}
                 </ul>
@@ -584,19 +584,18 @@ export default async function StudioDetail({ params }: { params: { city: string;
                 className="card p-5 block"
                 style={{ color: "inherit", textDecoration: "none" }}
               >
-                <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Find us</h3>
+                <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Find us</h2>
                 <p style={{ fontSize: 14, fontWeight: 600 }}>{s.address}</p>
-                <p style={{ fontSize: 13, color: "rgb(var(--muted))" }}>{s.city.display_name}</p>
+                <p className="text-muted" style={{ fontSize: 13 }}>{s.city.display_name}</p>
                 <div
+                  className="border border-forest/[0.22] text-forest"
                   style={{
                     marginTop: 12,
                     aspectRatio: "16/9",
                     background: "var(--tint-forest)",
-                    border: "1px solid rgba(31,95,60,0.22)",
                     borderRadius: "var(--r-md)",
                     display: "grid",
                     placeItems: "center",
-                    color: "rgb(var(--forest))",
                     fontFamily: "var(--font-display)",
                     fontWeight: 700,
                     fontSize: 13,
@@ -610,11 +609,12 @@ export default async function StudioDetail({ params }: { params: { city: string;
             )}
 
             {!s.is_claimed && (
-              <div className="card p-5" style={{ background: "var(--tint-magenta)", borderColor: "rgba(181,54,91,0.22)" }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Is this your studio?</h3>
+              <div className="card p-5 border-magenta/[0.22]" style={{ background: "var(--tint-magenta)" }}>
+                <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Is this your studio?</h2>
                 <a
                   href="mailto:hello@crafty.app?subject=Claim%20listing"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgb(var(--magenta))" }}
+                  className="text-magenta"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}
                 >
                   <Mail size={14} /> Email hello@crafty.app to claim
                 </a>

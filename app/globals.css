@@ -25,7 +25,7 @@
   --indigo:       61 74 140;
   --ink:          26 26 26;
   --muted:        107 90 62;
-  --subtle:       126 107 78;
+  --subtle:       110 92 65;
 
   /* Line color channels — bridged through Tailwind; flip in dark */
   --line-rgb:           31 95 60;
@@ -41,10 +41,10 @@
   --tint-magenta:     rgba(181, 54, 91, 0.06);
   --tint-cream:       rgba(255, 246, 229, 0.85);
 
-  /* Semantic */
-  --ok:    #1F5F3C;
-  --warn:  #E6A817;
-  --error: #B5365B;
+  /* Semantic — bridged through tokens so they flip in dark mode */
+  --ok:    rgb(var(--forest));
+  --warn:  rgb(var(--mustard));
+  --error: rgb(var(--magenta));
 
   /* Typography (next/font CSS variables injected at html root) */
   --font-display: var(--font-fraunces, Fraunces, Georgia, serif);
@@ -123,9 +123,10 @@
   --line-rgb:           96 188 130;
   --line-alpha:         0.20;
   --line-strong-alpha:  0.36;
-  --tint-mustard: rgba(234, 178, 50, 0.08);
-  --tint-forest:  rgba(96, 188, 130, 0.08);
-  --tint-magenta: rgba(236, 90, 134, 0.08);
+  --tint-mustard:     rgba(234, 178, 50, 0.08);
+  --tint-mustard-mid: rgba(234, 178, 50, 0.18);
+  --tint-forest:      rgba(96, 188, 130, 0.08);
+  --tint-magenta:     rgba(236, 90, 134, 0.08);
   --soft-shadow:    0 4px 12px rgba(0, 0, 0, 0.45);
   --soft-shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.55);
 }

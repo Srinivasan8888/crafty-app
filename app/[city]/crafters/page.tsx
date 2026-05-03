@@ -136,6 +136,7 @@ export default async function CraftersListing({
                       ? ([{ label: "Teaches", variant: "classes" }] as const)
                       : []),
                   ]}
+                  saveTarget={{ entityType: "crafter", entityId: featured.id }}
                 />
               </div>
             )}
@@ -144,6 +145,7 @@ export default async function CraftersListing({
               {rest.map((c, i) => (
                 <CrafterCard
                   key={c.id}
+                  id={c.id}
                   city={city.slug}
                   slug={c.slug}
                   name={c.name}

@@ -109,16 +109,16 @@ export default async function StoreDetail({ params }: { params: { city: string; 
 
   const aboutPane = (
     <section className="seg-section about" style={{ padding: "14px 18px 18px" }}>
-      <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
+      <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
         About {s.name}
-      </h3>
-      <p style={{ color: "rgb(var(--muted))", lineHeight: 1.65, fontSize: 14 }}>
+      </h2>
+      <p className="text-muted" style={{ lineHeight: 1.65, fontSize: 14 }}>
         {s.is_online_only
           ? `${s.name} is an online supply store serving makers across India.`
           : `${s.name} is a craft supply store in ${s.address}, ${s.city.display_name}. Drop in to browse the latest materials in person.`}
       </p>
       {categoryNames.length > 0 && (
-        <p style={{ color: "rgb(var(--muted))", lineHeight: 1.65, fontSize: 14, marginTop: 10 }}>
+        <p className="text-muted" style={{ lineHeight: 1.65, fontSize: 14, marginTop: 10 }}>
           Specialising in {categoryNames.join(", ")}.
         </p>
       )}
@@ -133,8 +133,8 @@ export default async function StoreDetail({ params }: { params: { city: string; 
   const cataloguePane = (
     <section className="seg-section" style={{ padding: "14px 18px 18px" }}>
       <div className="sec-head" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-        <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>Catalogue</h3>
-        <span style={{ fontSize: 12, color: "rgb(var(--muted))" }}>Sample picks</span>
+        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>Catalogue</h2>
+        <span className="text-muted" style={{ fontSize: 12 }}>Sample picks</span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -156,7 +156,7 @@ export default async function StoreDetail({ params }: { params: { city: string; 
           </div>
         ))}
       </div>
-      <p style={{ marginTop: 10, fontSize: 12.5, color: "rgb(var(--subtle))", fontStyle: "italic" }}>
+      <p className="text-subtle" style={{ marginTop: 10, fontSize: 12.5, fontStyle: "italic" }}>
         Catalogue uploads coming soon. Message the store for current stock.
       </p>
     </section>
@@ -164,11 +164,11 @@ export default async function StoreDetail({ params }: { params: { city: string; 
 
   const hoursPane = (
     <section className="seg-section" style={{ padding: "14px 18px 18px" }}>
-      <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
+      <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
         Opening hours
-      </h3>
+      </h2>
       {hours.length === 0 ? (
-        <p style={{ color: "rgb(var(--muted))", fontSize: 14 }}>Hours not listed yet — message the store to confirm.</p>
+        <p className="text-muted" style={{ fontSize: 14 }}>Hours not listed yet — message the store to confirm.</p>
       ) : (
         <ul style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {hours.map((d) => (
@@ -184,7 +184,7 @@ export default async function StoreDetail({ params }: { params: { city: string; 
               }}
             >
               <span style={{ fontWeight: 600 }}>{d.label}</span>
-              <span style={{ color: "rgb(var(--muted))" }}>{d.value}</span>
+              <span className="text-muted">{d.value}</span>
             </li>
           ))}
         </ul>
@@ -194,23 +194,22 @@ export default async function StoreDetail({ params }: { params: { city: string; 
 
   const findUsPane = (
     <section className="seg-section" style={{ padding: "14px 18px 18px" }}>
-      <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>Find us</h3>
-      <p style={{ color: "rgb(var(--ink))", fontSize: 14, fontWeight: 600 }}>{s.is_online_only ? "Online only" : s.address}</p>
-      <p style={{ color: "rgb(var(--muted))", fontSize: 13, marginTop: 4 }}>{s.city.display_name}</p>
+      <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>Find us</h2>
+      <p className="text-ink" style={{ fontSize: 14, fontWeight: 600 }}>{s.is_online_only ? "Online only" : s.address}</p>
+      <p className="text-muted" style={{ fontSize: 13, marginTop: 4 }}>{s.city.display_name}</p>
       {!s.is_online_only && (
         <a
           href={`https://maps.google.com/?q=${mapQ}`}
           target="_blank"
           rel="noopener"
+          className="border border-forest/[0.22] text-forest"
           style={{
             display: "grid",
             placeItems: "center",
             marginTop: 12,
             aspectRatio: "16/9",
             background: "var(--tint-forest)",
-            border: "1px solid rgba(31,95,60,0.22)",
             borderRadius: "var(--r-lg)",
-            color: "rgb(var(--forest))",
             fontFamily: "var(--font-display)",
             fontWeight: 700,
             fontSize: 14,
@@ -310,7 +309,7 @@ export default async function StoreDetail({ params }: { params: { city: string; 
         <div className="grid gap-14 lg:grid-cols-3" style={{ alignItems: "flex-start" }}>
           <div className="lg:col-span-2">
             <section className="detail-section">
-              <h3 style={{ fontSize: 22, marginBottom: 14 }}>About {s.name}</h3>
+              <h2 style={{ fontSize: 22, marginBottom: 14 }}>About {s.name}</h2>
               <div className="about" style={{ fontSize: 15.5, lineHeight: 1.7 }}>
                 <p>
                   {s.is_online_only
@@ -336,8 +335,8 @@ export default async function StoreDetail({ params }: { params: { city: string; 
 
             <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
               <div className="sec-head" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
-                <h3 style={{ fontSize: 22 }}>Catalogue</h3>
-                <span style={{ fontSize: 13, color: "rgb(var(--muted))" }}>Sample picks · contact for stock</span>
+                <h2 style={{ fontSize: 22 }}>Catalogue</h2>
+                <span className="text-muted" style={{ fontSize: 13 }}>Sample picks · contact for stock</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -364,8 +363,8 @@ export default async function StoreDetail({ params }: { params: { city: string; 
             {upcomingEvents.length > 0 && (
               <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
                 <div className="sec-head" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
-                  <h3 style={{ fontSize: 22 }}>Upcoming events here</h3>
-                  <span style={{ fontSize: 13, color: "rgb(var(--muted))" }}>{upcomingEvents.length} scheduled</span>
+                  <h2 style={{ fontSize: 22 }}>Upcoming events here</h2>
+                  <span className="text-muted" style={{ fontSize: 13 }}>{upcomingEvents.length} scheduled</span>
                 </div>
                 <ul style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {upcomingEvents.map((e) => (
@@ -391,9 +390,9 @@ export default async function StoreDetail({ params }: { params: { city: string; 
             )}
 
             <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
-              <h3 style={{ fontSize: 22, marginBottom: 14 }}>Crafters who source here</h3>
+              <h2 style={{ fontSize: 22, marginBottom: 14 }}>Crafters who source here</h2>
               {sampleCrafters.length === 0 ? (
-                <p style={{ color: "rgb(var(--muted))", fontSize: 14 }}>No crafters tagged this store yet.</p>
+                <p className="text-muted" style={{ fontSize: 14 }}>No crafters tagged this store yet.</p>
               ) : (
                 <ul style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {sampleCrafters.map((c) => (
@@ -408,14 +407,14 @@ export default async function StoreDetail({ params }: { params: { city: string; 
                   ))}
                 </ul>
               )}
-              <p style={{ marginTop: 10, fontSize: 12, fontStyle: "italic", color: "rgb(var(--subtle))" }}>
+              <p className="text-subtle" style={{ marginTop: 10, fontSize: 12, fontStyle: "italic" }}>
                 Suggested crafters from {s.city.display_name} — sourcing tags coming soon.
               </p>
             </section>
 
             <section
-              className="detail-section"
-              style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24, fontStyle: "italic", color: "rgb(var(--subtle))", fontSize: 13 }}
+              className="detail-section text-subtle"
+              style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24, fontStyle: "italic", fontSize: 13 }}
             >
               <p>
                 Something off about this listing?{" "}
@@ -433,9 +432,9 @@ export default async function StoreDetail({ params }: { params: { city: string; 
 
           <aside className="space-y-4" style={{ position: "sticky", top: 88 }}>
             <div className="card p-5">
-              <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 12 }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 12 }}>
                 Get in touch
-              </h3>
+              </h2>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {s.contact_whatsapp && (
                   <a
@@ -461,17 +460,17 @@ export default async function StoreDetail({ params }: { params: { city: string; 
                   </a>
                 )}
                 {!s.contact_whatsapp && !s.contact_phone && !s.contact_website && (
-                  <p style={{ fontSize: 13, color: "rgb(var(--muted))" }}>No contact details listed yet.</p>
+                  <p className="text-muted" style={{ fontSize: 13 }}>No contact details listed yet.</p>
                 )}
               </div>
             </div>
 
             <div className="card p-5">
-              <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <Clock size={14} /> Opening hours
-              </h3>
+              </h2>
               {hours.length === 0 ? (
-                <p style={{ fontSize: 13, color: "rgb(var(--muted))" }}>Hours not listed yet.</p>
+                <p className="text-muted" style={{ fontSize: 13 }}>Hours not listed yet.</p>
               ) : (
                 <ul style={{ display: "flex", flexDirection: "column" }}>
                   {hours.map((d) => (
@@ -486,7 +485,7 @@ export default async function StoreDetail({ params }: { params: { city: string; 
                       }}
                     >
                       <span style={{ fontWeight: 600 }}>{d.label}</span>
-                      <span style={{ color: "rgb(var(--muted))" }}>{d.value}</span>
+                      <span className="text-muted">{d.value}</span>
                     </li>
                   ))}
                 </ul>
@@ -501,19 +500,18 @@ export default async function StoreDetail({ params }: { params: { city: string; 
                 className="card p-5 block"
                 style={{ color: "inherit", textDecoration: "none" }}
               >
-                <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Find us</h3>
+                <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Find us</h2>
                 <p style={{ fontSize: 14, fontWeight: 600 }}>{s.address}</p>
-                <p style={{ fontSize: 13, color: "rgb(var(--muted))" }}>{s.city.display_name}</p>
+                <p className="text-muted" style={{ fontSize: 13 }}>{s.city.display_name}</p>
                 <div
+                  className="border border-forest/[0.22] text-forest"
                   style={{
                     marginTop: 12,
                     aspectRatio: "16/9",
                     background: "var(--tint-forest)",
-                    border: "1px solid rgba(31,95,60,0.22)",
                     borderRadius: "var(--r-md)",
                     display: "grid",
                     placeItems: "center",
-                    color: "rgb(var(--forest))",
                     fontFamily: "var(--font-display)",
                     fontWeight: 700,
                     fontSize: 13,
@@ -527,12 +525,12 @@ export default async function StoreDetail({ params }: { params: { city: string; 
             )}
 
             {!s.is_claimed && (
-              <div className="card p-5" style={{ background: "var(--tint-magenta)", borderColor: "rgba(181,54,91,0.22)" }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Is this your store?</h3>
+              <div className="card p-5 border-magenta/[0.22]" style={{ background: "var(--tint-magenta)" }}>
+                <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Is this your store?</h2>
                 <a
                   href="mailto:hello@crafty.app?subject=Claim%20listing"
-                  className="text-accent hover:underline"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgb(var(--magenta))" }}
+                  className="text-accent hover:underline text-magenta"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}
                 >
                   <Mail size={14} /> Email hello@crafty.app to claim
                 </a>

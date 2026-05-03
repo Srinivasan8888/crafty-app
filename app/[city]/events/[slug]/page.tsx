@@ -139,17 +139,16 @@ export default async function EventDetail({
   return (
     <article>
       <div
-        className="cover-wrap"
+        className="cover-wrap bg-cream-2"
         style={{
           position: "relative",
           aspectRatio: "16 / 9",
-          backgroundColor: "rgb(var(--cream-2))",
           overflow: "hidden",
         }}
       >
         <Image
           src={e.cover_image}
-          alt=""
+          alt={`${e.name} event cover`}
           fill
           sizes="100vw"
           priority
@@ -318,7 +317,7 @@ export default async function EventDetail({
                 borderBottom: "1px solid var(--line)",
               }}
             >
-              <h3
+              <h2
                 style={{
                   fontFamily: "var(--font-display)",
                   fontSize: 22,
@@ -328,7 +327,7 @@ export default async function EventDetail({
                 }}
               >
                 About this event
-              </h3>
+              </h2>
               {paragraphs.length === 0 ? (
                 <p
                   style={{
@@ -364,7 +363,7 @@ export default async function EventDetail({
                 borderBottom: "1px solid var(--line)",
               }}
             >
-              <h3
+              <h2
                 style={{
                   fontFamily: "var(--font-display)",
                   fontSize: 22,
@@ -374,7 +373,7 @@ export default async function EventDetail({
                 }}
               >
                 What to bring
-              </h3>
+              </h2>
               <div className="alert info" style={{ display: "block" }}>
                 <ul
                   className="bring-list"
@@ -418,7 +417,7 @@ export default async function EventDetail({
                 borderBottom: "1px solid var(--line)",
               }}
             >
-              <h3
+              <h2
                 style={{
                   fontFamily: "var(--font-display)",
                   fontSize: 22,
@@ -428,7 +427,7 @@ export default async function EventDetail({
                 }}
               >
                 Getting there
-              </h3>
+              </h2>
               <p
                 style={{
                   color: "rgb(var(--muted))",
@@ -443,15 +442,14 @@ export default async function EventDetail({
               </p>
               <div
                 aria-label="Map embed coming soon"
+                className="bg-cream-2 text-muted"
                 style={{
                   marginTop: 12,
                   aspectRatio: "16 / 8",
-                  background: "rgb(var(--cream-2))",
                   border: "1px solid var(--line)",
                   borderRadius: "var(--r-lg)",
                   display: "grid",
                   placeItems: "center",
-                  color: "rgb(var(--muted))",
                   padding: "16px 20px",
                 }}
               >
@@ -466,15 +464,14 @@ export default async function EventDetail({
                 >
                   <span
                     aria-hidden="true"
+                    className="bg-cream text-forest"
                     style={{
                       width: 36,
                       height: 36,
                       borderRadius: "50%",
-                      background: "rgb(var(--cream))",
                       border: "1px solid var(--line)",
                       display: "grid",
                       placeItems: "center",
-                      color: "rgb(var(--forest))",
                     }}
                   >
                     <MapPin size={18} />
@@ -503,7 +500,7 @@ export default async function EventDetail({
                 borderBottom: "1px solid var(--line)",
               }}
             >
-              <h3
+              <h2
                 style={{
                   fontFamily: "var(--font-display)",
                   fontSize: 22,
@@ -513,7 +510,7 @@ export default async function EventDetail({
                 }}
               >
                 Organized by
-              </h3>
+              </h2>
               {organizerHref ? (
                 <HCard
                   href={organizerHref}
@@ -531,10 +528,10 @@ export default async function EventDetail({
                 />
               ) : (
                 <div className="hcard">
-                  <div className="img relative shrink-0 overflow-hidden" aria-hidden="true">
+                  <div className="img relative shrink-0 overflow-hidden">
                     <Image
                       src={organizerPhoto}
-                      alt=""
+                      alt={organizerName}
                       fill
                       sizes="96px"
                       className="object-cover"
@@ -583,6 +580,7 @@ export default async function EventDetail({
                       style={{ flex: "0 0 280px", maxWidth: 320 }}
                     >
                       <EventCard
+                        id={m.id}
                         city={city.slug}
                         slug={m.slug}
                         name={m.name}
@@ -606,9 +604,8 @@ export default async function EventDetail({
               style={{ position: "sticky", top: 100 }}
             >
               <div
-                className="sticky-card"
+                className="sticky-card bg-cream"
                 style={{
-                  background: "rgb(var(--cream))",
                   border: "1px solid var(--line-strong)",
                   borderRadius: "var(--r-lg)",
                   padding: 26,
@@ -750,14 +747,12 @@ export default async function EventDetail({
                     href={`https://wa.me/?text=${encodeURIComponent(`${e.name} — ${city.display_name} on Crafty`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="share-btn"
+                    className="share-btn bg-cream text-forest"
                     style={{
                       flex: 1,
                       padding: "9px 8px",
                       borderRadius: "var(--r-pill)",
                       border: "1px solid var(--line-strong)",
-                      background: "rgb(var(--cream))",
-                      color: "rgb(var(--forest))",
                       fontSize: 12,
                       fontWeight: 600,
                       fontFamily: "var(--font-display)",
@@ -770,14 +765,12 @@ export default async function EventDetail({
                     href="https://instagram.com/crafty.in"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="share-btn"
+                    className="share-btn bg-cream text-forest"
                     style={{
                       flex: 1,
                       padding: "9px 8px",
                       borderRadius: "var(--r-pill)",
                       border: "1px solid var(--line-strong)",
-                      background: "rgb(var(--cream))",
-                      color: "rgb(var(--forest))",
                       fontSize: 12,
                       fontWeight: 600,
                       fontFamily: "var(--font-display)",
@@ -789,14 +782,12 @@ export default async function EventDetail({
                   <ShareButton
                     title={e.name}
                     text={e.name}
-                    className="share-btn"
+                    className="share-btn bg-cream text-forest"
                     style={{
                       flex: 1,
                       padding: "9px 8px",
                       borderRadius: "var(--r-pill)",
                       border: "1px solid var(--line-strong)",
-                      background: "rgb(var(--cream))",
-                      color: "rgb(var(--forest))",
                       fontSize: 12,
                       fontWeight: 600,
                       fontFamily: "var(--font-display)",
@@ -812,7 +803,7 @@ export default async function EventDetail({
                     padding: "12px 14px",
                     background: "var(--tint-mustard)",
                     borderRadius: "var(--r-md)",
-                    border: "1px solid rgba(230,168,23,0.30)",
+                    border: "1px solid rgb(var(--mustard) / 0.3)",
                     fontSize: 12.5,
                     color: "rgb(var(--muted))",
                     lineHeight: 1.5,

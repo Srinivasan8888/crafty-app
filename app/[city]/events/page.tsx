@@ -206,6 +206,7 @@ export default async function EventsListing({
                       ? ([{ label: "Free entry", variant: "classes" }] as const)
                       : []),
                   ]}
+                  saveTarget={{ entityType: "event", entityId: featured.id }}
                 />
               </div>
             )}
@@ -214,6 +215,7 @@ export default async function EventsListing({
               {rest.map((e) => (
                 <EventCard
                   key={e.id}
+                  id={e.id}
                   city={city.slug}
                   slug={e.slug}
                   name={e.name}

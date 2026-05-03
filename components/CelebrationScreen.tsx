@@ -68,7 +68,8 @@ export function CelebrationScreen({ city, url, name, onContinue }: CelebrationSc
           particleCount: 120,
           spread: 80,
           origin: { y: 0.6 },
-          colors: ["#FF90E8", "#FFD166", "#06D6A0", "#118AB2"],
+          // Sunday Bazaar brand palette: magenta, mustard, forest, indigo.
+          colors: ["#B5365B", "#E6A817", "#1F5F3C", "#3D4A8C"],
         });
       } catch {
         // canvas-confetti not installed yet — silently skip.
@@ -126,7 +127,7 @@ export function CelebrationScreen({ city, url, name, onContinue }: CelebrationSc
         aria-label="Close celebration"
         className="absolute right-4 top-4 rounded-full p-2 text-ink-muted hover:bg-canvas-sunken hover:text-ink"
       >
-        <X size={20} />
+        <X size={20} aria-hidden="true" />
       </button>
 
       <div className="card mx-auto w-full max-w-xl space-y-6 p-8 text-center shadow-pop">
@@ -149,7 +150,7 @@ export function CelebrationScreen({ city, url, name, onContinue }: CelebrationSc
             className="btn btn-sm"
             aria-label="Copy live URL"
           >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
+            {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
             {copied ? "Copied" : "Copy"}
           </button>
         </div>
@@ -162,16 +163,16 @@ export function CelebrationScreen({ city, url, name, onContinue }: CelebrationSc
             rel="noopener noreferrer"
             className="btn"
           >
-            <MessageCircle size={16} /> WhatsApp
+            <MessageCircle size={16} aria-hidden="true" /> WhatsApp
           </a>
           <button type="button" onClick={copyForInstagram} className="btn">
-            <Instagram size={16} /> {igCopied ? "Copied" : "Instagram"}
+            <Instagram size={16} aria-hidden="true" /> {igCopied ? "Copied" : "Instagram"}
           </button>
           <a
             href={`mailto:?subject=${mailSubject}&body=${mailBody}`}
             className="btn"
           >
-            <Mail size={16} /> Email
+            <Mail size={16} aria-hidden="true" /> Email
           </a>
         </div>
 

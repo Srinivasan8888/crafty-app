@@ -152,9 +152,22 @@ export function StoreFilters({
           {appliedFilters.map((f) => (
             <span key={f.key} className="filter-chip">
               {f.label}
-              <span className="x" aria-hidden="true">
-                <X size={12} />
-              </span>
+              <button
+                type="button"
+                className="x focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta rounded-full"
+                aria-label={`Remove ${f.label} filter`}
+                onClick={() => router.push(baseHref)}
+                style={{
+                  background: "transparent",
+                  border: 0,
+                  padding: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <X size={12} aria-hidden="true" />
+              </button>
             </span>
           ))}
           <a className="clear" href={baseHref}>Clear all</a>

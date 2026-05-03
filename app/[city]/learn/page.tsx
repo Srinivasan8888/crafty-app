@@ -154,6 +154,7 @@ export default async function LearnListing({
           {studios.map((s, i) => (
             <StudioCard
               key={s.id}
+              id={s.id}
               city={city.slug}
               slug={s.slug}
               name={s.name}

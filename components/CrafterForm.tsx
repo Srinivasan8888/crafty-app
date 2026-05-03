@@ -84,6 +84,28 @@ export function CrafterForm({ cities, categories }: Props) {
   function step2Valid() { return Boolean(form.profile_photo); }
   function step3Valid() { return Boolean(form.contact_whatsapp || form.contact_instagram || form.contact_website); }
 
+  // Field-level error wiring for a11y. Errors only show after the user has
+  // touched the field (typed something) so they don't shout at empty fields.
+  const errors: Partial<Record<
+    | "name"
+    | "profile_photo"
+    | "contact"
+    , string
+  >> = {};
+  if (form.name.length > 0 && form.name.trim().length < 3) {
+    errors.name = "Name must be at least 3 characters.";
+  }
+  if (step === 2 && !form.profile_photo) {
+    errors.profile_photo = "A profile photo is required.";
+  }
+  const anyContactTouched =
+    form.contact_whatsapp.length > 0 ||
+    form.contact_instagram.length > 0 ||
+    form.contact_website.length > 0;
+  if (step === 3 && !anyContactTouched) {
+    // Only treat as error after the user has tried to advance — keep silent here.
+  }
+
   async function submit() {
     setSubmitting(true);
     setError(null);
@@ -123,7 +145,21 @@ export function CrafterForm({ cities, categories }: Props) {
         <div className="space-y-5">
           <div>
             <label className="label" htmlFor="name">Crafter / shop name *</label>
-            <input id="name" className="input" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Aisha Crochet" maxLength={60} />
+            <input
+              id="name"
+              className="input"
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="Aisha Crochet"
+              maxLength={60}
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? "name-error" : undefined}
+            />
+            {errors.name && (
+              <p id="name-error" role="alert" className="mt-1 text-sm text-danger">
+                {errors.name}
+              </p>
+            )}
           </div>
           <div>
             <label className="label" htmlFor="tagline">Tagline</label>
@@ -136,13 +172,23 @@ export function CrafterForm({ cities, categories }: Props) {
             </select>
           </div>
           <div>
-            <label className="label">Craft categories * <span className="text-ink-subtle">(pick 1–3)</span></label>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((c) => (
-                <button key={c.id} type="button" className="chip" data-active={form.category_ids.includes(c.id)} onClick={() => toggleCat(c.id)}>
-                  {c.display_name}
-                </button>
-              ))}
+            <label className="label" id="categories-label">Craft categories * <span className="text-ink-subtle">(pick 1–3)</span></label>
+            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="categories-label">
+              {categories.map((c) => {
+                const selected = form.category_ids.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className="chip"
+                    data-active={selected}
+                    aria-pressed={selected}
+                    onClick={() => toggleCat(c.id)}
+                  >
+                    {c.display_name}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <Nav onNext={() => setStep(2)} disabled={!step1Valid()} />
@@ -152,8 +198,19 @@ export function CrafterForm({ cities, categories }: Props) {
       {step === 2 && (
         <div className="space-y-5">
           <div>
-            <label className="label">Profile photo *</label>
-            <UploadField busy={profileBusy} onChange={onProfile} />
+            <label className="label" htmlFor="step2-profile-photo">Profile photo *</label>
+            <UploadField
+              id="step2-profile-photo"
+              busy={profileBusy}
+              onChange={onProfile}
+              ariaInvalid={!!errors.profile_photo}
+              ariaDescribedBy={errors.profile_photo ? "step2-profile-photo-error" : undefined}
+            />
+            {errors.profile_photo && (
+              <p id="step2-profile-photo-error" role="alert" className="mt-1 text-sm text-danger">
+                {errors.profile_photo}
+              </p>
+            )}
             {form.profile_photo && (
               <Image
                 src={form.profile_photo}
@@ -165,8 +222,8 @@ export function CrafterForm({ cities, categories }: Props) {
             )}
           </div>
           <div>
-            <label className="label">Portfolio photos <span className="text-ink-subtle">(up to 6)</span></label>
-            <UploadField busy={portfolioBusy} multiple onChange={onPortfolio} />
+            <label className="label" htmlFor="step2-portfolio-photos">Portfolio photos <span className="text-ink-subtle">(up to 6)</span></label>
+            <UploadField id="step2-portfolio-photos" busy={portfolioBusy} multiple onChange={onPortfolio} />
             {form.portfolio_photos.length > 0 && (
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {form.portfolio_photos.map((u, i) => (
@@ -179,7 +236,7 @@ export function CrafterForm({ cities, categories }: Props) {
                       className="rounded-md object-cover"
                     />
                     <button type="button" onClick={() => set("portfolio_photos", form.portfolio_photos.filter((_, j) => j !== i))} className="absolute right-1 top-1 rounded-full bg-canvas/90 p-0.5 text-ink-muted hover:text-danger" aria-label="Remove">
-                      <X size={14} />
+                      <X size={14} aria-hidden="true" />
                     </button>
                   </div>
                 ))}
@@ -192,25 +249,63 @@ export function CrafterForm({ cities, categories }: Props) {
 
       {step === 3 && (
         <div className="space-y-5">
-          <p className="text-sm text-ink-muted">Add at least one way for buyers to reach you.</p>
+          <p id="step3-contact-help" className="text-sm text-ink-muted">Add at least one way for buyers to reach you.</p>
           <div>
-            <label className="label">WhatsApp number</label>
-            <input className="input" value={form.contact_whatsapp} onChange={(e) => set("contact_whatsapp", e.target.value)} placeholder="+91-98865-44321" />
+            <label className="label" htmlFor="step3-whatsapp">WhatsApp number</label>
+            <input
+              id="step3-whatsapp"
+              type="tel"
+              inputMode="tel"
+              className="input"
+              value={form.contact_whatsapp}
+              onChange={(e) => set("contact_whatsapp", e.target.value)}
+              placeholder="+91-98865-44321"
+              aria-describedby="step3-contact-help"
+            />
           </div>
           <div>
-            <label className="label">Instagram handle</label>
-            <input className="input" value={form.contact_instagram} onChange={(e) => set("contact_instagram", e.target.value)} placeholder="@aishacrochet" />
+            <label className="label" htmlFor="step3-instagram">Instagram handle</label>
+            <input
+              id="step3-instagram"
+              type="text"
+              className="input"
+              value={form.contact_instagram}
+              onChange={(e) => set("contact_instagram", e.target.value)}
+              placeholder="@aishacrochet"
+              aria-describedby="step3-contact-help"
+            />
           </div>
           <div>
-            <label className="label">Website</label>
-            <input className="input" value={form.contact_website} onChange={(e) => set("contact_website", e.target.value)} placeholder="https://example.com" />
+            <label className="label" htmlFor="step3-website">Website</label>
+            <input
+              id="step3-website"
+              type="url"
+              inputMode="url"
+              className="input"
+              value={form.contact_website}
+              onChange={(e) => set("contact_website", e.target.value)}
+              placeholder="https://example.com"
+              aria-describedby="step3-contact-help"
+            />
           </div>
           <div>
-            <label className="label">Bio</label>
-            <textarea className="input min-h-[100px]" value={form.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Tell buyers about your craft, materials, lead times…" maxLength={2000} />
+            <label className="label" htmlFor="step3-bio">Bio</label>
+            <textarea
+              id="step3-bio"
+              className="input min-h-[100px]"
+              value={form.bio}
+              onChange={(e) => set("bio", e.target.value)}
+              placeholder="Tell buyers about your craft, materials, lead times…"
+              maxLength={2000}
+            />
           </div>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={form.offers_classes} onChange={(e) => set("offers_classes", e.target.checked)} />
+          <label className="flex items-center gap-2" htmlFor="step3-offers-classes">
+            <input
+              id="step3-offers-classes"
+              type="checkbox"
+              checked={form.offers_classes}
+              onChange={(e) => set("offers_classes", e.target.checked)}
+            />
             <span className="text-sm">I offer classes / workshops</span>
           </label>
           <Nav onBack={() => setStep(2)} onNext={() => setStep(4)} disabled={!step3Valid()} />
@@ -244,12 +339,43 @@ export function CrafterForm({ cities, categories }: Props) {
   );
 }
 
-function UploadField({ busy, multiple, onChange }: { busy: boolean; multiple?: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+function UploadField({
+  id,
+  busy,
+  multiple,
+  onChange,
+  ariaInvalid,
+  ariaDescribedBy,
+}: {
+  id?: string;
+  busy: boolean;
+  multiple?: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
+}) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-line bg-canvas-raised p-4 hover:border-ink">
-      {busy ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+    <label
+      htmlFor={id}
+      className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-line bg-canvas-raised p-4 hover:border-ink"
+    >
+      {busy ? (
+        <Loader2 className="animate-spin" size={18} aria-hidden="true" />
+      ) : (
+        <Upload size={18} aria-hidden="true" />
+      )}
       <span className="text-sm text-ink-muted">{busy ? "Uploading…" : (multiple ? "Click to add images (≤5MB each)" : "Click to upload (≤5MB)")}</span>
-      <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" multiple={multiple} onChange={onChange} disabled={busy} />
+      <input
+        id={id}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        multiple={multiple}
+        onChange={onChange}
+        disabled={busy}
+        aria-invalid={ariaInvalid || undefined}
+        aria-describedby={ariaDescribedBy}
+      />
     </label>
   );
 }

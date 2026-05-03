@@ -213,6 +213,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         {crafters.map((c, idx) => (
           <div key={c.id} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
             <CrafterCard
+              id={c.id}
               city={city.slug}
               slug={c.slug}
               name={c.name}
@@ -239,6 +240,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         {stores.map((s) => (
           <div key={s.id} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
             <StoreCard
+              id={s.id}
               city={city.slug}
               slug={s.slug}
               name={s.name}
@@ -264,6 +266,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         {studios.map((s) => (
           <div key={s.id} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
             <StudioCard
+              id={s.id}
               city={city.slug}
               slug={s.slug}
               name={s.name}
@@ -288,6 +291,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         {events.map((e) => (
           <div key={e.id} className="shrink-0" style={{ width: "var(--rail-card-w-wide)" }}>
             <EventCard
+              id={e.id}
               city={city.slug}
               slug={e.slug}
               name={e.name}

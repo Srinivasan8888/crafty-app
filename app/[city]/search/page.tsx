@@ -98,6 +98,7 @@ export default async function SearchPage({
           {crafters.slice(0, 4).map((c) => (
             <CrafterCard
               key={c.id}
+              id={c.id}
               city={city.slug}
               slug={c.slug}
               name={c.name}
@@ -130,6 +131,7 @@ export default async function SearchPage({
           {stores.slice(0, 4).map((s) => (
             <StoreCard
               key={s.id}
+              id={s.id}
               city={city.slug}
               slug={s.slug}
               name={s.name}
@@ -162,6 +164,7 @@ export default async function SearchPage({
           {studios.slice(0, 4).map((s) => (
             <StudioCard
               key={s.id}
+              id={s.id}
               city={city.slug}
               slug={s.slug}
               name={s.name}
@@ -193,6 +196,7 @@ export default async function SearchPage({
           {events.slice(0, 4).map((e) => (
             <EventCard
               key={e.id}
+              id={e.id}
               city={city.slug}
               slug={e.slug}
               name={e.name}
@@ -295,6 +299,8 @@ export default async function SearchPage({
 
         <form
           method="get"
+          role="search"
+          aria-label="Search crafters, stores, events"
           style={{
             display: "flex",
             gap: 10,
@@ -305,6 +311,7 @@ export default async function SearchPage({
           <div style={{ position: "relative", flex: 1 }}>
             <Search
               size={16}
+              aria-hidden="true"
               className="text-subtle"
               style={{
                 position: "absolute",
@@ -318,6 +325,7 @@ export default async function SearchPage({
               defaultValue={q}
               placeholder={`Search ${city.display_name} — try yarn, pottery, Cubbon meetup…`}
               type="search"
+              aria-label="Search crafters, stores, events"
               className="search-input w-full"
               style={{ paddingLeft: 38 }}
             />

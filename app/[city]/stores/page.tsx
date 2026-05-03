@@ -159,6 +159,7 @@ export default async function StoresListing({
           {stores.map((s, i) => (
             <StoreCard
               key={s.id}
+              id={s.id}
               city={city.slug}
               slug={s.slug}
               name={s.name}

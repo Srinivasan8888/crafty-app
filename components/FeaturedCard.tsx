@@ -1,8 +1,13 @@
 import Link from "next/link";
-import { Heart } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
+import { SaveButton } from "@/components/SaveButton";
 
 type BadgeVariant = "feat" | "classes" | "claim" | "online";
+
+type SaveTarget = {
+  entityType: "crafter" | "store" | "studio" | "event";
+  entityId: string;
+};
 
 type Props = {
   href: string;
@@ -14,6 +19,7 @@ type Props = {
   primaryAction: { label: string; href: string };
   secondaryAction?: { label: string; href: string };
   badges?: { label: string; variant: BadgeVariant }[];
+  saveTarget?: SaveTarget;
 };
 
 function renderTitle(title: string, emHighlight?: string) {
@@ -41,6 +47,7 @@ export function FeaturedCard({
   primaryAction,
   secondaryAction,
   badges,
+  saveTarget,
 }: Props) {
   return (
     <article className="featured-card relative overflow-hidden">
@@ -65,9 +72,14 @@ export function FeaturedCard({
           ))}
         </div>
       )}
-      <span className="heart" aria-hidden="true">
-        <Heart size={16} />
-      </span>
+      {saveTarget && (
+        <SaveButton
+          variant="icon"
+          entityType={saveTarget.entityType}
+          entityId={saveTarget.entityId}
+          className="heart absolute top-3 right-3 z-10"
+        />
+      )}
       <div className="body">
         <div className="eyebrow">{eyebrow}</div>
         <h3 className="ttl">

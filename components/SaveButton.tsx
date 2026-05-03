@@ -32,7 +32,9 @@ export function SaveButton({
   const [saved, setSaved] = useState(initialSaved);
   const [pending, setPending] = useState(false);
 
-  async function toggle() {
+  async function toggle(e?: React.MouseEvent) {
+    e?.preventDefault();
+    e?.stopPropagation();
     if (pending) return;
     const next = !saved;
     setSaved(next); // optimistic

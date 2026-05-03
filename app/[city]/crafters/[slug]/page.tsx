@@ -149,9 +149,9 @@ export default async function CrafterDetail({
 
   const aboutBlock = (
     <section className="seg-section about">
-      <h3 className="font-display text-lg font-bold" style={{ marginBottom: 10 }}>
+      <h2 className="font-display text-lg font-bold" style={{ marginBottom: 10 }}>
         About {c.name.split(" ")[0]}
-      </h3>
+      </h2>
       {c.bio ? (
         c.bio.split("\n\n").map((p, i) => (
           <p key={i} className={`text-muted ${i > 0 ? "mt-2.5" : ""}`.trim()} style={{ lineHeight: 1.65, fontSize: 14 }}>
@@ -175,7 +175,7 @@ export default async function CrafterDetail({
     c.portfolio_photos.length > 0 ? (
       <section className="seg-section">
         <div className="sec-head flex items-baseline justify-between mb-2.5">
-          <h3 className="font-display text-lg font-bold">Portfolio</h3>
+          <h2 className="font-display text-lg font-bold">Portfolio</h2>
           <span className="text-xs text-muted">
             {c.portfolio_photos.length} photos
           </span>
@@ -192,7 +192,7 @@ export default async function CrafterDetail({
     products.length > 0 ? (
       <section className="seg-section">
         <div className="sec-head flex items-baseline justify-between mb-2.5">
-          <h3 className="font-display text-lg font-bold">Products on order</h3>
+          <h2 className="font-display text-lg font-bold">Products on order</h2>
           <span className="text-xs text-muted">
             {products.length} items
           </span>
@@ -224,7 +224,7 @@ export default async function CrafterDetail({
     classes.length > 0 || upcomingEvents.length > 0 ? (
       <section className="seg-section">
         <div className="sec-head flex items-baseline justify-between mb-2.5">
-          <h3 className="font-display text-lg font-bold">Classes &amp; workshops</h3>
+          <h2 className="font-display text-lg font-bold">Classes &amp; workshops</h2>
           {c.offers_classes && <span className="badge classes">Teaches</span>}
         </div>
 
@@ -238,8 +238,8 @@ export default async function CrafterDetail({
                   width: 56,
                   height: 56,
                   borderRadius: "50%",
-                  background: "var(--tint-mustard-mid, rgba(230,168,23,0.18))",
-                  border: "1px solid rgba(230,168,23,0.5)",
+                  background: "var(--tint-mustard-mid)",
+                  border: "1px solid rgb(var(--mustard) / 0.5)",
                   display: "grid",
                   placeItems: "center",
                   fontFamily: "var(--font-display)",
@@ -411,7 +411,7 @@ export default async function CrafterDetail({
 
         {(otherStore || otherStudio) && (
           <section className="px-[18px] py-4">
-            <h3 className="font-display text-lg font-bold mb-2.5">Also runs</h3>
+            <h2 className="font-display text-lg font-bold mb-2.5">Also runs</h2>
             <div className="flex flex-col gap-2">
               {otherStore && (
                 <Link
@@ -527,11 +527,10 @@ export default async function CrafterDetail({
                 )}
                 {c.tagline && (
                   <p
-                    className="mt-4 max-w-[640px] italic"
+                    className="mt-4 max-w-[640px] italic text-muted"
                     style={{
                       fontFamily: "var(--font-display)",
                       fontSize: 16,
-                      color: "rgb(var(--muted))",
                       lineHeight: 1.55,
                     }}
                   >
@@ -541,12 +540,12 @@ export default async function CrafterDetail({
               </header>
 
               <section className="about">
-                <h3
+                <h2
                   className="font-display"
                   style={{ fontSize: 22, fontWeight: 700, marginBottom: 14 }}
                 >
                   About {c.name.split(" ")[0]}
-                </h3>
+                </h2>
                 {c.bio ? (
                   c.bio.split("\n\n").map((p, i) => (
                     <p
@@ -558,7 +557,7 @@ export default async function CrafterDetail({
                     </p>
                   ))
                 ) : (
-                  <p style={{ fontSize: 15.5, lineHeight: 1.7, color: "rgb(var(--muted))" }}>
+                  <p className="text-muted" style={{ fontSize: 15.5, lineHeight: 1.7 }}>
                     {c.tagline ?? `${c.name} hasn't added a bio yet.`}
                   </p>
                 )}
@@ -572,12 +571,12 @@ export default async function CrafterDetail({
               {c.portfolio_photos.length > 0 && (
                 <section>
                   <div className="sec-head flex items-baseline justify-between mb-3.5">
-                    <h3
+                    <h2
                       className="font-display"
                       style={{ fontSize: 22, fontWeight: 700 }}
                     >
                       Portfolio
-                    </h3>
+                    </h2>
                     <span className="text-sm text-muted">
                       {c.portfolio_photos.length} photos
                     </span>
@@ -605,12 +604,12 @@ export default async function CrafterDetail({
               {classes.length > 0 && (
                 <section>
                   <div className="sec-head flex items-baseline justify-between mb-3.5">
-                    <h3
+                    <h2
                       className="font-display"
                       style={{ fontSize: 22, fontWeight: 700 }}
                     >
                       Classes &amp; workshops
-                    </h3>
+                    </h2>
                     {c.offers_classes && <span className="badge classes">Teaches</span>}
                   </div>
                   <div className="flex flex-col gap-3.5">
@@ -632,8 +631,8 @@ export default async function CrafterDetail({
                             width: 64,
                             height: 64,
                             borderRadius: "var(--r-md)",
-                            background: "var(--tint-mustard-mid, rgba(230,168,23,0.18))",
-                            border: "1px solid rgba(230,168,23,0.5)",
+                            background: "var(--tint-mustard-mid)",
+                            border: "1px solid rgb(var(--mustard) / 0.5)",
                             display: "grid",
                             placeItems: "center",
                             fontSize: 28,
@@ -649,8 +648,8 @@ export default async function CrafterDetail({
                             {cls.name ?? "Workshop"}
                           </div>
                           <div
-                            className="meta mt-1.5"
-                            style={{ color: "rgb(var(--muted))", fontSize: 13 }}
+                            className="meta mt-1.5 text-muted"
+                            style={{ fontSize: 13 }}
                           >
                             {cls.format ?? cls.description ?? ""}
                           </div>
@@ -668,12 +667,12 @@ export default async function CrafterDetail({
 
               {upcomingEvents.length > 0 && (
                 <section>
-                  <h3
+                  <h2
                     className="font-display mb-3.5"
                     style={{ fontSize: 22, fontWeight: 700 }}
                   >
                     Upcoming events
-                  </h3>
+                  </h2>
                   <div className="flex flex-col gap-3">
                     {upcomingEvents.map((e) => {
                       const date = new Date(e.start_at);
@@ -798,20 +797,19 @@ export default async function CrafterDetail({
 
                 {(otherStore || otherStudio) && (
                   <div
+                    className="border border-forest/[0.22]"
                     style={{
                       background: "var(--tint-forest)",
-                      border: "1px solid rgba(31,95,60,0.22)",
                       borderRadius: "var(--r-lg)",
                       padding: 20,
                     }}
                   >
                     <div
-                      className="font-display"
+                      className="font-display text-forest"
                       style={{
                         fontSize: 11,
                         textTransform: "uppercase",
                         letterSpacing: "1.4px",
-                        color: "rgb(var(--forest))",
                         fontWeight: 600,
                       }}
                     >
@@ -820,8 +818,7 @@ export default async function CrafterDetail({
                     {otherStore && (
                       <Link
                         href={`/${c.city.slug}/stores/${otherStore.slug}`}
-                        className="block mt-2"
-                        style={{ color: "rgb(var(--ink))" }}
+                        className="block mt-2 text-ink"
                       >
                         <div
                           className="font-display"
@@ -833,9 +830,8 @@ export default async function CrafterDetail({
                           Store · {c.city.display_name}
                         </div>
                         <span
-                          className="inline-block mt-3 text-sm font-semibold"
+                          className="inline-block mt-3 text-sm font-semibold text-forest"
                           style={{
-                            color: "rgb(var(--forest))",
                             borderBottom: "1px solid rgb(var(--mustard))",
                             paddingBottom: 1,
                           }}
@@ -847,8 +843,7 @@ export default async function CrafterDetail({
                     {otherStudio && (
                       <Link
                         href={`/${c.city.slug}/learn/${otherStudio.slug}`}
-                        className="block mt-3"
-                        style={{ color: "rgb(var(--ink))" }}
+                        className="block mt-3 text-ink"
                       >
                         <div
                           className="font-display"
@@ -860,9 +855,8 @@ export default async function CrafterDetail({
                           Studio · {c.city.display_name}
                         </div>
                         <span
-                          className="inline-block mt-3 text-sm font-semibold"
+                          className="inline-block mt-3 text-sm font-semibold text-forest"
                           style={{
-                            color: "rgb(var(--forest))",
                             borderBottom: "1px solid rgb(var(--mustard))",
                             paddingBottom: 1,
                           }}
@@ -875,8 +869,8 @@ export default async function CrafterDetail({
                 )}
 
                 <div
-                  className="px-1 italic text-sm"
-                  style={{ color: "rgb(var(--subtle))", lineHeight: 1.5 }}
+                  className="px-1 italic text-sm text-subtle"
+                  style={{ lineHeight: 1.5 }}
                 >
                   Something off about this profile?{" "}
                   <Link
@@ -936,17 +930,17 @@ function StatRow({
       className="flex items-center justify-between py-3.5 first:pt-0 first:border-t-0"
       style={{ borderTop: "1px solid var(--line)" }}
     >
-      <span className="text-sm" style={{ color: "rgb(var(--muted))" }}>
+      <span className="text-sm text-muted">
         {label}
       </span>
       <span
-        className="font-display"
-        style={{ fontWeight: 700, fontSize: 16, color: "rgb(var(--ink))" }}
+        className="font-display text-ink"
+        style={{ fontWeight: 700, fontSize: 16 }}
       >
         {highlight ? (
           <em
-            className="italic"
-            style={{ color: "rgb(var(--magenta))", fontWeight: 600 }}
+            className="italic text-magenta"
+            style={{ fontWeight: 600 }}
           >
             {value}
           </em>
