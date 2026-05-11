@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { SegmentedControl, SegmentedSection } from "@/components/SegmentedControl";
 
 export type SearchSectionKey = "all" | "crafters" | "stores" | "learn" | "events";
 
@@ -15,6 +14,14 @@ type Props = {
   eventsSlot: React.ReactNode;
 };
 
+const TABS: Array<{ id: SearchSectionKey; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "crafters", label: "Crafters" },
+  { id: "stores", label: "Stores" },
+  { id: "learn", label: "Learn" },
+  { id: "events", label: "Events" },
+];
+
 export function SearchTabs({
   counts,
   craftersSlot,
@@ -24,39 +31,99 @@ export function SearchTabs({
 }: Props) {
   const [active, setActive] = useState<SearchSectionKey>("all");
 
-  const tabs: Array<{ id: SearchSectionKey; label: string }> = [
-    { id: "all", label: `All ${counts.all}` },
-    { id: "crafters", label: `Crafters ${counts.crafters}` },
-    { id: "stores", label: `Stores ${counts.stores}` },
-    { id: "learn", label: `Learn ${counts.learn}` },
-    { id: "events", label: `Events ${counts.events}` },
-  ];
-
   return (
     <>
-      <SegmentedControl
-        tabs={tabs}
-        active={active}
-        onChange={(id) => setActive(id as SearchSectionKey)}
-      />
-      <SegmentedSection id="all" active={active === "all"}>
+      <nav
+        className="filter-bar"
+        role="tablist"
+        aria-orientation="horizontal"
+        aria-label="Filter search results by type"
+        style={{ position: "static", padding: "10px 0", borderBottom: 0 }}
+      >
+        {TABS.map((t) => {
+          const isActive = active === t.id;
+          const count = counts[t.id];
+          return (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              id={`search-tab-${t.id}`}
+              aria-controls={`search-panel-${t.id}`}
+              aria-selected={isActive}
+              tabIndex={isActive ? 0 : -1}
+              className={`pill${isActive ? " active" : ""}`}
+              onClick={() => setActive(t.id)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, flex: "0 0 auto" }}
+            >
+              <span>{t.label}</span>
+              <span
+                aria-hidden="true"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minWidth: 20,
+                  height: 18,
+                  padding: "0 6px",
+                  borderRadius: 999,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  background: isActive ? "rgba(255,255,255,0.22)" : "rgb(var(--cream-2))",
+                  color: isActive ? "rgb(var(--cream))" : "rgb(var(--forest))",
+                }}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <section
+        id="search-panel-all"
+        role="tabpanel"
+        aria-labelledby="search-tab-all"
+        hidden={active !== "all"}
+      >
         {craftersSlot}
         {storesSlot}
         {studiosSlot}
         {eventsSlot}
-      </SegmentedSection>
-      <SegmentedSection id="crafters" active={active === "crafters"}>
+      </section>
+      <section
+        id="search-panel-crafters"
+        role="tabpanel"
+        aria-labelledby="search-tab-crafters"
+        hidden={active !== "crafters"}
+      >
         {craftersSlot}
-      </SegmentedSection>
-      <SegmentedSection id="stores" active={active === "stores"}>
+      </section>
+      <section
+        id="search-panel-stores"
+        role="tabpanel"
+        aria-labelledby="search-tab-stores"
+        hidden={active !== "stores"}
+      >
         {storesSlot}
-      </SegmentedSection>
-      <SegmentedSection id="learn" active={active === "learn"}>
+      </section>
+      <section
+        id="search-panel-learn"
+        role="tabpanel"
+        aria-labelledby="search-tab-learn"
+        hidden={active !== "learn"}
+      >
         {studiosSlot}
-      </SegmentedSection>
-      <SegmentedSection id="events" active={active === "events"}>
+      </section>
+      <section
+        id="search-panel-events"
+        role="tabpanel"
+        aria-labelledby="search-tab-events"
+        hidden={active !== "events"}
+      >
         {eventsSlot}
-      </SegmentedSection>
+      </section>
     </>
   );
 }

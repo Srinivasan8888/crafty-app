@@ -150,6 +150,7 @@ export default async function CityHome({ params }: { params: { city: string } })
                   sizes="(min-width:768px) 25vw, 50vw"
                   className="object-cover"
                   priority
+                  fetchPriority="high"
                 />
               </div>
               <div
@@ -162,6 +163,8 @@ export default async function CityHome({ params }: { params: { city: string } })
                   fill
                   sizes="(min-width:768px) 25vw, 50vw"
                   className="object-cover"
+                  priority
+                  fetchPriority="high"
                 />
               </div>
               <div
@@ -174,6 +177,8 @@ export default async function CityHome({ params }: { params: { city: string } })
                   fill
                   sizes="(min-width:768px) 25vw, 50vw"
                   className="object-cover"
+                  priority
+                  fetchPriority="high"
                 />
               </div>
               <div
@@ -186,6 +191,8 @@ export default async function CityHome({ params }: { params: { city: string } })
                   fill
                   sizes="(min-width:768px) 25vw, 50vw"
                   className="object-cover"
+                  priority
+                  fetchPriority="high"
                 />
               </div>
             </div>
@@ -344,11 +351,11 @@ export default async function CityHome({ params }: { params: { city: string } })
             <div className="bg-cream border border-line-strong rounded-lg p-8 shadow-soft">
               <div className="text-3xl text-mustard mb-4 leading-none">❋</div>
               <h3 className="font-display text-xl font-bold leading-tight tracking-tight mb-2.5 text-ink">
-                Real photos, <em className="text-magenta font-semibold">real makers</em>
+                Built for <em className="text-magenta font-semibold">real photos</em>
               </h3>
               <p className="text-sm leading-relaxed text-ink-muted">
-                Every profile is a real person. Most are within an auto&apos;s reach. No drop-shipped stock &mdash; the
-                images you see are the things that turn up when you order.
+                Real owner photos roll in as crafters claim their listings &mdash; an early peek at how it&apos;ll
+                look once your friends down the lane are on here too.
               </p>
             </div>
           </div>

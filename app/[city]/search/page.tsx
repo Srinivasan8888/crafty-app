@@ -94,7 +94,7 @@ export default async function SearchPage({
             </Link>
           )}
         </div>
-        <div className="listing-grid" style={{ padding: 0 }}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {crafters.slice(0, 4).map((c) => (
             <CrafterCard
               key={c.id}
@@ -127,7 +127,7 @@ export default async function SearchPage({
             </Link>
           )}
         </div>
-        <div className="listing-grid" style={{ padding: 0 }}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {stores.slice(0, 4).map((s) => (
             <StoreCard
               key={s.id}
@@ -160,7 +160,7 @@ export default async function SearchPage({
             </Link>
           )}
         </div>
-        <div className="listing-grid" style={{ padding: 0 }}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {studios.slice(0, 4).map((s) => (
             <StudioCard
               key={s.id}
@@ -192,7 +192,7 @@ export default async function SearchPage({
             </Link>
           )}
         </div>
-        <div className="listing-grid" style={{ padding: 0 }}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {events.slice(0, 4).map((e) => (
             <EventCard
               key={e.id}

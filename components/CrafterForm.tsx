@@ -77,6 +77,10 @@ export function CrafterForm({ cities, categories }: Props) {
       set("category_ids", form.category_ids.filter((x) => x !== id));
     } else if (form.category_ids.length < 3) {
       set("category_ids", [...form.category_ids, id]);
+    } else {
+      // At the limit: drop the oldest selection to make room for the new one.
+      // Feels less hostile than ignoring the click.
+      set("category_ids", [...form.category_ids.slice(1), id]);
     }
   }
 
@@ -180,8 +184,7 @@ export function CrafterForm({ cities, categories }: Props) {
                   <button
                     key={c.id}
                     type="button"
-                    className="chip"
-                    data-active={selected}
+                    className={`pill sm${selected ? " active" : ""}`}
                     aria-pressed={selected}
                     onClick={() => toggleCat(c.id)}
                   >
@@ -190,6 +193,7 @@ export function CrafterForm({ cities, categories }: Props) {
                 );
               })}
             </div>
+            <CategoryCounter count={form.category_ids.length} />
           </div>
           <Nav onNext={() => setStep(2)} disabled={!step1Valid()} />
         </div>
@@ -410,4 +414,23 @@ function Nav({ onBack, onNext, nextLabel = "Next", disabled }: { onBack?: () => 
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return <div className="flex justify-between gap-3"><dt className="text-ink-muted">{k}</dt><dd className="text-right">{v}</dd></div>;
+}
+
+function CategoryCounter({ count }: { count: number }) {
+  const messages = [
+    "Pick 1–3 categories.",
+    "Picked 1 of 3 — pick 2 more (optional).",
+    "Picked 2 of 3 — pick 1 more (optional).",
+    "Picked 3 of 3 — at the limit.",
+  ] as const;
+  const msg = messages[Math.min(count, 3)];
+  const atLimit = count >= 3;
+  return (
+    <p
+      aria-live="polite"
+      className={`mt-2 text-xs italic font-display ${atLimit ? "text-magenta" : "text-ink-muted"}`}
+    >
+      {msg}
+    </p>
+  );
 }

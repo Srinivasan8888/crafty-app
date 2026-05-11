@@ -274,7 +274,15 @@ export default async function StoreDetail({ params }: { params: { city: string; 
               Featured
             </span>
           )}
-          {!s.is_claimed && <span className="badge claim">Claim this listing</span>}
+          {!s.is_claimed && (
+            <a
+              href={`mailto:hello@crafty.app?subject=${encodeURIComponent(`Claim listing: ${s.name}`)}`}
+              className="badge claim"
+              style={{ textDecoration: "none" }}
+            >
+              Claim this listing →
+            </a>
+          )}
           {s.is_online_only && <span className="badge online">Online only</span>}
         </div>
 
@@ -528,8 +536,8 @@ export default async function StoreDetail({ params }: { params: { city: string; 
               <div className="card p-5 border-magenta/[0.22]" style={{ background: "var(--tint-magenta)" }}>
                 <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Is this your store?</h2>
                 <a
-                  href="mailto:hello@crafty.app?subject=Claim%20listing"
-                  className="text-accent hover:underline text-magenta"
+                  href={`mailto:hello@crafty.app?subject=${encodeURIComponent(`Claim listing: ${s.name}`)}`}
+                  className="text-magenta hover:underline"
                   style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}
                 >
                   <Mail size={14} /> Email hello@crafty.app to claim
