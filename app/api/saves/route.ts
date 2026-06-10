@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit first — cheap, IP-bound, no DB hit on rejection.
-  const rl = rateLimit(req, "saves");
+  const rl = await rateLimit(req, "saves");
   if (!rl.allowed) {
     const retry = Math.ceil(rl.resetIn / 1000);
     return NextResponse.json(

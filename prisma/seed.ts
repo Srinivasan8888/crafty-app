@@ -118,6 +118,23 @@ async function main() {
     data: {
       email: process.env.DEV_USER_EMAIL || "pavithran7777@gmail.com",
       display_name: "Pavithran",
+      role: "ADMIN",
+      is_admin: true,
+    },
+  });
+
+  // T7 — Second-in-Command admin per PRD §12.4. Seeded so the launch never
+  // ships with a single point of failure on moderation/curation. Replace
+  // SIC_ADMIN_EMAIL in .env with the actual SiC once identified (Week 4
+  // deliverable per the design doc). Defaults to a clearly-placeholder email
+  // so a misconfigured deploy is obvious. Responsibilities documented in
+  // docs/operations.md.
+  const sicEmail = process.env.SIC_ADMIN_EMAIL || "sic-placeholder@crafty.app";
+  await prisma.user.create({
+    data: {
+      email: sicEmail,
+      display_name: process.env.SIC_ADMIN_NAME || "SiC (placeholder)",
+      role: "ADMIN",
       is_admin: true,
     },
   });
@@ -126,6 +143,7 @@ async function main() {
     data: {
       email: "seed-bot@crafty.app",
       display_name: "Crafty Seed",
+      role: "CREATOR",
       is_admin: false,
     },
   });

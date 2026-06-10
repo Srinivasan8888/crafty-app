@@ -1,12 +1,13 @@
-// Issue 1.3 — server-proxied upload + sync sharp variants.
-// Local dev: writes to public/uploads/* and returns /uploads/... URLs.
-// Production: swap writeFile() for the Replit Object Storage client + return public CDN URL.
+// Issue 1.3 / Decision #15 — server-proxied upload + sync sharp variants.
+//
+// Image bytes go through `getStorage()` (lib/storage.ts) which picks a backend
+// at runtime via STORAGE_DRIVER env var: "local" (default, writes to
+// public/uploads) or "s3" (Replit Object Storage / R2 / AWS S3). The processor
+// itself doesn't care where bytes land — it only knows about sharp transforms.
 
-import { writeFile, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import sharp from "sharp";
 import crypto from "node:crypto";
+import { getStorage } from "./storage";
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB per §13.3
@@ -14,15 +15,15 @@ const MAX_BYTES = 5 * 1024 * 1024; // 5 MB per §13.3
 export type Variant = "thumb" | "medium" | "full";
 const VARIANT_WIDTHS: Record<Variant, number> = { thumb: 320, medium: 800, full: 1600 };
 
-export type Folder = "profile-photos" | "portfolio" | "event-covers";
+export type Folder = "profile-photos" | "portfolio" | "event-covers" | "product-photos" | "review-photos";
 
 export type UploadResult = {
   full: string;    // primary URL stored on the entity
   medium: string;
   thumb: string;
+  blurhash: string; // base64 data URL suitable as next/image blurDataURL
 };
 
-// Format names sharp returns for our allowlisted MIME types.
 const ALLOWED_FORMATS = new Set(["jpeg", "png", "webp"]);
 
 export async function processAndStoreImage(
@@ -33,10 +34,9 @@ export async function processAndStoreImage(
   if (!ALLOWED_MIME.has(mime)) throw new Error("UNSUPPORTED_MIME");
   if (buffer.byteLength > MAX_BYTES) throw new Error("FILE_TOO_LARGE");
 
-  // S3 — magic-byte validation. The client-supplied MIME is untrusted; an
-  // attacker can lie. Ask sharp to actually decode the header and tell us
-  // what format it really is. Reject anything outside the allowlist
-  // (specifically blocks SVG, GIF, AVIF inputs and any non-image payload).
+  // S3 — magic-byte validation. The client-supplied MIME is untrusted; ask
+  // sharp to actually decode the header and reject anything outside the
+  // allowlist (blocks SVG/GIF/AVIF inputs and any non-image payload).
   let realFormat: string | undefined;
   try {
     realFormat = (await sharp(buffer).metadata()).format;
@@ -47,23 +47,35 @@ export async function processAndStoreImage(
     throw new Error("UNSUPPORTED_MIME");
   }
 
+  const storage = getStorage();
   const id = crypto.randomBytes(12).toString("hex");
-  const baseDir = path.join(process.cwd(), "public", "uploads", folder);
-  if (!existsSync(baseDir)) await mkdir(baseDir, { recursive: true });
 
   // Decode + auto-orient + strip metadata once
   const base = sharp(buffer).rotate().withMetadata({});
 
   const out: Record<Variant, string> = { thumb: "", medium: "", full: "" };
   for (const variant of ["thumb", "medium", "full"] as const) {
-    const filename = `${id}-${variant}.webp`;
-    const abs = path.join(baseDir, filename);
-    await base
+    const filename = `${folder}/${id}-${variant}.webp`;
+    const buf = await base
       .clone()
       .resize({ width: VARIANT_WIDTHS[variant], withoutEnlargement: true })
       .webp({ quality: variant === "thumb" ? 70 : 82 })
-      .toFile(abs);
-    out[variant] = `/uploads/${folder}/${filename}`;
+      .toBuffer();
+    out[variant] = await storage.put(filename, buf, "image/webp");
   }
-  return out;
+
+  // Tiny base64-encoded JPEG suitable as next/image blurDataURL.
+  let blurhash = "";
+  try {
+    const tiny = await base
+      .clone()
+      .resize(16, 16, { fit: "inside" })
+      .jpeg({ quality: 50 })
+      .toBuffer();
+    blurhash = `data:image/jpeg;base64,${tiny.toString("base64")}`;
+  } catch {
+    // Best-effort; cards fall back to bg-canvas-sunken if blurhash is empty.
+  }
+
+  return { ...out, blurhash };
 }

@@ -3,10 +3,14 @@ import { getCities, getCityBySlug } from "@/lib/cities";
 import { CitySelector } from "@/components/CitySelector";
 import { DiscoveryRail } from "@/components/DiscoveryRail";
 import { CrafterCard, StoreCard, StudioCard, EventCard } from "@/components/Cards";
+import { CommunityMoment, FALLBACK_COMMUNITY_MOMENT } from "@/components/CommunityMoment";
+import { RequestCityBanner } from "@/components/RequestCityBanner";
+import { readGeoHint } from "@/lib/geo";
 import { BottomNav } from "@/components/BottomNav";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 
 export const revalidate = 60;
 
@@ -18,6 +22,14 @@ export async function generateStaticParams() {
 export default async function CityHome({ params }: { params: { city: string } }) {
   const city = await getCityBySlug(params.city);
   if (!city) notFound();
+
+  const tHero = await getTranslations("hero");
+
+  // V1.5 — if the visitor's IP suggests they're in India but in a city we
+  // don't serve yet, surface a request-banner so demand can accumulate.
+  const geo = readGeoHint();
+  const showRequestBanner =
+    geo.isLikelyIN && geo.matchedCitySlug === null && geo.city !== null;
 
   const cities = await getCities();
   const where = { city_id: city.id, status: "PUBLISHED" as const };
@@ -109,24 +121,24 @@ export default async function CityHome({ params }: { params: { city: string } })
         <div className="md:grid md:grid-cols-[1.2fr_1fr] md:items-center md:gap-16 md:max-w-[var(--container-max)] md:mx-auto md:px-[var(--container-pad)]">
           <div>
             <span className="hidden md:inline-block font-display text-xs font-bold uppercase tracking-[3px] text-forest mb-4 pb-1.5 border-b border-mustard">
-              Issue 01 &middot; {city.display_name}
+              {tHero("eyebrow")} &middot; {city.display_name}
             </span>
             <h1 className="md:text-[56px] md:leading-[1.02] md:tracking-[-2px]">
-              Discover India&apos;s craft community,{" "}
+              {tHero("headline")}{" "}
               <em className="text-magenta italic font-semibold block md:inline">
-                one city at a time.
+                {tHero("headlineEm")}
               </em>
             </h1>
             <p className="md:text-[17px] md:max-w-[520px] md:mt-6">
-              Crafters, supply stores, studios and craft events in {city.display_name}. Free to list, free to browse.
-              <span className="hidden md:inline"> A handpicked Sunday-bazaar guide to the people making things by hand in your city.</span>
+              {tHero("subtitleA")} {city.display_name}. {tHero("subtitleB")}
+              <span className="hidden md:inline"> {tHero("subtitleExtended")}</span>
             </p>
             <div className="ctas md:justify-start">
               <Link href={`/${city.slug}/crafters`} className="btn btn-primary md:btn-lg">
-                Explore crafters in {city.display_name}
+                {tHero("exploreCta")} {city.display_name}
               </Link>
               <Link href="/list-your-profile" className="btn btn-secondary md:btn-lg">
-                List your profile
+                {tHero("listCta")}
               </Link>
             </div>
           </div>
@@ -202,7 +214,7 @@ export default async function CityHome({ params }: { params: { city: string } })
 
       <div className="container py-4">
         <div className="text-xs uppercase tracking-wider text-forest font-display font-semibold mb-2">
-          Pick your city
+          {tHero("pickCity")}
         </div>
         <CitySelector cities={cities} current={city.slug} />
       </div>
@@ -262,6 +274,18 @@ export default async function CityHome({ params }: { params: { city: string } })
       </DiscoveryRail>
 
       <div className="motif magenta dots"></div>
+
+      {/* PRD §7.1 — community moment between rails 2 and 3.
+          V1.5: per-city moment from the City.community_moment JSON field,
+          falling back to the generic Crafty moment. */}
+      {(() => {
+        const m = (city.community_moment ?? null) as { photoUrl?: string; caption?: string } | null;
+        const photoUrl = m?.photoUrl ?? FALLBACK_COMMUNITY_MOMENT.photoUrl;
+        const caption = m?.caption ?? FALLBACK_COMMUNITY_MOMENT.caption;
+        return <CommunityMoment photoUrl={photoUrl} caption={caption} />;
+      })()}
+
+      {showRequestBanner && <RequestCityBanner defaultCity={geo.city ?? ""} />}
 
       <DiscoveryRail
         title={`Learn in ${city.display_name}`}

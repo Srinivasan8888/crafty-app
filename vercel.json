@@ -1,0 +1,37 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/event-reminders",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/expire-featured",
+      "schedule": "15 0 * * *"
+    },
+    {
+      "path": "/api/cron/materialize-recurring-events",
+      "schedule": "30 0 * * *"
+    },
+    {
+      "path": "/api/cron/message-digest",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/saved-search-alerts",
+      "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/lifecycle-emails",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/warehouse-sync",
+      "schedule": "0 19 * * *"
+    },
+    {
+      "path": "/api/cron/for-you-digest",
+      "schedule": "30 4 * * 0"
+    }
+  ]
+}

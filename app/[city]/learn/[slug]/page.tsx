@@ -12,6 +12,15 @@ import { SaveButton } from "@/components/SaveButton";
 import { ShareButton } from "@/components/ShareButton";
 import { formatDateShort } from "@/lib/util";
 import { MobileTabs } from "./_components/MobileTabs";
+import { EventTracker } from "@/components/EventTracker";
+import { buildStudioJsonLd, jsonLdSafe } from "@/lib/json-ld";
+import { ReviewSection } from "@/components/ReviewSection";
+import { CoSaveRecommendations } from "@/components/CoSaveRecommendations";
+import { MessageButton } from "@/components/MessageButton";
+import { ProductCard } from "@/components/ProductCard";
+import { getCurrentUser } from "@/lib/auth";
+import { isPro } from "@/lib/subscription-gates";
+import { ClaimRequestForm } from "@/components/ClaimRequestForm";
 
 export const revalidate = 60;
 
@@ -35,23 +44,27 @@ const loadStudio = cache(async (citySlug: string, slug: string) => {
     include: {
       city: true,
       craft_disciplines: { include: { discipline: true } },
+      // V3 — surface the owner's Pro tier for the badge.
+      owner: { select: { subscription_tier: true, subscription_expires_at: true } },
     },
   });
-  if (!studio || studio.status !== "PUBLISHED" || studio.city_id !== city.id) {
-    const redirected = await prisma.slugRedirect.findUnique({
-      where: { entity_type_old_slug: { entity_type: "studio", old_slug: slug } },
-    }).catch(() => null);
-    if (redirected) {
-      redirect(`/${citySlug}/learn/${redirected.new_slug}`);
-    }
-    return null;
-  }
+  if (!studio || studio.status !== "PUBLISHED" || studio.city_id !== city.id) return null;
   return studio;
 });
 
+async function maybeRedirectByOldSlug(citySlug: string, slug: string): Promise<void> {
+  const r = await prisma.slugRedirect
+    .findUnique({ where: { entity_type_old_slug: { entity_type: "studio", old_slug: slug } } })
+    .catch(() => null);
+  if (r) redirect(`/${citySlug}/learn/${r.new_slug}`);
+}
+
 export async function generateMetadata({ params }: { params: { city: string; slug: string } }): Promise<Metadata> {
   const s = await loadStudio(params.city, params.slug);
-  if (!s) return {};
+  if (!s) {
+    await maybeRedirectByOldSlug(params.city, params.slug);
+    return {};
+  }
   return {
     title: `${s.name} — Crafty`,
     description: `Learn at ${s.name} · ${s.is_online_only ? "Online studio" : `${s.address}, ${s.city.display_name}`}`,
@@ -78,12 +91,28 @@ function readCourses(courses: unknown): Course[] {
 
 export default async function StudioDetail({ params }: { params: { city: string; slug: string } }) {
   const s = await loadStudio(params.city, params.slug);
-  if (!s) notFound();
+  if (!s) {
+    await maybeRedirectByOldSlug(params.city, params.slug);
+    notFound();
+  }
 
   const upcomingEvents = await prisma.event.findMany({
     where: { organizer_studio_id: s.id, status: "PUBLISHED", end_at: { gte: new Date() } },
     orderBy: { start_at: "asc" }, take: 6,
   });
+
+  const [productsForSale, viewer] = await Promise.all([
+    prisma.product.findMany({
+      where: { studio_id: s.id, status: "PUBLISHED" },
+      orderBy: [{ is_featured: "desc" }, { created_at: "desc" }],
+      take: 12,
+      select: {
+        id: true, name: true, price_inr: true, photos: true,
+        photo_blurhashes: true, inventory: true, owner_user_id: true,
+      },
+    }),
+    getCurrentUser(),
+  ]);
 
   const sampleCrafters = await prisma.crafter.findMany({
     where: { city_id: s.city_id, status: "PUBLISHED", offers_classes: true },
@@ -260,6 +289,14 @@ export default async function StudioDetail({ params }: { params: { city: string;
 
   return (
     <article style={{ paddingBottom: 120 }}>
+      <EventTracker
+        name="profile_view"
+        props={{ entity_type: "STUDIO", entity_id: s.id, slug: s.slug, city: s.city.slug }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildStudioJsonLd(s)) }}
+      />
       <div className="container">
         <nav className="breadcrumb">
           <Link href={`/${s.city.slug}`}>{s.city.display_name}</Link>
@@ -309,7 +346,20 @@ export default async function StudioDetail({ params }: { params: { city: string;
               Featured
             </span>
           )}
-          {!s.is_claimed && <span className="badge claim">Claim this listing</span>}
+          {isPro(s.owner) && (
+            <span className="badge" style={{ background: "var(--tint-mustard-mid, rgb(var(--cream-2)))", color: "rgb(var(--magenta))", border: "1px solid rgb(var(--magenta) / 0.3)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <Sparkles size={10} aria-hidden="true" /> Pro
+            </span>
+          )}
+          {!s.is_claimed && (
+            <ClaimRequestForm
+              entityType="STUDIO"
+              entityId={s.id}
+              entityName={s.name}
+              triggerClassName="badge claim"
+              triggerLabel="Claim this listing →"
+            />
+          )}
           {s.age_group && <span className="badge classes">{s.age_group}</span>}
           {s.is_online_only && <span className="badge online">Online</span>}
         </div>
@@ -610,14 +660,17 @@ export default async function StudioDetail({ params }: { params: { city: string;
 
             {!s.is_claimed && (
               <div className="card p-5 border-magenta/[0.22]" style={{ background: "var(--tint-magenta)" }}>
-                <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Is this your studio?</h2>
-                <a
-                  href="mailto:hello@crafty.app?subject=Claim%20listing"
-                  className="text-magenta"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}
-                >
-                  <Mail size={14} /> Email hello@crafty.app to claim
-                </a>
+                <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Is this your studio?</h2>
+                <p style={{ fontSize: 13, color: "rgb(var(--muted))", marginBottom: 10 }}>
+                  Claim it to manage hours, courses, and respond to reviews.
+                </p>
+                <ClaimRequestForm
+                  entityType="STUDIO"
+                  entityId={s.id}
+                  entityName={s.name}
+                  triggerClassName="btn btn-primary btn-sm"
+                  triggerLabel="Claim this listing →"
+                />
               </div>
             )}
           </aside>
@@ -647,6 +700,36 @@ export default async function StudioDetail({ params }: { params: { city: string;
           </>
         }
       />
+      {s.owner_user_id && (
+        <div className="container mt-4 flex justify-center">
+          <MessageButton entityType="STUDIO" entityId={s.id} ownerDisplayName={s.name} />
+        </div>
+      )}
+      {productsForSale.length > 0 && (
+        <section className="container mt-10">
+          <h2 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+            Shop <em className="font-semibold italic text-magenta">{s.name}</em>
+          </h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {productsForSale.map((p) => (
+              <ProductCard
+                key={p.id}
+                id={p.id}
+                name={p.name}
+                price_inr={p.price_inr}
+                photo={p.photos[0] ?? null}
+                photo_blurhash={p.photo_blurhashes[0] ?? null}
+                inventory={p.inventory}
+                ownerIsViewer={viewer?.id === p.owner_user_id}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+      {s.owner_user_id && (
+        <ReviewSection entityType="STUDIO" entityId={s.id} ownerUserId={s.owner_user_id} />
+      )}
+      <CoSaveRecommendations entityType="STUDIO" entityId={s.id} />
     </article>
   );
 }

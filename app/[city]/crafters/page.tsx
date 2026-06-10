@@ -1,12 +1,27 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getCityBySlug } from "@/lib/cities";
 import { CrafterCard } from "@/components/Cards";
+
+export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
+  const city = await getCityBySlug(params.city);
+  const cityName = city?.display_name ?? params.city;
+  const title = `Crafters in ${cityName} — Crafty`;
+  const description = `Discover handmade artists and craft sellers across ${cityName}. Browse profiles, see portfolios, contact directly.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/${params.city}/crafters` },
+    openGraph: { title, description, type: "website" },
+  };
+}
 import { FeaturedCard } from "@/components/FeaturedCard";
 import { BottomNav } from "@/components/BottomNav";
 import { EmptyState } from "@/components/EmptyState";
 import { CrafterFilters } from "./_components/CrafterFilters";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { isPro } from "@/lib/subscription-gates";
 
 export const revalidate = 60;
 
@@ -38,7 +53,11 @@ export default async function CraftersListing({
     where,
     take: 24,
     orderBy: [{ is_featured: "desc" }, { created_at: "desc" }],
-    include: { craft_categories: { include: { category: true } } },
+    include: {
+      craft_categories: { include: { category: true } },
+      // V3 — surface the owner's Pro tier so cards can show the Pro pill.
+      owner: { select: { subscription_tier: true, subscription_expires_at: true } },
+    },
   });
 
   const totalCount = await prisma.crafter.count({ where });
@@ -154,6 +173,7 @@ export default async function CraftersListing({
                   categories={c.craft_categories.map((j) => j.category.display_name)}
                   is_featured={c.is_featured}
                   offers_classes={c.offers_classes}
+                  owner_is_pro={isPro(c.owner)}
                   priority={i < 4}
                 />
               ))}

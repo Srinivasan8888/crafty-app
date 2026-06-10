@@ -1,12 +1,27 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getCityBySlug } from "@/lib/cities";
 import { StoreCard } from "@/components/Cards";
+
+export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
+  const city = await getCityBySlug(params.city);
+  const cityName = city?.display_name ?? params.city;
+  const title = `Supply stores in ${cityName} — Crafty`;
+  const description = `Yarn, fabric, beads, tools — find craft supply stores across ${cityName}. Address, hours, contact info.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/${params.city}/stores` },
+    openGraph: { title, description, type: "website" },
+  };
+}
 import { BottomNav } from "@/components/BottomNav";
 import { EmptyState } from "@/components/EmptyState";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { StoreFilters, type AppliedFilter } from "./_components/Filters";
+import { isPro } from "@/lib/subscription-gates";
 
 export const revalidate = 60;
 
@@ -28,7 +43,11 @@ export default async function StoresListing({
   const stores = await prisma.store.findMany({
     where, take: PAGE_SIZE,
     orderBy: [{ is_featured: "desc" }, { created_at: "desc" }],
-    include: { supply_categories: { include: { category: true } } },
+    include: {
+      supply_categories: { include: { category: true } },
+      // V3 — owner Pro tier for the Pro pill on cards.
+      owner: { select: { subscription_tier: true, subscription_expires_at: true } },
+    },
   });
 
   const totalCount = await prisma.store.count({ where });
@@ -168,6 +187,7 @@ export default async function StoresListing({
               categories={s.supply_categories.map((j) => j.category.display_name)}
               is_online_only={s.is_online_only}
               is_claimed={s.is_claimed}
+              owner_is_pro={isPro(s.owner)}
               priority={i < 4}
             />
           ))}

@@ -6,9 +6,11 @@ These are work items surfaced by the design review that don't belong in V1 PRD s
 
 ---
 
-## T1 — Replace tailwind.config.ts font stacks with non-system-ui typography
+## T1 — Replace tailwind.config.ts font stacks with non-system-ui typography  ✅ DONE 2026-05-23
 
-**What.** Edit [crafty-app/tailwind.config.ts:13-14](crafty-app/tailwind.config.ts#L13-L14) to use ABC Diatype (body / UI) + ABC Maxi Round (display) per PRD §17.2 — or a licensed free substitute (e.g., Inter + Fraunces) per Open Q I. Wire via `@next/font/local` with self-hosted `.woff2` files; ensure `font-display: swap` and `<link rel="preload">` per §19.2.
+**Status.** Shipped Fraunces (display) + Inter (body) via `next/font/google` (self-hosting + `display: swap` + auto-preload). Removed all non-terminal `system-ui` / `-apple-system` / `ui-sans-serif` references from `tailwind.config.ts`, `app/globals.css`, `lib/clerkAppearance.ts`. Open Q I resolved with free pairing rather than ABC license procurement.
+
+**What (original).** Edit [crafty-app/tailwind.config.ts:13-14](crafty-app/tailwind.config.ts#L13-L14) to use ABC Diatype (body / UI) + ABC Maxi Round (display) per PRD §17.2 — or a licensed free substitute (e.g., Inter + Fraunces) per Open Q I. Wire via `@next/font/local` with self-hosted `.woff2` files; ensure `font-display: swap` and `<link rel="preload">` per §19.2.
 
 **Why.** Current tailwind config ships `ui-sans-serif, system-ui, -apple-system, ...` as both `sans` AND `display`. PRD §17.2 explicitly forbids this — system-ui as primary is the AI-slop signal #11 ("I gave up on typography"). PRD §17.6 is now the source of truth; the code is out of compliance.
 
@@ -62,7 +64,9 @@ These are work items surfaced by the design review that don't belong in V1 PRD s
 
 ---
 
-## T5 — Wire metrics infrastructure for design-doc Day-90 gates (LAUNCH-BLOCKER)
+## T5 — Wire metrics infrastructure for design-doc Day-90 gates (LAUNCH-BLOCKER)  ✅ DONE 2026-05-23
+
+**Status.** PostHog client wired via `lib/analytics.ts` + `components/PostHogProvider.tsx` (mounted in `app/layout.tsx`). Five events fire client-side per PRD §16.2: `session_start` (auto, with UTM + referrer + path), `signup_started` (on `/list-your-profile`), `signup_completed` (on first `/dashboard` arrival, dedup'd via localStorage), `profile_view` (on all 4 entity detail pages), `profile_completed` (on Crafter publish — extend to Store/Studio/Event when those create flows ship). First-touch UTM persisted in a 14-day cookie so signup events keep attribution. `/admin/metrics` shows DB-derived gates (self-serve count, activation %, signup windows, content tallies, pending flags); engagement gates (profile CTR, multi-page sessions, direct-traffic %, D30 retention) are placeholder cards labelled "wire PostHog with real key". Set `NEXT_PUBLIC_POSTHOG_KEY` in `.env` to start sending events to a real project. Until then everything no-ops silently.
 
 **What.** Implement the expanded event list in PRD §16.2 (added in eng review): `session_start`, `profile_view`, `profile_completed`, `signup_started`/`signup_completed` with `signup_source` UTM-tag, plus the `/admin/metrics` view computing the 6 design-doc gates. UTM tagging discipline: every Rahul-WhatsApp message uses `?utm_source=whatsapp&utm_medium=curator`; Insta link-in-bio uses `?utm_source=insta`.
 
@@ -90,7 +94,9 @@ These are work items surfaced by the design review that don't belong in V1 PRD s
 
 ---
 
-## T7 — Formalize Second-in-Command (SiC) admin role + responsibilities
+## T7 — Formalize Second-in-Command (SiC) admin role + responsibilities  ✅ DONE 2026-05-23
+
+**Status.** Added `SIC_ADMIN_EMAIL` / `SIC_ADMIN_NAME` env vars (documented in `.env.example`); seed creates a second ADMIN row from those values (placeholder until founder names the SiC). Wrote `docs/operations.md` covering moderation SLAs, takedown authority, curator quotas, weekly cadence. Schema now has a `UserRole` enum so the SiC's permissions are first-class in code.
 
 **What.** PRD §12.4 currently hard-codes `pavithran7777@gmail.com` as the sole bootstrapped admin. Add a Week 4 SiC deliverable: a second admin user seeded (sub-group lead from the 8 WhatsApp groups), with a written runbook in `docs/operations.md` covering: weekly Reel cadence, curator entry quota, takedown decision authority when Rahul unavailable, moderation triage SLA. Per design doc spec.
 

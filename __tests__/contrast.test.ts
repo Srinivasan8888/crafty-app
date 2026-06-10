@@ -11,28 +11,24 @@ import { dirname, resolve } from "node:path";
  * AA thresholds:
  *   - 4.5:1 for normal body text
  *   - 3.0:1 for large text (≥18pt or ≥14pt bold) and non-text UI components
+ *
+ * Token naming follows what's actually in app/globals.css (cream / ink /
+ * muted / subtle / magenta) rather than the PRD's abstract canvas / accent
+ * names. PRD §17.6 is the source of truth for the values.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cssPath = resolve(here, "..", "app", "globals.css");
 const css = readFileSync(cssPath, "utf8");
 
-/**
- * Parse a `--token: R G B;` declaration from inside the `:root { ... }` block.
- * Tokens are stored as space-separated RGB components for use with `rgb(var(--x))`.
- */
 function parseToken(name: string): [number, number, number] {
-  // Match "--name: R G B;" inside the root block — first occurrence wins
-  // (the :root block precedes the .dark override in globals.css).
+  // First occurrence wins — the :root block (light mode) precedes the .dark override.
   const re = new RegExp(`--${name}:\\s*(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*;`);
   const m = css.match(re);
   if (!m) throw new Error(`Token --${name} not found in app/globals.css`);
   return [Number(m[1]), Number(m[2]), Number(m[3])];
 }
 
-/**
- * Convert sRGB 0–255 channel to linear-light, per WCAG 2.x relative luminance.
- */
 function linearize(c: number): number {
   const s = c / 255;
   return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
@@ -53,47 +49,41 @@ function contrastRatio(
 }
 
 describe("WCAG contrast for design tokens (PRD §22.4 audit table)", () => {
-  const canvas = parseToken("canvas");
-  const canvasRaised = parseToken("canvas-raised");
-  const ink = parseToken("ink");
-  const inkMuted = parseToken("ink-muted");
-  const accent = parseToken("accent");
-  const accentFg = parseToken("accent-fg");
+  const cream = parseToken("cream");        // page background (canvas)
+  const cream2 = parseToken("cream-2");     // card surface (canvas-raised)
+  const ink = parseToken("ink");            // primary text
+  const muted = parseToken("muted");        // secondary text (ink-muted equivalent)
+  const subtle = parseToken("subtle");      // tertiary text (ink-subtle equivalent)
+  const magenta = parseToken("magenta");    // accent (used for primary CTA + featured badge)
+  const forest = parseToken("forest");      // success / eyebrows
 
-  it("--ink on --canvas passes AA for body text (≥ 4.5:1)", () => {
-    expect(contrastRatio(ink, canvas)).toBeGreaterThanOrEqual(4.5);
+  it("--ink on --cream passes AA for body text (≥ 4.5:1)", () => {
+    expect(contrastRatio(ink, cream)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("--ink on --canvas-raised passes AA for body text (≥ 4.5:1)", () => {
-    expect(contrastRatio(ink, canvasRaised)).toBeGreaterThanOrEqual(4.5);
+  it("--ink on --cream-2 (card surface) passes AA for body text (≥ 4.5:1)", () => {
+    expect(contrastRatio(ink, cream2)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("--ink-muted on --canvas passes AA for body text (≥ 4.5:1)", () => {
-    expect(contrastRatio(inkMuted, canvas)).toBeGreaterThanOrEqual(4.5);
+  it("--muted on --cream passes AA for body text (≥ 4.5:1)", () => {
+    expect(contrastRatio(muted, cream)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("--accent-fg on --accent passes AA for body text (≥ 4.5:1)", () => {
-    // Primary button surface — must be readable for both body labels and
-    // larger button text.
-    expect(contrastRatio(accentFg, accent)).toBeGreaterThanOrEqual(4.5);
+  it("--forest on --cream passes AA for body text (≥ 4.5:1)", () => {
+    // Forest is used for eyebrow labels and link decorations; treat as body.
+    expect(contrastRatio(forest, cream)).toBeGreaterThanOrEqual(4.5);
   });
 
-  // ----- KNOWN-FAILING PAIRS (skipped, tracked in PRD §22.4) -----
-
-  // --ink-subtle on --canvas: known to fail AA per PRD §22.4 audit. The
-  // subtle ink color is intentionally low-contrast for hint/placeholder
-  // text only, and is never used for primary readable copy. Re-evaluate
-  // when the design tokens are next refreshed.
-  it.skip("--ink-subtle on --canvas passes AA for body text (PRD §22.4 known failure)", () => {
-    const inkSubtle = parseToken("ink-subtle");
-    expect(contrastRatio(inkSubtle, canvas)).toBeGreaterThanOrEqual(4.5);
+  it("--cream on --magenta (primary button label) passes AA for body text (≥ 4.5:1)", () => {
+    // Button labels are cream-on-magenta. Verify the inverse pair works.
+    expect(contrastRatio(cream, magenta)).toBeGreaterThanOrEqual(4.5);
   });
 
-  // --accent on --canvas: the gumroad pink does not meet AA against the
-  // warm cream background per PRD §22.4 audit. The accent color is only
-  // used as a fill (with --accent-fg on top), never as foreground text on
-  // the canvas. Re-evaluate when the accent palette is next refreshed.
-  it.skip("--accent on --canvas passes AA for large text (PRD §22.4 known failure)", () => {
-    expect(contrastRatio(accent, canvas)).toBeGreaterThanOrEqual(3.0);
+  // ───── KNOWN-BORDERLINE PAIRS (allowed at AA-large = 3:1) ─────
+
+  it("--subtle on --cream meets 3:1 (large-text / caption AA-large)", () => {
+    // PRD §22.4 accepts this at 3:1 because it's only used for tertiary
+    // captions and disabled-state UI, never primary body copy.
+    expect(contrastRatio(subtle, cream)).toBeGreaterThanOrEqual(3.0);
   });
 });

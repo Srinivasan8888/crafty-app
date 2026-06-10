@@ -3,38 +3,43 @@ import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { SafeImage } from "@/components/SafeImage";
 import { ArrowRight } from "lucide-react";
+import { startCreatorIntent } from "./actions";
+import { EventTracker } from "@/components/EventTracker";
+import { getTranslations } from "next-intl/server";
 
 // Editorial seed photo for the crafter hero — handmade pottery, warm light.
 // SafeImage handles 404s with the branded cream-2/cream-3 fallback.
 const CRAFTER_HERO_PHOTO =
   "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=1200&q=80&fit=crop&auto=format";
 
-export default function ListYourProfile() {
+export default async function ListYourProfile() {
+  const t = await getTranslations("listHero");
   return (
     <>
+      <EventTracker name="signup_started" props={{ role: "creator" }} includeSignupSource />
       <AppHeader city={process.env.NEXT_PUBLIC_DEFAULT_CITY ?? "bengaluru"} />
       <main id="main" className="container py-12 md:py-16">
         {/* Hero */}
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-block font-display text-xs font-bold uppercase tracking-[3px] text-forest border-b border-mustard pb-1.5">
-            List with Crafty
+            {t("eyebrow")}
           </span>
           <h1 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl md:text-6xl">
-            Get your craft{" "}
-            <em className="font-semibold italic text-magenta">discovered</em>
+            {t("headline")}{" "}
+            <em className="font-semibold italic text-magenta">{t("headlineEm")}</em>
           </h1>
           <p className="mt-5 text-lg text-ink-muted md:text-xl">
-            Free to list. About five minutes to set up. Listings are
-            city-localized so the right buyers find you.
+            {t("subtitle")}
           </p>
         </div>
 
         {/* Crafter — hero card */}
         <section className="mx-auto mt-12 max-w-5xl">
-          <Link
-            href="/dashboard/crafter/new"
+          <form action={startCreatorIntent.bind(null, "/dashboard/crafter/new")}>
+          <button
+            type="submit"
             aria-label="Create a crafter profile"
-            className="group relative block overflow-hidden rounded-xl border border-line-strong bg-cream-2 shadow-soft transition-shadow hover:shadow-soft-lg"
+            className="group relative block w-full overflow-hidden rounded-xl border border-line-strong bg-cream-2 text-left shadow-soft transition-shadow hover:shadow-soft-lg"
           >
             <div className="grid md:grid-cols-[1.1fr_1fr]">
               {/* Photo */}
@@ -89,7 +94,8 @@ export default function ListYourProfile() {
                 </p>
               </div>
             </div>
-          </Link>
+          </button>
+          </form>
         </section>
 
         {/* Secondary — three smaller cards */}
@@ -152,20 +158,22 @@ function SecondaryCard({
   cta: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="group block rounded-lg border border-line bg-cream p-5 transition-colors hover:border-line-strong hover:bg-cream-2"
-    >
-      <p className="font-display text-[11px] font-bold uppercase tracking-[2.5px] text-forest">
-        {eyebrow}
-      </p>
-      <h3 className="mt-2 font-display text-lg font-bold leading-tight tracking-tight text-ink">
-        {title}
-      </h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-muted">{desc}</p>
-      <p className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-forest group-hover:gap-1.5 transition-all">
-        {cta} <ArrowRight size={14} />
-      </p>
-    </Link>
+    <form action={startCreatorIntent.bind(null, href)}>
+      <button
+        type="submit"
+        className="group block w-full rounded-lg border border-line bg-cream p-5 text-left transition-colors hover:border-line-strong hover:bg-cream-2"
+      >
+        <p className="font-display text-[11px] font-bold uppercase tracking-[2.5px] text-forest">
+          {eyebrow}
+        </p>
+        <h3 className="mt-2 font-display text-lg font-bold leading-tight tracking-tight text-ink">
+          {title}
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-ink-muted">{desc}</p>
+        <p className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-forest group-hover:gap-1.5 transition-all">
+          {cta} <ArrowRight size={14} />
+        </p>
+      </button>
+    </form>
   );
 }

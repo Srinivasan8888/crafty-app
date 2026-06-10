@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getCityBySlug } from "@/lib/cities";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, MapPin, Share2, Heart } from "lucide-react";
@@ -11,6 +11,9 @@ import { StickyCTA } from "@/components/StickyCTA";
 import { BottomNav } from "@/components/BottomNav";
 import { SaveButton } from "@/components/SaveButton";
 import { ShareButton } from "@/components/ShareButton";
+import { EventTracker } from "@/components/EventTracker";
+import { buildEventJsonLd, jsonLdSafe } from "@/lib/json-ld";
+import { CoSaveRecommendations } from "@/components/CoSaveRecommendations";
 
 export const revalidate = 60;
 
@@ -41,7 +44,13 @@ export default async function EventDetail({
       craft_category: true,
     },
   });
-  if (!e || e.status !== "PUBLISHED" || e.city_id !== city.id) notFound();
+  if (!e || e.status !== "PUBLISHED" || e.city_id !== city.id) {
+    const r = await prisma.slugRedirect.findUnique({
+      where: { entity_type_old_slug: { entity_type: "event", old_slug: params.slug } },
+    }).catch(() => null);
+    if (r) redirect(`/${params.city}/events/${r.new_slug}`);
+    notFound();
+  }
 
   const moreEvents = await prisma.event.findMany({
     where: {
@@ -138,6 +147,14 @@ export default async function EventDetail({
 
   return (
     <article>
+      <EventTracker
+        name="profile_view"
+        props={{ entity_type: "EVENT", entity_id: e.id, slug: e.slug, city: city.slug }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildEventJsonLd({ ...e, city })) }}
+      />
       <div
         className="cover-wrap bg-cream-2"
         style={{
@@ -732,6 +749,14 @@ export default async function EventDetail({
                     className="btn btn-secondary w-full"
                     style={{ padding: 14 }}
                   />
+                  <a
+                    href={`/${city.slug}/events/${e.slug}/ics`}
+                    className="btn btn-ghost w-full"
+                    style={{ padding: 12 }}
+                    aria-label="Download .ics file to add this event to your calendar"
+                  >
+                    Add to calendar
+                  </a>
                 </div>
 
                 <div
@@ -850,6 +875,8 @@ export default async function EventDetail({
           </>
         }
       />
+
+      <CoSaveRecommendations entityType="EVENT" entityId={e.id} />
 
       <BottomNav city={city.slug} active="explore" />
     </article>

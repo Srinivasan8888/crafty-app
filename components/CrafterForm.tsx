@@ -3,34 +3,68 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Loader2, Upload, X } from "lucide-react";
+import { track } from "@/lib/analytics";
+import { useFormDraft } from "@/lib/useFormDraft";
+import { DraftBanner } from "@/components/DraftBanner";
 
 type Option = { id: string; display_name: string; slug: string };
-type Props = { cities: Option[]; categories: Option[] };
+type CrafterFormValues = {
+  name: string;
+  tagline: string;
+  bio: string;
+  city_id: string;
+  profile_photo: string;
+  profile_photo_blurhash: string;
+  portfolio_photos: string[];
+  portfolio_blurhashes: string[];
+  contact_whatsapp: string;
+  contact_instagram: string;
+  contact_website: string;
+  offers_classes: boolean;
+  category_ids: string[];
+};
+type Props = {
+  cities: Option[];
+  categories: Option[];
+  /** If set, the form runs in EDIT mode: PATCH /api/crafters/[entityId] on submit. */
+  entityId?: string;
+  initialValues?: Partial<CrafterFormValues>;
+};
 
-export function CrafterForm({ cities, categories }: Props) {
+export function CrafterForm({ cities, categories, entityId, initialValues }: Props) {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const isEdit = Boolean(entityId);
+  // In edit mode skip the wizard and jump straight to the last step (Review)
+  // so all the existing data is visible; users can still flip back to earlier
+  // steps to edit individual fields.
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(isEdit ? 4 : 1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profileBusy, setProfileBusy] = useState(false);
   const [portfolioBusy, setPortfolioBusy] = useState(false);
 
-  const [form, setForm] = useState({
-    name: "",
-    tagline: "",
-    bio: "",
-    city_id: cities[0]?.id ?? "",
-    profile_photo: "",
-    portfolio_photos: [] as string[],
-    contact_whatsapp: "",
-    contact_instagram: "",
-    contact_website: "",
-    offers_classes: false,
-    category_ids: [] as string[],
+  const [form, setForm] = useState<CrafterFormValues>({
+    name: initialValues?.name ?? "",
+    tagline: initialValues?.tagline ?? "",
+    bio: initialValues?.bio ?? "",
+    city_id: initialValues?.city_id ?? cities[0]?.id ?? "",
+    profile_photo: initialValues?.profile_photo ?? "",
+    profile_photo_blurhash: initialValues?.profile_photo_blurhash ?? "",
+    portfolio_photos: initialValues?.portfolio_photos ?? [],
+    portfolio_blurhashes: initialValues?.portfolio_blurhashes ?? [],
+    contact_whatsapp: initialValues?.contact_whatsapp ?? "",
+    contact_instagram: initialValues?.contact_instagram ?? "",
+    contact_website: initialValues?.contact_website ?? "",
+    offers_classes: initialValues?.offers_classes ?? false,
+    category_ids: initialValues?.category_ids ?? [],
   });
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((p) => ({ ...p, [k]: v }));
+
+  // Draft auto-save (PRD §23.5). Skipped in edit mode — editing already-published
+  // data through a stale draft would be confusing.
+  const draft = useFormDraft(isEdit ? `crafter:edit:${entityId}` : "crafter:new", form, { skip: isEdit });
 
   async function uploadOne(file: File, folder: "profile-photos" | "portfolio") {
     const fd = new FormData();
@@ -40,8 +74,8 @@ export function CrafterForm({ cities, categories }: Props) {
       const j = await res.json().catch(() => ({}));
       throw new Error(j.error ?? "upload_failed");
     }
-    const j = (await res.json()) as { full: string; medium: string; thumb: string };
-    return j.medium; // store medium for cards/profile; full/thumb regenerable
+    const j = (await res.json()) as { full: string; medium: string; thumb: string; blurhash: string };
+    return { url: j.medium, blurhash: j.blurhash ?? "" };
   }
 
   async function onProfile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -49,8 +83,9 @@ export function CrafterForm({ cities, categories }: Props) {
     if (!file) return;
     setProfileBusy(true);
     try {
-      const url = await uploadOne(file, "profile-photos");
+      const { url, blurhash } = await uploadOne(file, "profile-photos");
       set("profile_photo", url);
+      set("profile_photo_blurhash", blurhash);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -63,8 +98,9 @@ export function CrafterForm({ cities, categories }: Props) {
     const remaining = 6 - form.portfolio_photos.length;
     setPortfolioBusy(true);
     try {
-      const urls = await Promise.all(files.slice(0, remaining).map((f) => uploadOne(f, "portfolio")));
-      set("portfolio_photos", [...form.portfolio_photos, ...urls]);
+      const uploads = await Promise.all(files.slice(0, remaining).map((f) => uploadOne(f, "portfolio")));
+      set("portfolio_photos", [...form.portfolio_photos, ...uploads.map((u) => u.url)]);
+      set("portfolio_blurhashes", [...form.portfolio_blurhashes, ...uploads.map((u) => u.blurhash)]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -122,16 +158,20 @@ export function CrafterForm({ cities, categories }: Props) {
         tagline: form.tagline || null,
         bio: form.bio || null,
       };
-      const res = await fetch("/api/crafters", {
-        method: "POST",
+      const res = await fetch(isEdit ? `/api/crafters/${entityId}` : "/api/crafters", {
+        method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? "create_failed");
+        throw new Error(j.error ?? (isEdit ? "update_failed" : "create_failed"));
       }
       const j = (await res.json()) as { slug: string; city: string };
+      if (!isEdit) {
+        track("profile_completed", { entity_type: "CRAFTER", slug: j.slug, city: j.city });
+      }
+      draft.clear();
       router.push(`/${j.city}/crafters/${j.slug}`);
     } catch (err: any) {
       setError(err.message);
@@ -143,6 +183,12 @@ export function CrafterForm({ cities, categories }: Props) {
     <div className="mx-auto max-w-2xl">
       <Stepper step={step} />
 
+      {draft.restored && (
+        <DraftBanner
+          onRestore={() => { setForm(draft.restored as typeof form); draft.dismiss(); }}
+          onDismiss={() => { draft.clear(); }}
+        />
+      )}
       {error && <div className="mb-4 rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger">{error}</div>}
 
       {step === 1 && (
@@ -334,7 +380,11 @@ export function CrafterForm({ cities, categories }: Props) {
           <Nav
             onBack={() => setStep(3)}
             onNext={submit}
-            nextLabel={submitting ? "Publishing…" : "Publish profile"}
+            nextLabel={
+              submitting
+                ? isEdit ? "Saving…" : "Publishing…"
+                : isEdit ? "Save changes" : "Publish profile"
+            }
             disabled={submitting}
           />
         </div>

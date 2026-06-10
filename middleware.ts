@@ -1,4 +1,3 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 
 // S2 — DEV_AUTH is server-only and forbidden in production. Module load
@@ -12,26 +11,60 @@ if (DEV && process.env.NODE_ENV === "production") {
   );
 }
 
-const isProtected = createRouteMatcher([
-  "/dashboard(.*)",
-  "/admin(.*)",
-  "/api/(crafters|stores|studios|events|upload|saves|flags)(.*)",
-]);
+const DESCOPE_CONFIGURED =
+  !!process.env.NEXT_PUBLIC_DESCOPE_PROJECT_ID &&
+  !process.env.NEXT_PUBLIC_DESCOPE_PROJECT_ID.startsWith("P_placeholder");
+
+// Descope's authMiddleware is "private by default" — only routes listed in
+// publicRoutes (or matching wildcards) skip the auth check. We enumerate
+// everything that should be reachable without sign-in.
+//
+// Keep this list in sync with the actual public surface. Forgetting
+// /sitemap.xml here would break Google indexing.
+const PUBLIC_ROUTES = [
+  "/",
+  "/sign-in", "/sign-in/(.*)",
+  "/sign-up", "/sign-up/(.*)",
+  "/list-your-profile",
+  "/privacy",
+  "/terms",
+  "/sitemap.xml",
+  "/robots.txt",
+  // Per-city public routes: /[city] and /[city]/(crafters|stores|learn|events|search)
+  // + their detail pages. Match-anything against the city wildcards.
+  "/:city",
+  "/:city/(.*)",
+  // Public API routes — webhooks (signed independently), cron (token-gated
+  // independently), city-requests (anonymous), flags (anonymous), saves
+  // (anonymous form-post fallback).
+  "/api/webhooks/(.*)",
+  "/api/cron/(.*)",
+  "/api/city-requests",
+  "/api/flags",
+  "/api/saves",
+];
 
 const passthrough = (_req: NextRequest) => NextResponse.next();
 
-// In dev mode the Clerk middleware is bypassed entirely; protected routes still
-// resolve via the auth dev-stub user. Flip DEV_AUTH to "false" (or unset it)
-// to enforce real Clerk session checks.
-export default DEV
-  ? passthrough
-  : clerkMiddleware(async (auth, req) => {
-      if (isProtected(req)) {
-        // Clerk Next.js v6: auth() is async; protect() is async.
-        await auth.protect();
-      }
-    });
+// In dev mode (DEV_AUTH=true) OR when Descope isn't yet configured, skip auth
+// entirely — the lib/auth.ts dev path / placeholder path handles identity.
+const useDescope = !DEV && DESCOPE_CONFIGURED;
+
+export default useDescope
+  ? // Dynamic import keeps the SDK out of the dev/placeholder bundle.
+    // The middleware function is lazily resolved on the first request.
+    (async (req: NextRequest) => {
+      const { authMiddleware } = await import("@descope/nextjs-sdk/server");
+      const handler = authMiddleware({
+        projectId: process.env.NEXT_PUBLIC_DESCOPE_PROJECT_ID!,
+        redirectUrl: "/sign-in",
+        publicRoutes: PUBLIC_ROUTES,
+      });
+      return handler(req);
+    })
+  : passthrough;
 
 export const config = {
+  // Skip Next internals and any static asset (anything with a file extension).
   matcher: ["/((?!_next|.*\\..*).*)", "/(api|trpc)(.*)"],
 };

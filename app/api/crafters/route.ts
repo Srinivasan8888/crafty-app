@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireCreator } from "@/lib/auth";
 import { ensureUniqueSlug } from "@/lib/util";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
+import { sendListingLive } from "@/lib/email";
+import { getMaxPortfolioPhotos } from "@/lib/subscription-gates";
 
 export const runtime = "nodejs";
 
@@ -20,7 +22,11 @@ const Schema = z.object({
   bio: z.string().max(2000).optional().nullable(),
   city_id: z.string().min(1).max(30),
   profile_photo: internalUploadPath,
-  portfolio_photos: z.array(internalUploadPath).max(6).default([]),
+  profile_photo_blurhash: z.string().max(500).optional().default(""),
+  // V3 — schema cap is 12 (the PRO ceiling); runtime check below enforces 6
+  // for FREE users via getMaxPortfolioPhotos().
+  portfolio_photos: z.array(internalUploadPath).max(12).default([]),
+  portfolio_blurhashes: z.array(z.string().max(500)).max(12).default([]),
   contact_whatsapp: z.string().max(40).optional().nullable(),
   contact_instagram: z.string().max(40).optional().nullable(),
   contact_website: z.string().url().max(500).optional().nullable(),
@@ -38,7 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "forbidden_origin" }, { status: 403 });
   }
 
-  const rl = rateLimit(req, "crafters");
+  const rl = await rateLimit(req, "crafters");
   if (!rl.allowed) {
     const retry = Math.ceil(rl.resetIn / 1000);
     return NextResponse.json(
@@ -48,8 +54,13 @@ export async function POST(req: NextRequest) {
   }
 
   let user;
-  try { user = await requireUser(); }
-  catch { return NextResponse.json({ error: "unauthenticated" }, { status: 401 }); }
+  try { user = await requireCreator(); }
+  catch (e: any) {
+    if (e?.message === "FORBIDDEN_NOT_CREATOR") {
+      return NextResponse.json({ error: "not_a_creator" }, { status: 403 });
+    }
+    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  }
 
   const json = await req.json().catch(() => null);
   const parsed = Schema.safeParse(json);
@@ -57,6 +68,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "validation", details: parsed.error.flatten() }, { status: 400 });
   }
   const data = parsed.data;
+
+  // V3 — enforce subscription-tier portfolio cap. FREE = 6, PRO = 12.
+  // Schema accepts up to 12; this runtime check rejects FREE users who
+  // try to slip in more than their cap.
+  const subRow = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { subscription_tier: true, subscription_expires_at: true },
+  });
+  const maxPhotos = getMaxPortfolioPhotos(subRow);
+  if (data.portfolio_photos.length > maxPhotos) {
+    return NextResponse.json({ error: "portfolio_cap_exceeded", max: maxPhotos }, { status: 400 });
+  }
 
   // Issue 2.2 — enforce 1-per-type cap in app code (schema dropped @unique).
   const existing = await prisma.crafter.count({ where: { owner_user_id: user.id } });
@@ -96,7 +119,9 @@ export async function POST(req: NextRequest) {
       bio: data.bio ?? null,
       city_id: data.city_id,
       profile_photo: data.profile_photo,
+      profile_photo_blurhash: data.profile_photo_blurhash || null,
       portfolio_photos: data.portfolio_photos,
+      portfolio_blurhashes: data.portfolio_blurhashes,
       contact_whatsapp: data.contact_whatsapp ?? null,
       contact_instagram: data.contact_instagram ?? null,
       contact_website: data.contact_website ?? null,
@@ -108,6 +133,15 @@ export async function POST(req: NextRequest) {
   // Issue 4.3 — on-demand revalidation
   revalidatePath(`/${city.slug}`);
   revalidatePath(`/${city.slug}/crafters`);
+
+  // Fire-and-forget email. Failure never blocks the response.
+  void sendListingLive({
+    to: user.email,
+    firstName: user.display_name,
+    kind: "crafter",
+    name: data.name,
+    publicUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/${city.slug}/crafters/${slug}`,
+  });
 
   return NextResponse.json({ id: created.id, slug, city: city.slug }, { status: 201 });
 }

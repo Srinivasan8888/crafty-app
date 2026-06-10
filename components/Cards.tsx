@@ -2,8 +2,18 @@ import Link from "next/link";
 import { SafeImage } from "@/components/SafeImage";
 import { SaveButton } from "@/components/SaveButton";
 import { formatINR } from "@/lib/util";
+import { Sparkles } from "lucide-react";
 
 const CARD_SIZES = "(max-width:768px) 50vw, 25vw";
+
+// V3 — Pro pill, matching Featured/Classes badge sizing.
+function ProBadge() {
+  return (
+    <span className="badge" style={{ background: "var(--tint-mustard-mid, rgb(var(--cream-2)))", color: "rgb(var(--magenta))", border: "1px solid rgb(var(--magenta) / 0.3)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <Sparkles size={10} aria-hidden="true" /> Pro
+    </span>
+  );
+}
 
 type SaveOverlayProps = {
   entityType: "crafter" | "store" | "studio" | "event";
@@ -28,9 +38,11 @@ type CrafterCardProps = {
   name: string;
   tagline: string | null;
   profile_photo: string;
+  profile_photo_blurhash?: string | null;
   categories: string[];
   is_featured?: boolean;
   offers_classes?: boolean;
+  owner_is_pro?: boolean;
   priority?: boolean;
 };
 
@@ -41,9 +53,11 @@ export function CrafterCard({
   name,
   tagline,
   profile_photo,
+  profile_photo_blurhash,
   categories,
   is_featured,
   offers_classes,
+  owner_is_pro,
   priority,
 }: CrafterCardProps) {
   const neighborhood = categories[0] ?? null;
@@ -59,17 +73,24 @@ export function CrafterCard({
           className="object-cover"
           priority={priority}
           {...(priority ? { fetchPriority: "high" as const } : {})}
+          {...(profile_photo_blurhash
+            ? { placeholder: "blur" as const, blurDataURL: profile_photo_blurhash }
+            : {})}
         />
-        {(is_featured || offers_classes) && (
+        {(is_featured || offers_classes || owner_is_pro) && (
           <div className="badge-row">
             {is_featured && <span className="badge feat">Featured</span>}
+            {owner_is_pro && <ProBadge />}
             {offers_classes && <span className="badge classes">Teaches classes</span>}
           </div>
         )}
         <SaveOverlay entityType="crafter" entityId={id} />
       </div>
       <div className="body">
-        <div className="title">{name}</div>
+        <div className="title">
+          {name}
+          {owner_is_pro && <span className="sr-only"> — Crafty Pro member</span>}
+        </div>
         {tagline && <p className="muted text-sm line-clamp-2">{tagline}</p>}
         {neighborhood && <div className="loc">{neighborhood}</div>}
         {chips.length > 0 && (
@@ -94,6 +115,7 @@ type StoreCardProps = {
   categories: string[];
   is_online_only?: boolean;
   is_claimed?: boolean;
+  owner_is_pro?: boolean;
   priority?: boolean;
 };
 
@@ -107,6 +129,7 @@ export function StoreCard({
   categories,
   is_online_only,
   is_claimed,
+  owner_is_pro,
   priority,
 }: StoreCardProps) {
   const locText = is_online_only ? "Online only" : address.split(",")[0];
@@ -122,16 +145,20 @@ export function StoreCard({
           priority={priority}
           {...(priority ? { fetchPriority: "high" as const } : {})}
         />
-        {(is_claimed === false || is_online_only) && (
+        {(is_claimed === false || is_online_only || owner_is_pro) && (
           <div className="badge-row">
             {is_claimed === false && <span className="badge claim">Claim this listing</span>}
+            {owner_is_pro && <ProBadge />}
             {is_online_only && <span className="badge online">Online only</span>}
           </div>
         )}
         <SaveOverlay entityType="store" entityId={id} />
       </div>
       <div className="body">
-        <div className="title">{name}</div>
+        <div className="title">
+          {name}
+          {owner_is_pro && <span className="sr-only"> — Crafty Pro member</span>}
+        </div>
         <div className="loc">{locText}</div>
         {categories.length > 0 && (
           <div className="chips">
@@ -154,6 +181,7 @@ type StudioCardProps = {
   address: string;
   age_group?: string | null;
   disciplines: string[];
+  owner_is_pro?: boolean;
   priority?: boolean;
 };
 
@@ -166,6 +194,7 @@ export function StudioCard({
   address,
   age_group,
   disciplines,
+  owner_is_pro,
   priority,
 }: StudioCardProps) {
   return (
@@ -181,12 +210,16 @@ export function StudioCard({
           {...(priority ? { fetchPriority: "high" as const } : {})}
         />
         <div className="badge-row">
+          {owner_is_pro && <ProBadge />}
           <span className="badge classes">{age_group ?? "All ages"}</span>
         </div>
         <SaveOverlay entityType="studio" entityId={id} />
       </div>
       <div className="body">
-        <div className="title">{name}</div>
+        <div className="title">
+          {name}
+          {owner_is_pro && <span className="sr-only"> — Crafty Pro member</span>}
+        </div>
         <div className="loc">{address.split(",")[0]}</div>
         {disciplines.length > 0 && (
           <div className="chips">

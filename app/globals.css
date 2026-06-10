@@ -48,7 +48,7 @@
 
   /* Typography (next/font CSS variables injected at html root) */
   --font-display: var(--font-fraunces, Fraunces, Georgia, serif);
-  --font-body:    var(--font-dm-sans, 'DM Sans', system-ui, -apple-system, sans-serif);
+  --font-body:    var(--font-inter, Inter, sans-serif);
 
   --fs-display-1: 56px;
   --fs-display-2: 42px;

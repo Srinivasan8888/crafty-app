@@ -11,7 +11,7 @@ const config: Config = {
     container: { center: true, padding: "1.25rem", screens: { "2xl": "1200px" } },
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "sans-serif"],
         display: ["var(--font-display)", "Georgia", "serif"],
       },
       colors: {

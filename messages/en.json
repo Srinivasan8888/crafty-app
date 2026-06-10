@@ -1,0 +1,76 @@
+{
+  "nav": {
+    "crafters": "Crafters",
+    "stores": "Stores",
+    "learn": "Learn",
+    "events": "Events",
+    "search": "Search",
+    "community": "Community",
+    "signIn": "Sign in",
+    "listProfile": "List your profile",
+    "searchPlaceholder": "Search crafters, stores, events…"
+  },
+  "hero": {
+    "eyebrow": "Issue 01",
+    "headline": "Discover India's craft community,",
+    "headlineEm": "one city at a time.",
+    "subtitleA": "Crafters, supply stores, studios and craft events in",
+    "subtitleB": "Free to list, free to browse.",
+    "subtitleExtended": "A handpicked Sunday-bazaar guide to the people making things by hand in your city.",
+    "exploreCta": "Explore crafters in",
+    "listCta": "List your profile",
+    "pickCity": "Pick your city"
+  },
+  "listHero": {
+    "eyebrow": "List with Crafty",
+    "headline": "Get your craft",
+    "headlineEm": "discovered",
+    "subtitle": "Free to list. About five minutes to set up. Listings are city-localized so the right buyers find you."
+  },
+  "cta": {
+    "save": "Save",
+    "share": "Share",
+    "message": "Message",
+    "viewProfile": "View profile",
+    "buy": "Buy",
+    "apply": "Apply"
+  },
+  "dashboard": {
+    "overview": "Overview",
+    "myCrafter": "My crafter",
+    "myStore": "My store",
+    "myStudio": "My studio",
+    "myEvents": "My events",
+    "myProducts": "My products",
+    "orders": "Orders",
+    "messages": "Messages",
+    "settings": "Settings"
+  },
+  "empty": {
+    "noResults": "No results yet.",
+    "tryAgain": "Try a different search.",
+    "comingSoon": "Coming soon."
+  },
+  "community": {
+    "title": "The Crafty Community",
+    "subtitle": "Moments from across India's craft cities.",
+    "moments": "Community moments",
+    "crafterOfWeek": "Crafter of the week",
+    "noFeatureYet": "Not enough activity this week to feature a crafter — check back soon.",
+    "ambient": "Live signal",
+    "ambientSubtitle": "What people are searching and saving right now.",
+    "commentsTeaser": "Comments and city threads are coming in V3.1.",
+    "savedRecently": "people saved a crafter or store today.",
+    "noActivity": "Quiet day on Crafty. Be the first to save something."
+  },
+  "search": {
+    "across": "Across",
+    "cities": "cities",
+    "selectCities": "Select cities",
+    "applyCities": "Apply",
+    "crafterCount": "{count, plural, =0 {No crafters} one {1 crafter} other {# crafters}} in {city}",
+    "storeCount": "{count, plural, =0 {No stores} one {1 store} other {# stores}} in {city}",
+    "studioCount": "{count, plural, =0 {No studios} one {1 studio} other {# studios}} in {city}",
+    "eventCount": "{count, plural, =0 {No events} one {1 event} other {# events}} in {city}"
+  }
+}

@@ -20,17 +20,38 @@ enum ListingStatus {
   DELETED       // tombstone
 }
 
+// ─── User role (PRD §12.1) ───────────────────────────────────────────
+// VISITOR = signed in but only consumes (heart/save/report).
+// CREATOR = can create listings (crafter/store/studio/event).
+// ADMIN   = creator + moderation + promotion + export.
+// Source of truth lives here, not Descope custom claims, so server can gate
+// without a management-API round-trip on every request.
+enum UserRole {
+  VISITOR
+  CREATOR
+  ADMIN
+}
+
 // ─── Core models ─────────────────────────────────────────────────────
 
 model User {
   id                String    @id @default(cuid())
-  clerk_id          String?   @unique          // null in dev-stub mode
+  // descope_id is the post-migration auth identifier (Descope's `U...` 28-char
+  // user ID, from JWT `sub` claim). clerk_id is kept for one release as a
+  // safety net; drop in Phase 8 cleanup once Descope is verified in prod.
+  descope_id        String?   @unique
+  clerk_id          String?   @unique
   email             String    @unique
   display_name      String?
   profile_photo_url String?
-  is_admin          Boolean   @default(false)
+  role              UserRole  @default(VISITOR)
+  is_admin          Boolean   @default(false)  // kept for back-compat; ADMIN role is authoritative
   is_banned         Boolean   @default(false)
   email_bounced     Boolean   @default(false)  // Resend bounce flag (TODO §15)
+  // V3 — subscription tier. Authoritative for feature gates; the Subscription
+  // model below carries the Razorpay-side state and renewal cadence.
+  subscription_tier SubscriptionTier @default(FREE)
+  subscription_expires_at DateTime?
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
 
@@ -40,6 +61,20 @@ model User {
   events   Event[]
   saves    Save[]
   flags    Flag[]    @relation("FlaggedBy")
+  saved_searches SavedSearch[]
+  conversations_as_buyer Conversation[] @relation("ConversationsAsBuyer")
+  conversations_as_owner Conversation[] @relation("ConversationsAsOwner")
+  messages_sent Message[]
+  reviews_authored Review[]
+  feature_orders FeatureOrder[]
+  products      Product[]
+  cart_items    CartItem[]
+  orders_as_buyer  Order[]     @relation("BuyerOrders")
+  order_items_as_seller OrderItem[] @relation("SellerOrderItems")
+  payouts       Payout[]
+  subscription  Subscription?
+  api_keys      ApiKey[]
+  claim_requests ClaimRequest[] @relation("ClaimedBy")
 
   @@index([email])
 }
@@ -58,7 +93,9 @@ model Crafter {
   city_id           String
   city              City      @relation(fields: [city_id], references: [id])
   profile_photo     String
+  profile_photo_blurhash String?
   portfolio_photos  String[]  @default([])
+  portfolio_blurhashes String[] @default([])
   contact_whatsapp  String?
   contact_instagram String?
   contact_website   String?
@@ -75,6 +112,11 @@ model Crafter {
   craft_categories  CraftCategoryOnCrafter[]
   events            Event[]   @relation("EventCrafter")
   flags             Flag[]    @relation("FlaggedCrafter")
+  products          Product[]
+
+  // Issue 2.3 — FTS column populated by raw-migration trigger; declared here
+  // as Unsupported so Prisma db push doesn't try to drop it.
+  search_vector     Unsupported("tsvector")?
 
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
@@ -92,6 +134,7 @@ model Store {
   owner             User?     @relation(fields: [owner_user_id], references: [id], onDelete: SetNull)
   name              String
   logo_photo        String
+  logo_photo_blurhash String?
   city_id           String
   city              City      @relation(fields: [city_id], references: [id])
   address           String
@@ -110,6 +153,9 @@ model Store {
   supply_categories SupplyCategoryOnStore[]
   events            Event[]   @relation("EventStore")
   flags             Flag[]    @relation("FlaggedStore")
+  products          Product[]
+
+  search_vector     Unsupported("tsvector")?
 
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
@@ -127,6 +173,7 @@ model Studio {
   owner             User?     @relation(fields: [owner_user_id], references: [id], onDelete: SetNull)
   name              String
   logo_photo        String
+  logo_photo_blurhash String?
   city_id           String
   city              City      @relation(fields: [city_id], references: [id])
   address           String
@@ -147,6 +194,9 @@ model Studio {
   craft_disciplines DisciplineOnStudio[]
   events            Event[]   @relation("EventStudio")
   flags             Flag[]    @relation("FlaggedStudio")
+  products          Product[]
+
+  search_vector     Unsupported("tsvector")?
 
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
@@ -183,7 +233,9 @@ model Event {
   name              String
   description       String
   cover_image       String
+  cover_image_blurhash String?
   start_at          DateTime
+  reminder_sent_at  DateTime?
   end_at            DateTime
   city_id           String
   city              City      @relation(fields: [city_id], references: [id])
@@ -198,12 +250,22 @@ model Event {
   price_currency    String    @default("INR")
   registration_url  String
 
+  // V3 Tier 3 — RRULE iCalendar recurrence spec (RFC 5545). Null = one-off.
+  // Cron job /api/cron/materialize-recurring-events expands future occurrences
+  // into concrete Event rows; this column on the SERIES master stays the spec.
+  recurrence_rule       String?
+  recurrence_master_id  String?  // null = this row IS the master; non-null = expanded occurrence
+  recurrence_master     Event?   @relation("EventOccurrences", fields: [recurrence_master_id], references: [id], onDelete: Cascade)
+  recurrence_occurrences Event[] @relation("EventOccurrences")
+
   status            ListingStatus @default(PUBLISHED)
   deleted_at        DateTime?
   hidden_by_user_id String?
   is_featured       Boolean   @default(false)
 
   flags             Flag[]    @relation("FlaggedEvent")
+
+  search_vector     Unsupported("tsvector")?
 
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
@@ -222,10 +284,147 @@ model City {
   display_order Int      @default(0)
   created_at    DateTime @default(now())
 
+  // V1.5 — PRD §7.1 per-city community moment (admin-curatable).
+  // Shape: { photoUrl: string, caption: string } | null
+  community_moment Json?
+
   crafters Crafter[]
   stores   Store[]
   studios  Studio[]
   events   Event[]
+  saved_searches SavedSearch[]
+}
+
+// V2.0 — in-app messaging between buyers and listing owners.
+//
+// A Conversation is scoped to a (entity_type, entity_id, buyer_user_id) tuple
+// — buyer talks to the OWNER of that entity, not the entity itself. Owner is
+// denormalized so we can paginate "all my conversations" without joining
+// through the entity table for each row.
+//
+// Messaging targets CRAFTER / STORE / STUDIO listings. EVENT messaging is
+// deferred (events are short-lived; buyers register via registration_url).
+
+model Conversation {
+  id                 String   @id @default(cuid())
+  entity_type        String   // "CRAFTER" | "STORE" | "STUDIO"
+  entity_id          String
+  owner_user_id      String
+  owner              User     @relation("ConversationsAsOwner", fields: [owner_user_id], references: [id], onDelete: Cascade)
+  buyer_user_id      String
+  buyer              User     @relation("ConversationsAsBuyer", fields: [buyer_user_id], references: [id], onDelete: Cascade)
+  last_message_at    DateTime @default(now())
+  buyer_last_read_at DateTime?
+  owner_last_read_at DateTime?
+  created_at         DateTime @default(now())
+
+  messages Message[]
+
+  @@unique([entity_type, entity_id, buyer_user_id])
+  @@index([owner_user_id, last_message_at(sort: Desc)])
+  @@index([buyer_user_id, last_message_at(sort: Desc)])
+}
+
+model Message {
+  id              String       @id @default(cuid())
+  conversation_id String
+  conversation    Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  sender_user_id  String
+  sender          User         @relation(fields: [sender_user_id], references: [id], onDelete: Cascade)
+  body            String       @db.Text
+  created_at      DateTime     @default(now())
+
+  @@index([conversation_id, created_at])
+}
+
+// V2.0 — buyer-left reviews on a listing. One review per buyer per entity
+// (enforced via @@unique). Hidden flag covers admin moderation; PRD §24 path.
+model Review {
+  id             String   @id @default(cuid())
+  entity_type    String   // "CRAFTER" | "STORE" | "STUDIO"
+  entity_id      String
+  author_user_id String
+  author         User     @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
+  rating         Int      // 1..5
+  body           String?  @db.Text
+  hidden         Boolean  @default(false)
+  // V3 Tier 2 — richer trust signals.
+  photos              String[] @default([])
+  photo_blurhashes    String[] @default([])
+  // verified_purchase_order_id links the review to an Order row in which the
+  // author bought from this listing's owner. The Review API sets this on
+  // submit if a matching paid Order exists. Cards/detail pages show a
+  // "Verified purchase" badge when non-null.
+  verified_purchase_order_id String?
+  // Owner's response to the review. PRD §24 moderation — owners can reply
+  // once; admins can hide a hostile response without touching the review.
+  creator_response       String?  @db.Text
+  creator_response_at    DateTime?
+  creator_response_hidden Boolean @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@unique([entity_type, entity_id, author_user_id])
+  @@index([entity_type, entity_id, hidden, created_at(sort: Desc)])
+}
+
+// V2.0 — featured-listing payments. Owner pays to have is_featured=true on
+// their listing for N days. Razorpay handles the payment side; this table
+// is the local ledger + expiry source of truth.
+model FeatureOrder {
+  id                   String    @id @default(cuid())
+  entity_type          String    // "CRAFTER" | "STORE" | "STUDIO" | "EVENT"
+  entity_id            String
+  buyer_user_id        String    // the listing owner who's paying
+  buyer                User      @relation(fields: [buyer_user_id], references: [id], onDelete: Cascade)
+  amount_inr           Int       // ₹500 -> 500 (whole rupees)
+  duration_days        Int
+  status               String    @default("PENDING") // PENDING | PAID | EXPIRED | CANCELLED | FAILED
+  razorpay_order_id    String?   @unique
+  razorpay_payment_id  String?
+  feature_expires_at   DateTime?
+  created_at           DateTime  @default(now())
+  paid_at              DateTime?
+
+  @@index([entity_type, entity_id])
+  @@index([status, feature_expires_at])
+}
+
+// V2.0 — buyer-saved search subscriptions. The /api/cron/saved-search-alerts
+// job re-runs each search daily and emails the user when a new match appears.
+//
+// Scope: city + entity_type + free-text query. `last_run_at` is the
+// high-water mark so we only email on truly-new matches, not the full result
+// set every day.
+model SavedSearch {
+  id            String   @id @default(cuid())
+  user_id       String
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  city_id       String
+  city          City     @relation(fields: [city_id], references: [id])
+  entity_type   String   // "CRAFTER" | "STORE" | "STUDIO" | "EVENT"
+  query         String
+  last_run_at   DateTime?
+  last_match_at DateTime?
+  created_at    DateTime @default(now())
+  @@index([user_id])
+  @@index([city_id, entity_type])
+}
+
+// V1.5 — City suggestions from buyers in unsupported geographies.
+model CityRequest {
+  id           String   @id @default(cuid())
+  city_name    String
+  region       String?       // e.g. "Karnataka", "Maharashtra"
+  reporter_email String?
+  ip_country   String?       // best-effort geo from request
+  count        Int      @default(1)   // increment on duplicate suggestions
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  resolved     Boolean  @default(false)
+  resolved_at  DateTime?
+  @@unique([city_name])
+  @@index([resolved, count(sort: Desc)])
 }
 
 model CraftCategory {
@@ -387,4 +586,207 @@ model SlugRedirect {
   created_at   DateTime @default(now())
   @@unique([entity_type, old_slug])
   @@index([new_slug])
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// V3 Tier 2-4 — public API, self-serve claim, infrastructure
+// ═══════════════════════════════════════════════════════════════════
+
+// V3 Tier 3 — Open read API. Each ApiKey row is one client's credential.
+// Owner can be a logged-in user (for "let me build a widget against my own
+// listings") OR null when admin-issued (partner integrations).
+// `key_hash` stores a SHA-256 hex of the secret; the secret itself is shown
+// only once at create time. `prefix` is the first 8 chars of the secret +
+// stored plaintext so the admin UI can identify keys without rehashing.
+model ApiKey {
+  id             String    @id @default(cuid())
+  owner_user_id  String?
+  owner          User?     @relation(fields: [owner_user_id], references: [id], onDelete: Cascade)
+  name           String
+  prefix         String    @unique  // first 8 chars of the secret, plaintext, for display
+  key_hash       String    @unique  // SHA-256 of the full secret
+  scopes         String[]  @default(["read:public"])  // e.g. read:public, read:events, read:crafters
+  last_used_at   DateTime?
+  rate_limit_per_min Int   @default(60)
+  revoked_at     DateTime?
+  created_at     DateTime  @default(now())
+
+  @@index([owner_user_id])
+}
+
+// V3 Tier 4 — Self-serve claim flow. A buyer-side request to take ownership
+// of an unclaimed listing (one a curator pre-populated). PRD §8.7 currently
+// runs through admin email; this gives buyers a public form. Admin still
+// approves before transfer happens.
+model ClaimRequest {
+  id              String   @id @default(cuid())
+  entity_type     String   // "CRAFTER" | "STORE" | "STUDIO"
+  entity_id       String
+  claimant_email  String
+  claimant_phone  String?
+  claimant_name   String?
+  message         String   @db.Text
+  status          String   @default("PENDING")  // PENDING | APPROVED | REJECTED | WITHDRAWN
+  // Once approved by admin, this is set so we can link the claim to the user
+  // that ended up owning the listing (auto-promoted to CREATOR if VISITOR).
+  approved_user_id String?
+  approved_user    User?    @relation("ClaimedBy", fields: [approved_user_id], references: [id], onDelete: SetNull)
+  admin_note      String?
+  resolved_at     DateTime?
+  resolved_by_admin_id String?
+  created_at      DateTime @default(now())
+
+  @@index([entity_type, entity_id])
+  @@index([status, created_at(sort: Desc)])
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// V3 Tier 1 — On-platform commerce, Crafty Pro subscriptions, smart alerts
+// ═══════════════════════════════════════════════════════════════════
+
+enum SubscriptionTier {
+  FREE
+  PRO
+}
+
+// V3 — Product catalog. Each Product is owned by exactly one listing
+// (crafter | store | studio), via the 3-FK pattern PRD §11 already uses
+// for Event organizers. `owner_user_id` is denormalized for fast
+// "all my products" queries.
+model Product {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  owner_user_id       String
+  owner               User     @relation(fields: [owner_user_id], references: [id], onDelete: Cascade)
+
+  crafter_id          String?
+  crafter             Crafter? @relation(fields: [crafter_id], references: [id], onDelete: Cascade)
+  store_id            String?
+  store               Store?   @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  studio_id           String?
+  studio              Studio?  @relation(fields: [studio_id], references: [id], onDelete: Cascade)
+
+  name                String
+  description         String?  @db.Text
+  price_inr           Int      // whole rupees
+  photos              String[] @default([])
+  photo_blurhashes    String[] @default([])
+  inventory           Int      @default(-1)   // -1 = made-to-order, ≥0 = stock count
+  status              String   @default("PUBLISHED")  // PUBLISHED | UNPUBLISHED | DELETED
+  is_featured         Boolean  @default(false)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  cart_items          CartItem[]
+  order_items         OrderItem[]
+
+  @@index([owner_user_id, status])
+  @@index([crafter_id])
+  @@index([store_id])
+  @@index([studio_id])
+}
+
+model CartItem {
+  id            String   @id @default(cuid())
+  buyer_user_id String
+  buyer         User     @relation(fields: [buyer_user_id], references: [id], onDelete: Cascade)
+  product_id    String
+  product       Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  quantity      Int      @default(1)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@unique([buyer_user_id, product_id])
+  @@index([buyer_user_id])
+}
+
+// V3 — Orders. Order is buyer-scoped; OrderItem is product-scoped (and
+// also carries seller_user_id for fast "my sales" queries from the
+// seller side without joining through Product).
+//
+// Money: price_inr / platform_fee_inr / total_inr in whole rupees.
+// Razorpay charges in paise (×100); conversion happens at the API boundary.
+//
+// Multi-seller carts: a single Order can contain items from multiple
+// crafters. The webhook splits payouts per OrderItem.seller_payout_inr.
+model Order {
+  id                  String   @id @default(cuid())
+  buyer_user_id       String
+  buyer               User     @relation("BuyerOrders", fields: [buyer_user_id], references: [id], onDelete: Cascade)
+
+  status              String   @default("PENDING")   // PENDING | PAID | FULFILLED | REFUNDED | CANCELLED | FAILED
+  subtotal_inr        Int
+  platform_fee_inr    Int      // commission Crafty keeps
+  total_inr           Int      // charged to buyer = subtotal + shipping (shipping V3.1)
+
+  razorpay_order_id   String?  @unique
+  razorpay_payment_id String?
+  invoice_number      String?  @unique  // GST-style: "CRA-2026-0001"
+
+  // Shipping (V3 keeps it minimal — actual address verification is V3.1)
+  shipping_name       String?
+  shipping_address    String?
+  shipping_phone      String?
+
+  created_at          DateTime @default(now())
+  paid_at             DateTime?
+  fulfilled_at        DateTime?
+
+  items               OrderItem[]
+
+  @@index([buyer_user_id, created_at(sort: Desc)])
+  @@index([status, created_at(sort: Desc)])
+}
+
+model OrderItem {
+  id                  String   @id @default(cuid())
+  order_id            String
+  order               Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product_id          String
+  product             Product  @relation(fields: [product_id], references: [id])
+  seller_user_id      String
+  seller              User     @relation("SellerOrderItems", fields: [seller_user_id], references: [id])
+  quantity            Int
+  price_inr           Int      // unit price at time of purchase
+  seller_payout_inr   Int      // owed to seller for this line (price × qty − commission share)
+
+  @@index([seller_user_id])
+  @@index([order_id])
+}
+
+// V3 — Payout ledger. Mirrors Razorpay Route transfers when configured;
+// in stub mode (no Razorpay creds) we still write rows so the founder
+// can see what's owed to each seller and settle offline.
+model Payout {
+  id                    String   @id @default(cuid())
+  seller_user_id        String
+  seller                User     @relation(fields: [seller_user_id], references: [id], onDelete: Cascade)
+  amount_inr            Int
+  status                String   @default("PENDING")   // PENDING | PROCESSING | PAID | FAILED
+  razorpay_transfer_id  String?  @unique
+  notes                 String?
+  created_at            DateTime @default(now())
+  paid_at               DateTime?
+
+  @@index([seller_user_id, status])
+}
+
+// V3 — Crafty Pro subscription. One row per user (unique). Razorpay
+// Subscriptions API drives lifecycle; we cache the current period here so
+// feature gates can run without API round-trips.
+model Subscription {
+  id                       String   @id @default(cuid())
+  user_id                  String   @unique
+  user                     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  razorpay_subscription_id String?  @unique
+  plan                     String   // "monthly" | "annual"
+  amount_inr               Int      // 299 for monthly, 2999 for annual
+  status                   String   @default("PENDING")   // PENDING | ACTIVE | CANCELLED | EXPIRED | PAST_DUE
+  current_period_start     DateTime?
+  current_period_end       DateTime?
+  cancelled_at             DateTime?
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+
+  @@index([status, current_period_end])
 }

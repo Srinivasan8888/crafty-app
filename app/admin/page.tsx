@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { AiTriageButton } from "./_AiTriageButton";
 
 export default async function AdminFlags() {
   const [pending, dismissed, hidden, total] = await Promise.all([
@@ -30,16 +31,18 @@ export default async function AdminFlags() {
                 <th className="p-3">Reporter</th>
                 <th className="p-3">Note</th>
                 <th className="p-3">Created</th>
+                <th className="p-3">AI</th>
               </tr>
             </thead>
             <tbody>
               {flags.map((f) => (
-                <tr key={f.id} className="border-t border-line">
+                <tr key={f.id} className="border-t border-line align-top">
                   <td className="p-3">{f.entity_type} · {f.entity_id.slice(0, 8)}</td>
                   <td className="p-3">{f.reason.toLowerCase()}</td>
                   <td className="p-3">{f.reporter_email ?? "anonymous"}</td>
                   <td className="p-3">{f.note ?? "—"}</td>
                   <td className="p-3 text-ink-subtle">{f.created_at.toLocaleString("en-IN")}</td>
+                  <td className="p-3"><AiTriageButton flagId={f.id} /></td>
                 </tr>
               ))}
             </tbody>

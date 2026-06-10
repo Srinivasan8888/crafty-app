@@ -12,3 +12,7 @@ playwright-report/
 test-results/
 coverage/
 .vitest-cache/
+
+# V3 Tier 4 — warehouse export artifacts (JSONL per table per day).
+var/
+.vercel

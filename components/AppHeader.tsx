@@ -1,19 +1,25 @@
 import Link from "next/link";
 import { ChevronDown, Search } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { MobileDrawer } from "./MobileDrawer";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 import { getCities } from "@/lib/cities";
+import { readLocaleCookie } from "@/lib/i18n/request";
 
 export async function AppHeader({ city }: { city: string }) {
   const cities = await getCities();
   const current = cities.find((c) => c.slug === city) ?? cities[0];
+  const t = await getTranslations("nav");
+  const locale = readLocaleCookie();
 
   const navLinks: Array<[string, string]> = [
-    ["Crafters", `/${current.slug}/crafters`],
-    ["Stores", `/${current.slug}/stores`],
-    ["Learn", `/${current.slug}/learn`],
-    ["Events", `/${current.slug}/events`],
+    [t("crafters"), `/${current.slug}/crafters`],
+    [t("stores"), `/${current.slug}/stores`],
+    [t("learn"), `/${current.slug}/learn`],
+    [t("events"), `/${current.slug}/events`],
+    [t("community"), `/community`],
   ];
 
   const drawerCities = cities.map((c) => ({
@@ -59,7 +65,7 @@ export async function AppHeader({ city }: { city: string }) {
           >
             {navLinks.map(([label, href]) => (
               <Link
-                key={label}
+                key={href}
                 href={href}
                 className="font-display font-semibold text-[15px]"
                 style={{ color: "rgb(var(--ink))" }}
@@ -84,14 +90,14 @@ export async function AppHeader({ city }: { city: string }) {
             <Link
               href={`/${current.slug}/search`}
               className="icon-btn md:hidden"
-              aria-label="Search"
+              aria-label={t("search")}
             >
               <Search size={16} aria-hidden="true" />
             </Link>
             <Link
               href={`/${current.slug}/search`}
               className="hidden md:inline-flex items-center gap-2"
-              aria-label="Search Crafty"
+              aria-label={t("search")}
               style={{
                 background: "rgb(var(--cream-2))",
                 border: "1px solid var(--line-strong)",
@@ -103,7 +109,7 @@ export async function AppHeader({ city }: { city: string }) {
               }}
             >
               <Search size={14} aria-hidden="true" />
-              <span>Search crafters, stores, events…</span>
+              <span>{t("searchPlaceholder")}</span>
             </Link>
 
             {/* City pill: desktop only (mobile pill is centered above) */}
@@ -115,6 +121,8 @@ export async function AppHeader({ city }: { city: string }) {
               <ChevronDown size={14} aria-hidden="true" />
             </Link>
 
+            <LocaleSwitcher current={locale} />
+
             <ThemeToggle />
 
             {/* Desktop-only auth + CTA */}
@@ -122,13 +130,13 @@ export async function AppHeader({ city }: { city: string }) {
               href="/sign-in"
               className="hidden md:inline-flex btn btn-ghost btn-sm"
             >
-              Sign in
+              {t("signIn")}
             </Link>
             <Link
               href="/list-your-profile"
               className="hidden md:inline-flex btn btn-primary btn-sm"
             >
-              List your profile
+              {t("listProfile")}
             </Link>
           </div>
         </div>

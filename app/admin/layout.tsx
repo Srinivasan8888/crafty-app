@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClerkProvider } from "@clerk/nextjs";
+import { MaybeAuthProvider } from "@/components/MaybeAuthProvider";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { requireAdmin } from "@/lib/auth";
@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <ClerkProvider>
+    <MaybeAuthProvider>
       <AppHeader city={process.env.NEXT_PUBLIC_DEFAULT_CITY ?? "bengaluru"} />
       <main id="main" className="container my-8 grid gap-8 lg:grid-cols-[220px_1fr]">
         <aside className="lg:sticky lg:top-20 lg:self-start">
@@ -25,9 +25,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             {[
               ["Flags", "/admin"],
               ["Listings", "/admin/listings"],
+              ["Metrics", "/admin/metrics"],
               ["Users", "/admin/users"],
               ["Cities", "/admin/cities"],
+              ["City requests", "/admin/city-requests"],
+              ["Claim requests", "/admin/claim-requests"],
               ["Categories", "/admin/categories"],
+              ["API keys", "/admin/api-keys"],
+              ["Audit log", "/admin/audit-log"],
               ["Export CSV", "/admin/export"],
             ].map(([label, href]) => (
               <Link key={href as string} href={href as string} className="rounded-md px-3 py-2 hover:bg-canvas-sunken">{label}</Link>
@@ -37,6 +42,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <section className="min-w-0">{children}</section>
       </main>
       <AppFooter />
-    </ClerkProvider>
+    </MaybeAuthProvider>
   );
 }

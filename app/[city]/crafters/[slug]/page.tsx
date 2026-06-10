@@ -3,6 +3,13 @@ import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { getCityBySlug } from "@/lib/cities";
 import { notFound, redirect } from "next/navigation";
+import { EventTracker } from "@/components/EventTracker";
+import { buildCrafterJsonLd, jsonLdSafe } from "@/lib/json-ld";
+import { ReviewSection } from "@/components/ReviewSection";
+import { CoSaveRecommendations } from "@/components/CoSaveRecommendations";
+import { MessageButton } from "@/components/MessageButton";
+import { ProductCard } from "@/components/ProductCard";
+import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -20,6 +27,9 @@ import { SaveButton } from "@/components/SaveButton";
 import { ShareButton } from "@/components/ShareButton";
 import { MobileTabs } from "./_components/MobileTabs";
 import { formatINR } from "@/lib/util";
+import { isPro } from "@/lib/subscription-gates";
+import { Sparkles } from "lucide-react";
+import { ClaimRequestForm } from "@/components/ClaimRequestForm";
 
 export const revalidate = 60;
 
@@ -34,17 +44,20 @@ const loadCrafter = cache(async (citySlug: string, slug: string) => {
       owner: true,
     },
   });
-  if (!crafter || crafter.status !== "PUBLISHED" || crafter.city_id !== city.id) {
-    const redirected = await prisma.slugRedirect.findUnique({
-      where: { entity_type_old_slug: { entity_type: "crafter", old_slug: slug } },
-    }).catch(() => null);
-    if (redirected) {
-      redirect(`/${citySlug}/crafters/${redirected.new_slug}`);
-    }
-    return null;
-  }
+  if (!crafter || crafter.status !== "PUBLISHED" || crafter.city_id !== city.id) return null;
   return crafter;
 });
+
+// Slug-redirect lookup must happen OUTSIDE cache() and BEFORE layout streams,
+// otherwise Next.js degrades the redirect() throw into a client-side meta-refresh.
+// We call it from generateMetadata (runs before HTML render) and from the page
+// (covers the metadata-skipped path too).
+async function maybeRedirectByOldSlug(citySlug: string, slug: string): Promise<void> {
+  const r = await prisma.slugRedirect
+    .findUnique({ where: { entity_type_old_slug: { entity_type: "crafter", old_slug: slug } } })
+    .catch(() => null);
+  if (r) redirect(`/${citySlug}/crafters/${r.new_slug}`);
+}
 
 export async function generateMetadata({
   params,
@@ -52,7 +65,10 @@ export async function generateMetadata({
   params: { city: string; slug: string };
 }): Promise<Metadata> {
   const c = await loadCrafter(params.city, params.slug);
-  if (!c) return {};
+  if (!c) {
+    await maybeRedirectByOldSlug(params.city, params.slug);
+    return {};
+  }
   return {
     title: `${c.name} — Crafty`,
     description: c.tagline ?? c.bio ?? `${c.name} on Crafty`,
@@ -104,9 +120,12 @@ export default async function CrafterDetail({
   params: { city: string; slug: string };
 }) {
   const c = await loadCrafter(params.city, params.slug);
-  if (!c) notFound();
+  if (!c) {
+    await maybeRedirectByOldSlug(params.city, params.slug);
+    notFound();
+  }
 
-  const [otherStore, otherStudio, upcomingEvents] = await Promise.all([
+  const [otherStore, otherStudio, upcomingEvents, productsForSale, viewer] = await Promise.all([
     prisma.store.findFirst({
       where: { owner_user_id: c.owner_user_id, status: "PUBLISHED" },
     }),
@@ -122,6 +141,16 @@ export default async function CrafterDetail({
       orderBy: { start_at: "asc" },
       take: 6,
     }),
+    prisma.product.findMany({
+      where: { crafter_id: c.id, status: "PUBLISHED" },
+      orderBy: [{ is_featured: "desc" }, { created_at: "desc" }],
+      take: 12,
+      select: {
+        id: true, name: true, price_inr: true, photos: true,
+        photo_blurhashes: true, inventory: true, owner_user_id: true,
+      },
+    }),
+    getCurrentUser(),
   ]);
 
   const classes = parseClasses(c.classes_json);
@@ -313,6 +342,14 @@ export default async function CrafterDetail({
 
   return (
     <article>
+      <EventTracker
+        name="profile_view"
+        props={{ entity_type: "CRAFTER", entity_id: c.id, slug: c.slug, city: c.city.slug }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildCrafterJsonLd(c)) }}
+      />
       <div className="container hidden md:block">
         <nav className="breadcrumb" aria-label="Breadcrumb">
           <Link href={`/${c.city.slug}`}>{c.city.display_name}</Link>
@@ -363,8 +400,21 @@ export default async function CrafterDetail({
 
         <div className="badges-row">
           {c.is_featured && <span className="badge feat">Featured</span>}
+          {isPro(c.owner) && (
+            <span className="badge" style={{ background: "var(--tint-mustard-mid, rgb(var(--cream-2)))", color: "rgb(var(--magenta))", border: "1px solid rgb(var(--magenta) / 0.3)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <Sparkles size={10} aria-hidden="true" /> Pro
+            </span>
+          )}
           {c.offers_classes && <span className="badge classes">Teaches classes</span>}
-          {!c.is_claimed && <span className="badge claim">Claim this listing</span>}
+          {!c.is_claimed && (
+            <ClaimRequestForm
+              entityType="CRAFTER"
+              entityId={c.id}
+              entityName={c.name}
+              triggerClassName="badge claim"
+              triggerLabel="Claim this listing →"
+            />
+          )}
         </div>
 
         {categoryNames.length > 0 && (
@@ -512,6 +562,11 @@ export default async function CrafterDetail({
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {c.is_featured && <span className="badge feat">Featured</span>}
+                  {isPro(c.owner) && (
+                    <span className="badge" style={{ background: "var(--tint-mustard-mid, rgb(var(--cream-2)))", color: "rgb(var(--magenta))", border: "1px solid rgb(var(--magenta) / 0.3)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      <Sparkles size={10} aria-hidden="true" /> Pro
+                    </span>
+                  )}
                   {c.offers_classes && <span className="badge classes">Teaches classes</span>}
                   <span className="tag">{savesPlaceholder} saves</span>
                   <span className="tag mustard">Listed since {listedSince}</span>
@@ -912,6 +967,32 @@ export default async function CrafterDetail({
           }
         />
       )}
+      <div className="container mt-4 flex justify-center">
+        <MessageButton entityType="CRAFTER" entityId={c.id} ownerDisplayName={c.name} />
+      </div>
+      {productsForSale.length > 0 && (
+        <section className="container mt-10">
+          <h2 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+            Shop {c.name.split(" ")[0]}&rsquo;s <em className="font-semibold italic text-magenta">products</em>
+          </h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {productsForSale.map((p) => (
+              <ProductCard
+                key={p.id}
+                id={p.id}
+                name={p.name}
+                price_inr={p.price_inr}
+                photo={p.photos[0] ?? null}
+                photo_blurhash={p.photo_blurhashes[0] ?? null}
+                inventory={p.inventory}
+                ownerIsViewer={viewer?.id === p.owner_user_id}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+      <ReviewSection entityType="CRAFTER" entityId={c.id} ownerUserId={c.owner_user_id} />
+      <CoSaveRecommendations entityType="CRAFTER" entityId={c.id} />
     </article>
   );
 }

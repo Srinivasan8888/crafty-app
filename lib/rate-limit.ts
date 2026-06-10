@@ -1,11 +1,13 @@
 import type { NextRequest } from "next/server";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
 /**
- * Simple in-memory token bucket per IP.
+ * Rate limiting per IP.
  *
  * - 30 requests / 60s window per IP by default
- * - Process-local (resets on deploy / not shared across instances)
- * - Suitable for V1 hardening; swap for Upstash/Redis for multi-instance prod
+ * - Uses Upstash Redis when UPSTASH_REDIS_REST_* env vars are configured
+ * - Falls back to the original process-local limiter for local development
  *
  * Hardenings (S9):
  *   - Bounded Map size with LRU-ish eviction so a flood of unique IPs
@@ -23,6 +25,31 @@ const MAX_BUCKETS = 10_000;            // hard cap to bound memory
 const EVICT_TARGET = MAX_BUCKETS * 0.9; // drop to here when we hit MAX
 
 const buckets = new Map<string, Bucket>();
+const upstashLimiters = new Map<number, Ratelimit>();
+
+function hasUpstashConfig(): boolean {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  return !!url && !!token && !url.includes("your-database") && token !== "your-rest-token";
+}
+
+function getUpstashLimiter(limit: number): Ratelimit | null {
+  if (!hasUpstashConfig()) return null;
+
+  let limiter = upstashLimiters.get(limit);
+  if (!limiter) {
+    limiter = new Ratelimit({
+      redis: Redis.fromEnv(),
+      limiter: Ratelimit.slidingWindow(limit, "60 s"),
+      analytics: true,
+      prefix: "crafty:ratelimit",
+      timeout: 750,
+    });
+    upstashLimiters.set(limit, limiter);
+  }
+
+  return limiter;
+}
 
 function getClientIp(req: NextRequest): string {
   // 1. Trusted platform headers — set by the edge and not spoofable
@@ -74,7 +101,7 @@ export interface RateLimitResult {
  * @param key  optional namespace, lets callers split limits per-route
  *             (e.g. `rateLimit(req, "saves")`). Defaults to a global bucket.
  */
-export function rateLimit(
+function inMemoryRateLimit(
   req: NextRequest,
   key?: string,
   limit: number = DEFAULT_LIMIT,
@@ -95,7 +122,31 @@ export function rateLimit(
   return { allowed: bucket.count <= limit, resetIn };
 }
 
+/**
+ * Check + record one hit against the rate limit.
+ *
+ * Uses Redis when Upstash is configured so limits are shared across instances.
+ * Local dev without Upstash keeps using the bounded in-memory limiter.
+ */
+export async function rateLimit(
+  req: NextRequest,
+  key?: string,
+  limit: number = DEFAULT_LIMIT,
+): Promise<RateLimitResult> {
+  const limiter = getUpstashLimiter(limit);
+  if (!limiter) return inMemoryRateLimit(req, key, limit);
+
+  const ip = getClientIp(req);
+  const bucketKey = key ? `${key}:${ip}` : ip;
+  const result = await limiter.limit(bucketKey, { ip });
+  return {
+    allowed: result.success,
+    resetIn: Math.max(0, result.reset - Date.now()),
+  };
+}
+
 /** Test helper — clears all buckets. */
 export function __resetRateLimitForTests(): void {
   buckets.clear();
+  upstashLimiters.clear();
 }

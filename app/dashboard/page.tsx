@@ -5,6 +5,8 @@ import { getCityBySlug } from "@/lib/cities";
 import { ActivityStrip } from "@/components/ActivityStrip";
 import { CrafterCard } from "@/components/Cards";
 import { SafeImage } from "@/components/SafeImage";
+import { EventTracker } from "@/components/EventTracker";
+import { ForYouSection } from "@/components/ForYouSection";
 import { ArrowRight, Pencil, Plus } from "lucide-react";
 
 export default async function DashboardOverview() {
@@ -49,6 +51,12 @@ export default async function DashboardOverview() {
 
     return (
       <div>
+        <EventTracker
+          name="signup_completed"
+          props={{ role: user.role }}
+          dedupKey={`signup_completed:${user.id}`}
+          includeSignupSource
+        />
         {/* Editorial hero */}
         <section className="relative overflow-hidden rounded-xl border border-line-strong bg-cream-2 p-8 md:p-12">
           <span
@@ -221,6 +229,12 @@ export default async function DashboardOverview() {
 
   return (
     <div>
+      <EventTracker
+        name="signup_completed"
+        props={{ role: user.role }}
+        dedupKey={`signup_completed:${user.id}`}
+        includeSignupSource
+      />
       {/* Eyebrow + welcome */}
       <div>
         <p className="font-display text-xs font-bold uppercase tracking-[3px] text-forest">
@@ -326,6 +340,8 @@ export default async function DashboardOverview() {
           </Link>
         </div>
       </section>
+
+      <ForYouSection userId={user.id} />
     </div>
   );
 }

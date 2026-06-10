@@ -1,12 +1,27 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getCityBySlug } from "@/lib/cities";
 import { StudioCard } from "@/components/Cards";
+
+export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
+  const city = await getCityBySlug(params.city);
+  const cityName = city?.display_name ?? params.city;
+  const title = `Learn craft in ${cityName} — Crafty`;
+  const description = `Studios and academies teaching pottery, ceramics, weaving, and more across ${cityName}. Disciplines, age groups, contact info.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/${params.city}/learn` },
+    openGraph: { title, description, type: "website" },
+  };
+}
 import { BottomNav } from "@/components/BottomNav";
 import { EmptyState } from "@/components/EmptyState";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { StudioFilters, type AppliedFilter } from "./_components/Filters";
+import { isPro } from "@/lib/subscription-gates";
 
 export const revalidate = 60;
 
@@ -28,7 +43,11 @@ export default async function LearnListing({
   const studios = await prisma.studio.findMany({
     where, take: PAGE_SIZE,
     orderBy: [{ is_featured: "desc" }, { created_at: "desc" }],
-    include: { craft_disciplines: { include: { discipline: true } } },
+    include: {
+      craft_disciplines: { include: { discipline: true } },
+      // V3 — owner Pro tier for the Pro pill on cards.
+      owner: { select: { subscription_tier: true, subscription_expires_at: true } },
+    },
   });
 
   const totalCount = await prisma.studio.count({ where });
@@ -162,6 +181,7 @@ export default async function LearnListing({
               address={s.address}
               age_group={s.age_group}
               disciplines={s.craft_disciplines.map((j) => j.discipline.display_name)}
+              owner_is_pro={isPro(s.owner)}
               priority={i < 4}
             />
           ))}

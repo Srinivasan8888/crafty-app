@@ -1,6 +1,20 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getCityBySlug } from "@/lib/cities";
 import { EventCard } from "@/components/Cards";
+
+export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
+  const city = await getCityBySlug(params.city);
+  const cityName = city?.display_name ?? params.city;
+  const title = `Craft events in ${cityName} — Crafty`;
+  const description = `Workshops, fairs, pop-ups, classes happening in ${cityName}. Register directly with organizers.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/${params.city}/events` },
+    openGraph: { title, description, type: "website" },
+  };
+}
 import { FeaturedCard } from "@/components/FeaturedCard";
 import { EmptyState } from "@/components/EmptyState";
 import { BottomNav } from "@/components/BottomNav";

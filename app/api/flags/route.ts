@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit first — flag spam is a known abuse vector.
-  const rl = rateLimit(req, "flags");
+  const rl = await rateLimit(req, "flags");
   if (!rl.allowed) {
     const retry = Math.ceil(rl.resetIn / 1000);
     return NextResponse.json(

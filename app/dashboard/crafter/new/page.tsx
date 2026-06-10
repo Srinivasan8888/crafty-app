@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { CrafterForm } from "@/components/CrafterForm";
 import { redirect } from "next/navigation";
 
 export default async function NewCrafter() {
-  const user = await requireUser();
+  const user = await getCurrentUser();
+  if (!user) redirect("/list-your-profile");
+  if (user.role === "VISITOR") redirect("/list-your-profile");
 
   const existing = await prisma.crafter.findFirst({
     where: { owner_user_id: user.id, status: { not: "DELETED" } },

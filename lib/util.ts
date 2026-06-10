@@ -26,7 +26,7 @@ const RESERVED = new Set([
   // Static / framework
   "static","_next","public","uploads","manifest","favicon",
   // Auth provider integrations
-  "clerk","webhooks",
+  "descope","clerk","auth","webhooks",
   // Error pages
   "404","500","403","robots","sitemap",
   // Reserved for future product surfaces

@@ -4,7 +4,7 @@ import { processAndStoreImage, type Folder } from "@/lib/image";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
 
-const ALLOWED_FOLDERS: Folder[] = ["profile-photos", "portfolio", "event-covers"];
+const ALLOWED_FOLDERS: Folder[] = ["profile-photos", "portfolio", "event-covers", "product-photos", "review-photos"];
 const MAX_UPLOAD_BYTES = 6_000_000; // 6 MB hard ceiling at the edge.
 
 export const runtime = "nodejs";        // sharp needs Node, not edge
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit first — uploads are the most expensive endpoint.
-  const rl = rateLimit(req, "upload");
+  const rl = await rateLimit(req, "upload");
   if (!rl.allowed) {
     const retry = Math.ceil(rl.resetIn / 1000);
     return NextResponse.json(
