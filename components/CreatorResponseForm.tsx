@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Send } from "lucide-react";
+import { apiErrorMessage } from "@/lib/api-error";
 
 export function CreatorResponseForm({ reviewId }: { reviewId: string }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export function CreatorResponseForm({ reviewId }: { reviewId: string }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? "post_failed");
+        throw new Error(apiErrorMessage(j, "Could not post your reply. Please try again."));
       }
       setBody("");
       router.refresh();

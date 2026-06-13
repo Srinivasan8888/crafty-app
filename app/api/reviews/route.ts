@@ -17,14 +17,13 @@ import { prisma } from "@/lib/db";
 import { requireUser, requireAdmin } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
+import { uploadedImageUrl } from "@/lib/upload-url";
 import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
-const reviewPhotoPath = z
-  .string()
-  .startsWith("/uploads/review-photos/")
-  .max(300);
+// Accept review photo URLs from any active storage driver (local/blob/s3).
+const reviewPhotoPath = uploadedImageUrl;
 
 const Schema = z.object({
   entity_type: z.enum(["CRAFTER", "STORE", "STUDIO"]),

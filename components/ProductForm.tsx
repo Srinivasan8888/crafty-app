@@ -202,7 +202,7 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
             min={1}
             className="input"
             value={form.price_inr || ""}
-            onChange={(e) => set("price_inr", Math.max(0, Number(e.target.value) | 0))}
+            onChange={(e) => set("price_inr", Math.max(0, Math.floor(Number(e.target.value) || 0)))}
             placeholder="1499"
           />
         </div>
@@ -225,7 +225,7 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
               min={0}
               className="input"
               value={form.inventory}
-              onChange={(e) => set("inventory", Math.max(0, Number(e.target.value) | 0))}
+              onChange={(e) => set("inventory", Math.max(0, Math.floor(Number(e.target.value) || 0)))}
             />
           )}
         </div>

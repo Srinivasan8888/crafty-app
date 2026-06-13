@@ -216,7 +216,7 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
     }
   }
 
-  if (ownedListings.length === 0) {
+  if (!isEdit && ownedListings.length === 0) {
     return (
       <div className="card mx-auto max-w-2xl p-6">
         <h2 className="font-semibold">You need a crafter, store, or studio listing first.</h2>

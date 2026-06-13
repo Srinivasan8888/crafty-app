@@ -100,6 +100,20 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
   const existing = await prisma.user.findUnique({ where: { descope_id: claims.sub } });
   if (existing) {
+    // Idempotent CREATOR promotion (Issue 2.1 follow-up). The Descope audit
+    // webhook may have created this row as VISITOR before our first
+    // authenticated request could read the signup-intent cookie. Without this,
+    // a new creator stays VISITOR and gets bounced off /dashboard/*/new.
+    if (existing.role === "VISITOR" && readSignupIntent() === "creator") {
+      const promoted = await prisma.user.update({
+        where: { id: existing.id },
+        data: { role: "CREATOR" },
+      });
+      return {
+        id: promoted.id, descope_id: promoted.descope_id, email: promoted.email,
+        display_name: promoted.display_name, role: promoted.role, is_admin: promoted.is_admin,
+      };
+    }
     return {
       id: existing.id, descope_id: existing.descope_id, email: existing.email,
       display_name: existing.display_name, role: existing.role, is_admin: existing.is_admin,

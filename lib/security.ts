@@ -53,7 +53,14 @@ export function isSameOrigin(req: NextRequest): boolean {
   }
   if (expected) {
     try {
-      return originHost === new URL(expected).host;
+      const norm = (h: string) => h.replace(/^www\./, "").toLowerCase();
+      const expectedHost = norm(new URL(expected).host);
+      const reqHost = norm(new URL(req.url).host);
+      const got = norm(originHost);
+      // Accept the configured host OR the actual request host, so a stale or
+      // misconfigured NEXT_PUBLIC_SITE_URL can't 403 every state-changing POST.
+      // www/apex are treated as equivalent.
+      return got === expectedHost || got === reqHost;
     } catch {
       return false;
     }

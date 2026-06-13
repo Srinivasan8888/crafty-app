@@ -23,7 +23,13 @@ export default function SignUpPage({
   // The /list-your-profile server action sets the signup-intent cookie + sends
   // users here with ?redirect_url=/dashboard/... so the post-signup landing is
   // the form they originally clicked. Default to /dashboard.
-  const after = searchParams.redirect_url || "/dashboard";
+  // Only allow same-origin relative paths (a single leading "/", not "//evil").
+  // Prevents an open-redirect via ?redirect_url=https://evil.example.
+  const rawRedirect = searchParams.redirect_url;
+  const after =
+    rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : "/dashboard";
   return (
     <MaybeAuthProvider>
       <header

@@ -7,13 +7,14 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { isSameOrigin } from "@/lib/security";
+import { uploadedImageUrl } from "@/lib/upload-url";
 
 export const runtime = "nodejs";
 
 const Schema = z.union([
   z.object({ clear: z.literal(true) }),
   z.object({
-    photoUrl: z.string().max(1000).refine((s) => s.startsWith("/uploads/") || s.startsWith("https://"), "must be /uploads/ or https://"),
+    photoUrl: uploadedImageUrl,
     caption: z.string().min(1).max(140),
   }),
 ]);

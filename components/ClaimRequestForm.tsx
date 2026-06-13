@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { Loader2, X } from "lucide-react";
+import { apiErrorMessage } from "@/lib/api-error";
 
 type Props = {
   entityType: "CRAFTER" | "STORE" | "STUDIO";
@@ -50,17 +51,11 @@ export function ClaimRequestForm({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? "submit_failed");
+        throw new Error(apiErrorMessage(j, "Could not submit. Try again, or email hello@crafty.app."));
       }
       setDone(true);
     } catch (e: any) {
-      setError(
-        e.message === "already_claimed"
-          ? "This listing is already claimed."
-          : e.message === "rate_limited"
-            ? "Too many requests — please try again in a moment."
-            : "Couldn't submit. Try again, or email hello@crafty.app.",
-      );
+      setError(e.message ?? "Could not submit. Try again, or email hello@crafty.app.");
     } finally {
       setBusy(false);
     }

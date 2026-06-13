@@ -38,6 +38,11 @@ const CODE_MESSAGES: Record<string, string> = {
   invalid_form: "Something was off with the submission. Try again.",
   cap_reached: "You've reached the limit for this listing type.",
   already_exists: "You already have a listing of this type.",
+  already_claimed: "This listing is already claimed.",
+  already_responded: "You've already replied to this review.",
+  forbidden_not_owner: "You can only do that on your own listing.",
+  not_found: "That item could not be found.",
+  entity_not_found: "That listing could not be found.",
 };
 
 function label(field: string): string {
