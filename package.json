@@ -28,6 +28,7 @@
     "@sentry/nextjs": "^10.53.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "@vercel/blob": "^2.4.0",
     "blurhash": "^2.0.5",
     "canvas-confetti": "^1.9.4",
     "clsx": "2.1.1",

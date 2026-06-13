@@ -96,12 +96,55 @@ class S3Driver implements StorageDriver {
   }
 }
 
+// ─── Vercel Blob driver (Vercel-native prod target) ───────────────
+//
+// Vercel's managed object storage. No external cloud account: create a Blob
+// store in the Vercel dashboard (Storage -> Create -> Blob), which auto-injects
+// BLOB_READ_WRITE_TOKEN into the project env. Then set STORAGE_DRIVER=blob.
+// @vercel/blob is imported lazily so non-blob deploys don't load it. Returned
+// URLs live on *.public.blob.vercel-storage.com (allowed in next.config).
+class VercelBlobDriver implements StorageDriver {
+  async put(relativePath: string, buf: Buffer, contentType: string): Promise<string> {
+    const mod = await import("@vercel/blob").catch(() => {
+      throw new Error(
+        "STORAGE_DRIVER=blob but @vercel/blob is not installed. Run: bun add @vercel/blob",
+      );
+    });
+    const { put } = mod as {
+      put: (
+        path: string,
+        body: Buffer,
+        opts: {
+          access: "public";
+          contentType?: string;
+          token?: string;
+          addRandomSuffix?: boolean;
+          allowOverwrite?: boolean;
+          cacheControlMaxAge?: number;
+        },
+      ) => Promise<{ url: string }>;
+    };
+    const { url } = await put(relativePath, buf, {
+      access: "public",
+      contentType,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      cacheControlMaxAge: 31536000,
+    });
+    return url;
+  }
+}
+
 // ─── factory ──────────────────────────────────────────────────────
 
 let _driver: StorageDriver | null = null;
 export function getStorage(): StorageDriver {
   if (_driver) return _driver;
   const which = process.env.STORAGE_DRIVER ?? "local";
-  _driver = which === "s3" ? new S3Driver() : new LocalFsDriver();
+  _driver =
+    which === "blob" ? new VercelBlobDriver()
+      : which === "s3" ? new S3Driver()
+        : new LocalFsDriver();
   return _driver;
 }
