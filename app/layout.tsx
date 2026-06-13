@@ -1,10 +1,25 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Fraunces, Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
+
+// Brand typefaces (PRD §17.2 / §19.2 — self-optimized, preloaded). Fraunces
+// is the editorial display face, Inter the body. Exposed as CSS variables that
+// globals.css already references via var(--font-fraunces)/var(--font-inter).
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 // Dynamically load PostHog after LCP. ssr:false keeps it out of the initial
 // HTML payload entirely; the bundle is ~30KB and analytics doesn't need to
@@ -22,21 +37,6 @@ const InstallPrompt = dynamic(
   () => import("@/components/InstallPrompt").then((m) => m.InstallPrompt),
   { ssr: false },
 );
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["400", "600", "800"],
-  style: ["normal", "italic"],
-  variable: "--font-fraunces",
-  display: "swap",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Crafty — discover India's craft community",
@@ -71,10 +71,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
       className={`${fraunces.variable} ${inter.variable}`}
       style={{
-        // Bridge font CSS variables to the names used in tokens.css
-        // (--font-display and --font-sans are referenced by tailwind config + globals.css)
-        ["--font-display" as never]: "var(--font-fraunces)",
-        ["--font-sans" as never]: "var(--font-inter)",
+        ["--font-display" as never]: "var(--font-fraunces), Georgia, 'Times New Roman', serif",
+        ["--font-sans" as never]:
+          "var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif",
       }}
     >
       <head>

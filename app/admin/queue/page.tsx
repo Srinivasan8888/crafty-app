@@ -19,7 +19,7 @@ export default async function QueueDiagnosticPage() {
   try {
     await requireAdmin();
   } catch {
-    redirect("/dashboard");
+    redirect("/forbidden");
   }
 
   bootstrapQueueHandlers();

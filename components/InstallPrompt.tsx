@@ -110,7 +110,7 @@ export function InstallPrompt() {
           alignItems: "center",
           justifyContent: "center",
           background: "rgb(var(--magenta))",
-          color: "#fff",
+          color: "rgb(var(--cream))",
           borderRadius: 6,
           width: 22,
           height: 22,

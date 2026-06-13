@@ -14,7 +14,7 @@ import { prisma } from "@/lib/db";
 import { requireCreator } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
-import { createOrder, publicKeyId, isConfigured } from "@/lib/razorpay";
+import { createOrder, publicKeyId, isConfigured, isMockMode } from "@/lib/razorpay";
 
 export const runtime = "nodejs";
 
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   const rl = await rateLimit(req, "crafters");
   if (!rl.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
-  if (!isConfigured()) {
+  if (!isConfigured() && !isMockMode()) {
     return NextResponse.json(
       { error: "razorpay_not_configured", message: "Set RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in .env." },
       { status: 503 },

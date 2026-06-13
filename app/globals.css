@@ -415,6 +415,21 @@ html, body {
   box-shadow: var(--soft-shadow);
   overflow: hidden;
   position: relative;
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+/* Brand "stamp" hover (PRD §17.6): card lifts, ink offset shadow appears. */
+.card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 2px 2px 0 rgb(var(--ink));
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card:hover { transform: none; }
 }
 .card .img {
   width: 100%;
@@ -451,6 +466,12 @@ html, body {
   color: rgb(var(--magenta));
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
   z-index: 2;
+}
+/* Extend the heart tap target to 44px without enlarging the visual badge. */
+.card .heart::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
 }
 .card .badge-row {
   position: absolute;
@@ -569,11 +590,12 @@ html, body {
   background: rgb(var(--forest));
   box-shadow: 0 -5px 0 rgb(var(--forest)), 0 5px 0 rgb(var(--forest));
 }
-.app-hdr .city-pill {
+.city-pill {
   background: rgb(var(--cream-2));
   border: 1px solid rgb(var(--forest));
   border-radius: var(--r-pill);
   padding: 7px 16px;
+  min-height: 44px;
   font-weight: 600;
   font-size: 13px;
   color: rgb(var(--forest));
@@ -696,7 +718,7 @@ html, body {
   font-weight: 500;
   margin-bottom: 14px;
 }
-.app-footer .links a { color: rgb(var(--mustard)); }
+.app-footer .links a { color: rgb(var(--cream)); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 .app-footer .copy {
   font-size: 11px;
   color: rgba(255, 246, 229, 0.75);

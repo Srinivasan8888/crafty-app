@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Loader2 } from "lucide-react";
+import { runMockCheckout } from "@/lib/mock-checkout";
 
 type PlanKey = "monthly" | "annual";
 
@@ -69,11 +70,28 @@ export function UpgradeButton({ initialPlan = "annual" }: { initialPlan?: PlanKe
         throw new Error("Couldn't start checkout.");
       }
       const j = (await res.json()) as {
+        subscription_id: string;
         razorpay_subscription_id: string;
         razorpay_key_id: string;
         amount_inr: number;
         plan: PlanKey;
       };
+      if (j.razorpay_key_id === "mock") {
+        const paid = await runMockCheckout({
+          kind: "subscription",
+          id: j.subscription_id,
+          amountInr: j.amount_inr,
+          title: "Crafty Pro",
+          description: j.plan === "annual" ? "Annual subscription" : "Monthly subscription",
+        });
+        if (paid) {
+          router.push("/dashboard/subscription");
+          router.refresh();
+        } else {
+          setBusy(false);
+        }
+        return;
+      }
       await loadCheckout();
       const rzp = new window.Razorpay({
         key: j.razorpay_key_id,

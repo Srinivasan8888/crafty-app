@@ -61,5 +61,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  await prisma.cronRun.create({ data: { job_name: "event_reminders", status: "success", completed_at: new Date(), rows_affected: sent } }).catch((e) => console.error("[cron] record", e));
   return NextResponse.json({ window: { from: t24, to: t26 }, candidates: events.length, sent });
 }

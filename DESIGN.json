@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-13T00:00:00Z",
+  "title": "Design System: Crafty",
+  "extensions": {
+    "colorMeta": {
+      "bazaar-rose": { "role": "primary", "displayName": "Bazaar Rose", "canonical": "rgb(181 54 91)", "tonalRamp": ["#3A1019", "#5A1A2A", "#7A233B", "#9A2E4C", "#B5365B", "#CB5A7A", "#E08CA1", "#F3C9D3"] },
+      "banana-leaf": { "role": "secondary", "displayName": "Banana-Leaf Green", "canonical": "rgb(31 95 60)", "tonalRamp": ["#0C2618", "#123A26", "#184E32", "#1F5F3C", "#2E7A52", "#4E9B72", "#86C2A0", "#C9E4D6"] },
+      "marigold": { "role": "tertiary", "displayName": "Marigold", "canonical": "rgb(230 168 23)", "tonalRamp": ["#3D2C06", "#6B4D0C", "#9A7012", "#C99318", "#E6A817", "#EFC24F", "#F5D98A", "#FBEFCB"] },
+      "indigo-block": { "role": "tertiary", "displayName": "Indigo Block", "canonical": "rgb(61 74 140)", "tonalRamp": ["#13182E", "#1F2748", "#2C3768", "#3D4A8C", "#5A68A8", "#8390C4", "#B3BCDC", "#DDE2F0"] },
+      "khadi-cream": { "role": "neutral", "displayName": "Khadi Cream", "canonical": "rgb(255 246 229)", "tonalRamp": ["#2A2622", "#4A443B", "#6E6655", "#968B72", "#C2B79A", "#E4D9BE", "#FBEBC8", "#FFF6E5"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "rgb(26 26 26)", "tonalRamp": ["#1A1A1A", "#2E2A24", "#46402F", "#6B5A3E", "#8A7A5C", "#B0A488", "#D8CFB8", "#FFF6E5"] },
+      "muted-walnut": { "role": "neutral", "displayName": "Muted Walnut", "canonical": "rgb(107 90 62)", "tonalRamp": ["#241E14", "#3A301F", "#52442C", "#6B5A3E", "#8A7656", "#AD9A78", "#D2C3A2", "#F1E8D2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headlines and the one big statement per page. Fraunces 700." },
+      "headline": { "displayName": "Headline", "purpose": "Page and major-section titles. Fraunces 700." },
+      "title": { "displayName": "Title", "purpose": "Card names, subsection heads, editorial eyebrows. Fraunces 700." },
+      "body": { "displayName": "Body", "purpose": "All reading text, 65 to 75ch measure. Inter 400." },
+      "label": { "displayName": "Label", "purpose": "Chips, badges, metadata, uppercase eyebrows. Inter 600." }
+    },
+    "shadows": [
+      { "name": "soft", "value": "0 4px 12px rgba(180, 80, 40, 0.10)", "purpose": "Resting cards and raised surfaces. Warm terracotta tint, never grey." },
+      { "name": "soft-lg", "value": "0 8px 24px rgba(180, 80, 40, 0.14)", "purpose": "Modals, popovers, elevated sheets." },
+      { "name": "stamp", "value": "2px 2px 0 #1A1A1A", "purpose": "Hard ink offset paired with translate(-2px,-2px) on card hover. The block-print signature." },
+      { "name": "soft-dark", "value": "0 4px 12px rgba(0, 0, 0, 0.45)", "purpose": "Dark-mode resting shadow on charcoal canvas." }
+    ],
+    "motion": [
+      { "name": "t-fast", "value": "100ms ease", "purpose": "State changes: card stamp, button press, heart fill." },
+      { "name": "t-med", "value": "180ms ease", "purpose": "Slightly larger transitions: sheets, hovers." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "container", "value": "1200px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Highest-intent action per surface: rose fill, cream text, darkens on hover.",
+      "html": "<button class=\"ds-btn-primary\">Explore crafters</button>",
+      "css": ".ds-btn-primary { background: #B5365B; color: #FFF6E5; font-family: Inter, system-ui, sans-serif; font-weight: 600; font-size: 14px; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; transition: background 100ms ease, transform 100ms ease; } .ds-btn-primary:hover { background: #8E2A48; } .ds-btn-primary:focus-visible { outline: 2px solid #1F5F3C; outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Lower-intent action (List your profile): cream-tint fill, leaf text and hairline.",
+      "html": "<button class=\"ds-btn-ghost\">List your profile</button>",
+      "css": ".ds-btn-ghost { background: #FBEBC8; color: #1F5F3C; font-family: Inter, system-ui, sans-serif; font-weight: 600; font-size: 14px; padding: 12px 20px; border: 1px solid rgba(31,95,60,0.30); border-radius: 10px; cursor: pointer; transition: background 100ms ease; } .ds-btn-ghost:hover { background: #F4E5C0; } .ds-btn-ghost:focus-visible { outline: 2px solid #1F5F3C; outline-offset: 2px; }"
+    },
+    {
+      "name": "City Pill",
+      "kind": "chip",
+      "refersTo": "city-pill",
+      "description": "Signature control announcing the city the whole page is scoped to. At least 44px tall.",
+      "html": "<button class=\"ds-city-pill\">Bengaluru</button>",
+      "css": ".ds-city-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; background: #FBEBC8; color: #1F5F3C; font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 13px; padding: 7px 16px; border: 1px solid #1F5F3C; border-radius: 999px; cursor: pointer; } .ds-city-pill:hover { background: #F4E5C0; }"
+    },
+    {
+      "name": "Discovery Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Listing card on khadi cream with a leaf hairline. Block-print stamp on hover.",
+      "html": "<a class=\"ds-card\" href=\"#\"><div class=\"ds-card-img\"></div><div class=\"ds-card-body\"><div class=\"ds-card-title\">Aisha Crochet</div><div class=\"ds-card-loc\">Indiranagar, Bengaluru</div></div></a>",
+      "css": ".ds-card { display: block; text-decoration: none; background: #FFF6E5; border: 1px solid rgba(31,95,60,0.30); border-radius: 16px; box-shadow: 0 4px 12px rgba(180,80,40,0.10); overflow: hidden; transition: transform 100ms ease, box-shadow 100ms ease; } .ds-card:hover { transform: translate(-2px,-2px); box-shadow: 2px 2px 0 #1A1A1A; } .ds-card-img { aspect-ratio: 1/1; background: linear-gradient(135deg, #FBEBC8, #F4E5C0); } .ds-card-body { padding: 12px 14px 16px; } .ds-card-title { font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: 16px; color: #1A1A1A; } .ds-card-loc { font-family: Inter, system-ui, sans-serif; font-size: 12.5px; color: #6B5A3E; margin-top: 3px; } @media (prefers-reduced-motion: reduce) { .ds-card { transition: none; } .ds-card:hover { transform: none; } }"
+    },
+    {
+      "name": "Save Heart",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Circular rose-on-cream save button on a card corner. Visual 36px, 44px tap target via overlay.",
+      "html": "<button class=\"ds-heart\" aria-pressed=\"false\" aria-label=\"Save\"><svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" aria-hidden=\"true\"><path d=\"M12 21s-7.5-4.6-10-9.2C.6 8.9 2.1 5.5 5.3 5.5c2 0 3.3 1.2 4.7 3 1.4-1.8 2.7-3 4.7-3 3.2 0 4.7 3.4 3.3 6.3C19.5 16.4 12 21 12 21z\" fill=\"none\" stroke=\"#B5365B\" stroke-width=\"2\"/></svg></button>",
+      "css": ".ds-heart { position: relative; width: 36px; height: 36px; display: grid; place-items: center; border: none; border-radius: 50%; background: #FFF6E5; box-shadow: 0 2px 6px rgba(0,0,0,0.10); cursor: pointer; } .ds-heart::before { content: ''; position: absolute; inset: -4px; } .ds-heart[aria-pressed=\"true\"] svg path { fill: #B5365B; } .ds-heart:focus-visible { outline: 2px solid #1F5F3C; outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Cream-filled field with a leaf hairline; focus shifts toward rose with a soft ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Search crochet, yarn, pottery\" />",
+      "css": ".ds-input { width: 100%; background: #FFF6E5; color: #1A1A1A; font-family: Inter, system-ui, sans-serif; font-size: 14px; padding: 10px 14px; border: 1px solid rgba(31,95,60,0.30); border-radius: 10px; } .ds-input::placeholder { color: #6E5C41; } .ds-input:focus { outline: 2px solid transparent; outline-offset: 2px; border-color: #B5365B; box-shadow: 0 0 0 3px rgba(181,54,91,0.18); }"
+    },
+    {
+      "name": "Category Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Pill tag for craft categories and metadata: cream-tint fill, walnut text.",
+      "html": "<span class=\"ds-chip\">Crochet</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; background: #FBEBC8; color: #6B5A3E; font-family: Inter, system-ui, sans-serif; font-weight: 600; font-size: 11px; padding: 4px 10px; border-radius: 999px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sunday Bazaar",
+    "overview": "Crafty looks like a weekend craft market at golden hour, not a software product. The whole system is built on warm khadi cream (#FFF6E5) rather than white, lit by four named market colours: a deep rose for action, banana-leaf green for structure, marigold for accents, and indigo as a rare cool note. Type is editorial, with Fraunces carrying display and titles like hand-set signage above each stall, and Inter handling calm, readable body. Depth is soft and terracotta-tinted, never cold grey. The defining gesture is a printer's stamp: cards lift two pixels up and left on hover and cast a hard ink-coloured offset, like a block print pressed into paper. The register is product, but the discovery surfaces are dressed with brand warmth so buyers feel they are browsing a neighbourhood, not querying a database.",
+    "keyCharacteristics": [
+      "Warm cream canvas, never pure white or pure black.",
+      "A four-colour market palette (rose, leaf, marigold, indigo) over cream.",
+      "Editorial serif (Fraunces) for voice, humanist sans (Inter) for reading.",
+      "Block-print stamp hover instead of soft float.",
+      "Entity cards intentionally vary in shape so the eye reads four distinct rails."
+    ],
+    "rules": [
+      { "name": "The Cream-Not-White Rule", "body": "Every surface is khadi cream or a cream tint. Pure #FFFFFF and pure #000000 are forbidden. Neutrals are warm walnut browns, not greys.", "section": "colors" },
+      { "name": "The Four-Stall Rule", "body": "Rose, leaf, marigold, indigo each have one job (action, structure, festive accent, rare cool note). Never introduce a fifth hue or let one colour take another's role.", "section": "colors" },
+      { "name": "The Loaded-Font Rule", "body": "Fraunces and Inter must actually load via next/font. system-ui and Georgia may appear only as terminal fallbacks, never the primary face. A page in Georgia or system sans is a bug.", "section": "typography" },
+      { "name": "The Serif-Voice Rule", "body": "Fraunces carries identity (display, titles, names, eyebrows). Inter carries information (body, labels, forms).", "section": "typography" },
+      { "name": "The Block-Print Rule", "body": "Interactive cards stamp on hover: translate -2/-2, hard ink offset shadow, 100ms ease, wrapped in a reduced-motion guard. No soft glow, no scale, no grey lift.", "section": "elevation" },
+      { "name": "The Warm-Shadow Rule", "body": "Shadows are terracotta-tinted in light mode (rgba(180,80,40,...)), deep black in dark mode. A cold grey resting shadow is forbidden.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do sit everything on khadi cream (#FFF6E5); use warm walnut browns (#6B5A3E) for muted text, never grey.",
+      "Do load Fraunces and Inter through next/font; treat Georgia and system-ui as terminal fallbacks only.",
+      "Do use the block-print Stamp hover on cards (translate -2/-2 + hard ink offset, 100ms), wrapped in a reduced-motion guard.",
+      "Do keep terracotta-tinted shadows (rgba(180,80,40,...)) in light mode.",
+      "Do vary card shape by entity type so each rail reads as its own category.",
+      "Do give bazaar-rose double duty: primary fills and inline emphasis text (it clears AA on cream at about 5.4:1).",
+      "Do keep heart counts and popularity private; show the maker and the work, not the metric."
+    ],
+    "donts": [
+      "Don't use #fff or #000, or any cold neutral grey for text or surfaces.",
+      "Don't ship the page in Georgia or system-ui; a missing Fraunces or Inter is a bug.",
+      "Don't use gradient text (background-clip: text on a gradient), ever.",
+      "Don't use a border-left or border-right greater than 1px as a coloured accent stripe.",
+      "Don't use decorative glassmorphism (backdrop-filter: blur) as a default surface treatment.",
+      "Don't build a hero-metric block or an identical icon-card grid.",
+      "Don't reach for a modal first; exhaust inline and progressive disclosure.",
+      "Don't write em dashes in UI copy; use commas, colons, or parentheses.",
+      "Don't look like Etsy, Instagram, or Justdial: no global storefront pressure, no infinite feed, no grey directory rows."
+    ]
+  }
+}

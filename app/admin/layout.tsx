@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   try {
     await requireAdmin();
   } catch {
-    redirect("/dashboard");
+    redirect("/forbidden");
   }
 
   return (
@@ -26,6 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               ["Flags", "/admin"],
               ["Listings", "/admin/listings"],
               ["Metrics", "/admin/metrics"],
+              ["Cron health", "/admin/health"],
               ["Users", "/admin/users"],
               ["Cities", "/admin/cities"],
               ["City requests", "/admin/city-requests"],

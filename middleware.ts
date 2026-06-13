@@ -15,33 +15,27 @@ const DESCOPE_CONFIGURED =
   !!process.env.NEXT_PUBLIC_DESCOPE_PROJECT_ID &&
   !process.env.NEXT_PUBLIC_DESCOPE_PROJECT_ID.startsWith("P_placeholder");
 
-// Descope's authMiddleware is "private by default" — only routes listed in
-// publicRoutes (or matching wildcards) skip the auth check. We enumerate
-// everything that should be reachable without sign-in.
+// Crafty is PUBLIC by default: all city discovery pages must be reachable
+// without sign-in. We therefore use Descope's `privateRoutes` (everything is
+// public unless it matches a private route) and list the only protected
+// surfaces — the creator dashboard and the admin console.
 //
-// Keep this list in sync with the actual public surface. Forgetting
-// /sitemap.xml here would break Google indexing.
-const PUBLIC_ROUTES = [
-  "/",
-  "/sign-in", "/sign-in/(.*)",
-  "/sign-up", "/sign-up/(.*)",
-  "/list-your-profile",
-  "/privacy",
-  "/terms",
-  "/sitemap.xml",
-  "/robots.txt",
-  // Per-city public routes: /[city] and /[city]/(crafters|stores|learn|events|search)
-  // + their detail pages. Match-anything against the city wildcards.
-  "/:city",
-  "/:city/(.*)",
-  // Public API routes — webhooks (signed independently), cron (token-gated
-  // independently), city-requests (anonymous), flags (anonymous), saves
-  // (anonymous form-post fallback).
-  "/api/webhooks/(.*)",
-  "/api/cron/(.*)",
-  "/api/city-requests",
-  "/api/flags",
-  "/api/saves",
+// IMPORTANT — Descope's matcher (matchWildcardRoute) escapes regex and converts
+// only `*` -> `[^/]*` (a SINGLE path segment, no slashes). It does NOT support
+// `:param` or `(.*)`. A previous `publicRoutes` list using `/:city` and
+// `/(.*)` matched nothing, so every public page redirected to /sign-in. Because
+// `*` can't cross `/`, nested depths are enumerated explicitly. The dashboard
+// and admin LAYOUTS also guard (getCurrentUser / requireAdmin), so this is
+// defense-in-depth, not the sole gate. API routes are intentionally NOT listed:
+// their handlers self-gate and return 401 JSON rather than an HTML redirect.
+const PRIVATE_ROUTES = [
+  "/dashboard",
+  "/dashboard/*",
+  "/dashboard/*/*",
+  "/dashboard/*/*/*",
+  "/admin",
+  "/admin/*",
+  "/admin/*/*",
 ];
 
 const passthrough = (_req: NextRequest) => NextResponse.next();
@@ -58,7 +52,7 @@ export default useDescope
       const handler = authMiddleware({
         projectId: process.env.NEXT_PUBLIC_DESCOPE_PROJECT_ID!,
         redirectUrl: "/sign-in",
-        publicRoutes: PUBLIC_ROUTES,
+        privateRoutes: PRIVATE_ROUTES,
       });
       return handler(req);
     })

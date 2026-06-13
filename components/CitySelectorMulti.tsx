@@ -151,7 +151,7 @@ export function CitySelectorMulti({
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: "#fff",
+                        color: "rgb(var(--cream))",
                       }}
                     >
                       {isChecked && <Check size={12} />}

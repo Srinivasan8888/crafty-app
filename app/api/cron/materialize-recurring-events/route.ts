@@ -136,6 +136,7 @@ export async function GET(req: NextRequest) {
     seriesProcessed.push({ id: m.id, created: createdThis });
   }
 
+  await prisma.cronRun.create({ data: { job_name: "materialize_recurring_events", status: "success", completed_at: new Date(), rows_affected: createdTotal } }).catch((e) => console.error("[cron] record", e));
   return NextResponse.json({
     now: now.toISOString(),
     window_end: windowEnd.toISOString(),

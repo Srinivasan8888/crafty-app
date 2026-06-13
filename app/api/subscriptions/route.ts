@@ -19,7 +19,7 @@ import { prisma } from "@/lib/db";
 import { requireUser, getCurrentUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
-import { createSubscription, publicKeyId, isConfigured } from "@/lib/razorpay";
+import { createSubscription, publicKeyId, isConfigured, isMockMode } from "@/lib/razorpay";
 import { getPlanConfig, getRazorpayPlanId } from "@/lib/subscription-plans";
 import { logAudit } from "@/lib/audit";
 
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!isConfigured()) {
+  if (!isConfigured() && !isMockMode()) {
     return NextResponse.json(
       { error: "razorpay_not_configured", message: "Set RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in .env." },
       { status: 503 },
@@ -75,7 +75,9 @@ export async function POST(req: NextRequest) {
   }
 
   const planConfig = getPlanConfig(plan);
-  const planId = getRazorpayPlanId(plan);
+  // In mock mode there is no real Razorpay plan; use a synthetic id so the
+  // flow proceeds (createSubscription ignores it under mock).
+  const planId = getRazorpayPlanId(plan) ?? (isMockMode() ? "plan_mock" : null);
   if (!planId) {
     return NextResponse.json(
       { error: "plan_not_configured", message: `Set ${planConfig.plan_id_env_var} in .env (Razorpay dashboard → Subscriptions → Plans).` },

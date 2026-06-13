@@ -120,7 +120,7 @@ export default async function CityHome({ params }: { params: { city: string } })
       <section className="hero md:py-16 lg:py-24 md:text-left">
         <div className="md:grid md:grid-cols-[1.2fr_1fr] md:items-center md:gap-16 md:max-w-[var(--container-max)] md:mx-auto md:px-[var(--container-pad)]">
           <div>
-            <span className="hidden md:inline-block font-display text-xs font-bold uppercase tracking-[3px] text-forest mb-4 pb-1.5 border-b border-mustard">
+            <span className="inline-block font-display text-xs font-bold uppercase tracking-[3px] text-forest mb-4 pb-1.5 border-b border-mustard">
               {tHero("eyebrow")} &middot; {city.display_name}
             </span>
             <h1 className="md:text-[56px] md:leading-[1.02] md:tracking-[-2px]">
@@ -142,6 +142,17 @@ export default async function CityHome({ params }: { params: { city: string } })
               </Link>
             </div>
           </div>
+          <div className="md:hidden mt-6 relative aspect-[4/3] rounded-lg overflow-hidden border border-line-strong shadow-soft bg-cream-2">
+            <Image
+              src={heroTiles[0]}
+              alt=""
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority
+              fetchPriority="high"
+            />
+          </div>
           <div className="hidden md:block">
             <div
               className="relative w-full grid gap-3.5"
@@ -152,7 +163,7 @@ export default async function CityHome({ params }: { params: { city: string } })
               }}
             >
               <div
-                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden"
+                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden bg-cream-2"
                 style={{ transform: "rotate(-2deg)", marginTop: "14px" }}
               >
                 <Image
@@ -166,7 +177,7 @@ export default async function CityHome({ params }: { params: { city: string } })
                 />
               </div>
               <div
-                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden"
+                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden bg-cream-2"
                 style={{ transform: "rotate(1.5deg)" }}
               >
                 <Image
@@ -175,12 +186,11 @@ export default async function CityHome({ params }: { params: { city: string } })
                   fill
                   sizes="(min-width:768px) 25vw, 50vw"
                   className="object-cover"
-                  priority
-                  fetchPriority="high"
+                  loading="lazy"
                 />
               </div>
               <div
-                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden"
+                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden bg-cream-2"
                 style={{ transform: "rotate(2deg)", marginTop: "-8px" }}
               >
                 <Image
@@ -189,12 +199,11 @@ export default async function CityHome({ params }: { params: { city: string } })
                   fill
                   sizes="(min-width:768px) 25vw, 50vw"
                   className="object-cover"
-                  priority
-                  fetchPriority="high"
+                  loading="lazy"
                 />
               </div>
               <div
-                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden"
+                className="relative rounded-lg shadow-soft-lg border border-line-strong overflow-hidden bg-cream-2"
                 style={{ transform: "rotate(-1.5deg)", marginTop: "-2px" }}
               >
                 <Image
@@ -203,8 +212,7 @@ export default async function CityHome({ params }: { params: { city: string } })
                   fill
                   sizes="(min-width:768px) 25vw, 50vw"
                   className="object-cover"
-                  priority
-                  fetchPriority="high"
+                  loading="lazy"
                 />
               </div>
             </div>
@@ -219,7 +227,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         <CitySelector cities={cities} current={city.slug} />
       </div>
 
-      <div className="motif"></div>
+      <div className="motif" aria-hidden="true"></div>
 
       <DiscoveryRail
         title={`Crafters in ${city.display_name}`}
@@ -227,7 +235,6 @@ export default async function CityHome({ params }: { params: { city: string } })
         count={crafters.length}
         emptyText={`No crafters in ${city.display_name} yet.`}
         emptyCta={{ href: "/list-your-profile", label: "Be the first" }}
-        priorityFirstCard
       >
         {crafters.map((c, idx) => (
           <div key={c.id} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
@@ -241,13 +248,13 @@ export default async function CityHome({ params }: { params: { city: string } })
               categories={c.craft_categories.map((j) => j.category.display_name)}
               is_featured={c.is_featured}
               offers_classes={c.offers_classes}
-              priority={idx === 0}
+              priority={false}
             />
           </div>
         ))}
       </DiscoveryRail>
 
-      <div className="motif forest"></div>
+      <div className="motif forest" aria-hidden="true"></div>
 
       <DiscoveryRail
         title={`Stores in ${city.display_name}`}
@@ -273,7 +280,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         ))}
       </DiscoveryRail>
 
-      <div className="motif magenta dots"></div>
+      <div className="motif magenta dots" aria-hidden="true"></div>
 
       {/* PRD §7.1 — community moment between rails 2 and 3.
           V1.5: per-city moment from the City.community_moment JSON field,
@@ -310,7 +317,7 @@ export default async function CityHome({ params }: { params: { city: string } })
         ))}
       </DiscoveryRail>
 
-      <div className="motif forest zigzag"></div>
+      <div className="motif forest zigzag" aria-hidden="true"></div>
 
       <DiscoveryRail
         title={`Events in ${city.display_name}`}
@@ -337,21 +344,21 @@ export default async function CityHome({ params }: { params: { city: string } })
         ))}
       </DiscoveryRail>
 
-      <section className="hidden md:block py-16">
+      <section className="py-12 md:py-16">
         <div className="container">
           <div className="text-center">
             <div className="font-display text-xs font-bold uppercase tracking-[3px] text-forest mb-2">
               Why Crafty
             </div>
             <h2 className="font-display text-4xl font-extrabold tracking-tight leading-tight mb-2">
-              Built for the people <em className="not-italic text-magenta font-semibold italic">making things by hand.</em>
+              Built for the people <em className="not-italic text-magenta font-semibold">making things by hand.</em>
             </h2>
             <p className="text-ink-muted text-base max-w-xl mx-auto mb-10">
               Not a marketplace. Not a directory of stock photos. A real, city-by-city guide to Indian craft &mdash;
               written for crafters, by Crafty.
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-7">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-7">
             <div className="bg-cream border border-line-strong rounded-lg p-8 shadow-soft">
               <div className="text-3xl text-mustard mb-4 leading-none">!</div>
               <h3 className="font-display text-xl font-bold leading-tight tracking-tight mb-2.5 text-ink">

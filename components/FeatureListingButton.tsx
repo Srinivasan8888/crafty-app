@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, X, Loader2 } from "lucide-react";
+import { runMockCheckout } from "@/lib/mock-checkout";
 
 type Props = {
   entityType: "CRAFTER" | "STORE" | "STUDIO" | "EVENT";
@@ -61,11 +62,28 @@ export function FeatureListingButton({ entityType, entityId, entityName }: Props
         throw new Error("Couldn't start checkout.");
       }
       const j = (await res.json()) as {
+        feature_order_id: string;
         razorpay_order_id: string;
         razorpay_key_id: string;
         amount_inr: number;
         entity_name: string;
       };
+      if (j.razorpay_key_id === "mock") {
+        const paid = await runMockCheckout({
+          kind: "feature",
+          id: j.feature_order_id,
+          amountInr: j.amount_inr,
+          title: "Feature listing",
+          description: `Feature: ${j.entity_name}`,
+        });
+        if (paid) {
+          setOpen(false);
+          router.refresh();
+        } else {
+          setBusy(false);
+        }
+        return;
+      }
       await loadCheckout();
       const rzp = new window.Razorpay({
         key: j.razorpay_key_id,

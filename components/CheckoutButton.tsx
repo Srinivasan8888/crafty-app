@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ShoppingBag } from "lucide-react";
 import { formatINR } from "@/lib/util";
+import { runMockCheckout } from "@/lib/mock-checkout";
 
 type Props = {
   totalInr: number;
@@ -69,6 +70,18 @@ export function CheckoutButton({ totalInr }: Props) {
         razorpay_key_id: string;
         total_inr: number;
       };
+      if (j.razorpay_key_id === "mock") {
+        const paid = await runMockCheckout({
+          kind: "order",
+          id: j.order_id,
+          amountInr: j.total_inr,
+          title: "Crafty order",
+          description: `Order ${j.order_id}`,
+        });
+        if (paid) router.push(`/dashboard/orders/${j.order_id}?welcome=1`);
+        else setBusy(false);
+        return;
+      }
       await loadCheckout();
       const rzp = new window.Razorpay({
         key: j.razorpay_key_id,

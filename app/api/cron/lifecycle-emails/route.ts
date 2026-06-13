@@ -137,6 +137,7 @@ export async function GET(req: NextRequest) {
     coldSignups++;
   }
 
+  await prisma.cronRun.create({ data: { job_name: "lifecycle_emails", status: "success", completed_at: new Date(), rows_affected: lapsedCreators + inactiveBuyers + coldSignups } }).catch((e) => console.error("[cron] record", e));
   return NextResponse.json({
     ok: true,
     at: now,

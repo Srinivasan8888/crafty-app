@@ -39,5 +39,6 @@ export async function GET(req: NextRequest) {
   // Invalidate the homepage so unfeatured listings stop appearing in featured slots.
   revalidatePath("/");
 
+  await prisma.cronRun.create({ data: { job_name: "expire_featured", status: "success", completed_at: new Date(), rows_affected: flipped } }).catch((e) => console.error("[cron] record", e));
   return NextResponse.json({ ok: true, examined: expired.length, flipped });
 }

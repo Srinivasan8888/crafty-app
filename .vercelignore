@@ -1,0 +1,11 @@
+.env
+.env.local
+.next
+node_modules
+public/uploads
+playwright-report
+test-results
+coverage
+.vitest-cache
+var
+mobile

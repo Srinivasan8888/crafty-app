@@ -278,6 +278,7 @@ export async function GET(req: NextRequest) {
     ),
   );
 
+  await prisma.cronRun.create({ data: { job_name: "warehouse_sync", status: "success", completed_at: new Date(), rows_affected: tables.reduce((a, t) => a + t.rows, 0) } }).catch((e) => console.error("[cron] record", e));
   return NextResponse.json({
     ok: true,
     path: outDir,

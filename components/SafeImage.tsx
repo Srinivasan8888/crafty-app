@@ -23,7 +23,7 @@ function isEmptySrc(src: SafeImageProps["src"]): boolean {
   return false;
 }
 
-function FallbackMark({ fill }: { fill?: boolean }) {
+function FallbackMark({ fill, label }: { fill?: boolean; label?: string }) {
   // Positioning: in `fill` mode the parent is position:relative, so we
   // absolutely fill it. In intrinsic mode we sit in the normal flow
   // and stretch to whatever width/height the consumer asked for.
@@ -34,7 +34,7 @@ function FallbackMark({ fill }: { fill?: boolean }) {
   return (
     <div
       role="img"
-      aria-label="No photo yet"
+      aria-label={label && label.trim().length > 0 ? label : "No photo yet"}
       className={`${positionClass} flex flex-col items-center justify-center gap-1 overflow-hidden`}
       style={{
         background:
@@ -81,7 +81,7 @@ export default function SafeImage(props: SafeImageProps) {
   const [errored, setErrored] = useState(false);
 
   if (errored || isEmptySrc(src)) {
-    return <FallbackMark fill={Boolean(rest.fill)} />;
+    return <FallbackMark fill={Boolean(rest.fill)} label={typeof alt === "string" ? alt : undefined} />;
   }
 
   return (

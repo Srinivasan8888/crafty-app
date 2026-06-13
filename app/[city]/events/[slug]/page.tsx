@@ -876,6 +876,19 @@ export default async function EventDetail({
         }
       />
 
+      <section className="px-[18px] py-3 italic text-subtle" style={{ fontSize: 12.5 }}>
+        <p>
+          Something off about this event?{" "}
+          <Link
+            href={`/contact?ref=report&type=event&slug=${e.slug}`}
+            style={{ borderBottom: "1px dotted rgb(var(--subtle))" }}
+          >
+            Report this listing
+          </Link>{" "}
+          — we read every report.
+        </p>
+      </section>
+
       <CoSaveRecommendations entityType="EVENT" entityId={e.id} />
 
       <BottomNav city={city.slug} active="explore" />

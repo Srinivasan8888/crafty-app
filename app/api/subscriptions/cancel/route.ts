@@ -11,7 +11,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
-import { cancelSubscription, isConfigured } from "@/lib/razorpay";
+import { cancelSubscription, isConfigured, isMockMode } from "@/lib/razorpay";
 import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!isConfigured()) {
+  if (!isConfigured() && !isMockMode()) {
     return NextResponse.json(
       { error: "razorpay_not_configured" },
       { status: 503 },

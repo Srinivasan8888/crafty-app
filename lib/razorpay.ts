@@ -17,6 +17,19 @@ const KEY_ID = process.env.RAZORPAY_KEY_ID;
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
 
+// ─── Mock mode (demo / preview) ────────────────────────────────────────
+// When PAYMENTS_MOCK=true, every Razorpay call is short-circuited with a
+// synthetic object and `publicKeyId()` returns the "mock" sentinel. The
+// client detects that sentinel and skips the real Checkout SDK; the
+// /api/mock-pay endpoint performs the state transitions the webhook would.
+// Takes precedence over real keys so a local preview always completes
+// (Razorpay's webhook can't reach localhost). Default OFF — prod is untouched.
+export const MOCK_KEY_SENTINEL = "mock";
+
+export function isMockMode(): boolean {
+  return process.env.PAYMENTS_MOCK === "true";
+}
+
 export function isConfigured(): boolean {
   return (
     !!KEY_ID && !!KEY_SECRET &&
@@ -26,6 +39,7 @@ export function isConfigured(): boolean {
 }
 
 export function publicKeyId(): string | null {
+  if (isMockMode()) return MOCK_KEY_SENTINEL;
   // Safe to expose — Razorpay's public key (used by the Checkout SDK).
   return isConfigured() ? KEY_ID! : null;
 }
@@ -45,6 +59,15 @@ export type RazorpayOrder = {
 };
 
 export async function createOrder(args: CreateOrderArgs): Promise<RazorpayOrder | null> {
+  if (isMockMode()) {
+    return {
+      id: `order_mock_${args.receipt}`,
+      amount: args.amount_inr * 100,
+      currency: "INR",
+      receipt: args.receipt,
+      status: "created",
+    };
+  }
   if (!isConfigured()) return null;
   const res = await fetch("https://api.razorpay.com/v1/orders", {
     method: "POST",
@@ -140,6 +163,24 @@ async function razorpayFetch<T>(path: string, init: RequestInit): Promise<T> {
 export async function createSubscription(
   args: RazorpaySubscriptionCreateArgs,
 ): Promise<RazorpaySubscription | null> {
+  if (isMockMode()) {
+    const localId = args.notes?.subscription_id ?? "local";
+    return {
+      id: `sub_mock_${localId}`,
+      entity: "subscription",
+      plan_id: args.plan_id,
+      status: "created",
+      current_start: null,
+      current_end: null,
+      charge_at: null,
+      start_at: null,
+      end_at: null,
+      total_count: args.total_count,
+      paid_count: 0,
+      short_url: null,
+      notes: args.notes,
+    };
+  }
   if (!isConfigured()) return null;
   return razorpayFetch<RazorpaySubscription>("/v1/subscriptions", {
     method: "POST",
@@ -161,6 +202,22 @@ export async function cancelSubscription(
   subscriptionId: string,
   cancel_at_cycle_end: boolean,
 ): Promise<RazorpaySubscription | null> {
+  if (isMockMode()) {
+    return {
+      id: subscriptionId,
+      entity: "subscription",
+      plan_id: "",
+      status: "cancelled",
+      current_start: null,
+      current_end: null,
+      charge_at: null,
+      start_at: null,
+      end_at: null,
+      total_count: 0,
+      paid_count: 0,
+      short_url: null,
+    };
+  }
   if (!isConfigured()) return null;
   return razorpayFetch<RazorpaySubscription>(`/v1/subscriptions/${subscriptionId}/cancel`, {
     method: "POST",

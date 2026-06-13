@@ -12,7 +12,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
-import { createOrder, publicKeyId, isConfigured } from "@/lib/razorpay";
+import { createOrder, publicKeyId, isConfigured, isMockMode } from "@/lib/razorpay";
 import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": String(Math.ceil(rl.resetIn / 1000)) } });
   }
 
-  if (!isConfigured()) {
+  if (!isConfigured() && !isMockMode()) {
     return NextResponse.json(
       { error: "razorpay_not_configured", message: "Set RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in .env." },
       { status: 503 },

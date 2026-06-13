@@ -67,5 +67,6 @@ export async function GET(req: NextRequest) {
     sent++;
   }
 
+  await prisma.cronRun.create({ data: { job_name: "message_digest", status: "success", completed_at: new Date(), rows_affected: sent } }).catch((e) => console.error("[cron] record", e));
   return NextResponse.json({ ok: true, recipients: byUser.size, sent });
 }
