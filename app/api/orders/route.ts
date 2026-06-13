@@ -87,7 +87,10 @@ export async function POST(req: NextRequest) {
     return { line: l, linePayout };
   });
 
-  // Persist Order + OrderItems + clear cart in one transaction.
+  // Persist Order + OrderItems in one transaction. We intentionally do NOT
+  // clear the cart here: if Razorpay createOrder() fails below, the buyer
+  // must keep their cart intact to retry. The cart is cleared only after the
+  // Razorpay order is created successfully.
   const order = await prisma.$transaction(async (tx) => {
     const o = await tx.order.create({
       data: {
@@ -111,15 +114,12 @@ export async function POST(req: NextRequest) {
         seller_payout_inr: linePayout,
       })),
     });
-    // Clear the cart now that the order is on the books. The Razorpay
-    // checkout can still time out, but a stale cart is worse UX than
-    // an abandoned PENDING order the buyer can simply retry.
-    await tx.cartItem.deleteMany({ where: { buyer_user_id: user.id } });
     return o;
   });
 
   // Create Razorpay Order using our order id as the receipt — that's how
-  // the shared webhook disambiguates Order vs FeatureOrder.
+  // the shared webhook disambiguates Order vs FeatureOrder. This runs BEFORE
+  // the cart is cleared so a Razorpay failure leaves the cart untouched.
   let rzpOrder;
   try {
     rzpOrder = await createOrder({
@@ -140,6 +140,9 @@ export async function POST(req: NextRequest) {
     where: { id: order.id },
     data: { razorpay_order_id: rzpOrder.id },
   });
+
+  // Razorpay order is on the books — now it's safe to clear the cart.
+  await prisma.cartItem.deleteMany({ where: { buyer_user_id: user.id } });
 
   void logAudit({
     actorUserId: user.id,

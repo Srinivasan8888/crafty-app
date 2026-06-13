@@ -18,7 +18,10 @@ export function RequestCityBanner({ defaultCity = "" }: { defaultCity?: string }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!cityName.trim()) return;
+    if (cityName.trim().length < 2) {
+      setError("Please enter a city name (at least 2 characters).");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {

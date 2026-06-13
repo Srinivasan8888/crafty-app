@@ -13,6 +13,30 @@ import { track } from "@/lib/analytics";
 import { useFormDraft } from "@/lib/useFormDraft";
 import { DraftBanner } from "@/components/DraftBanner";
 
+// "myshop.com" passes the type=url input (and the submit gate) but is rejected by
+// the server z.string().url(). Prepend https:// when the user omitted a scheme so
+// the client and server agree.
+function normalizeWebsite(v: string) {
+  const s = v.trim();
+  if (!s || s.includes("://")) return s;
+  return `https://${s}`;
+}
+
+// Mirror the server phone rule (>=7 digits) for a gentle client-side gate.
+function looksLikePhone(v: string) {
+  return v.replace(/\D/g, "").length >= 7;
+}
+
+// Mirror the server z.string().url() — after normalizing a missing scheme.
+function looksLikeUrl(v: string) {
+  try {
+    new URL(normalizeWebsite(v));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 type Option = { id: string; display_name: string; slug: string };
 type StoreFormValues = {
   name: string;
@@ -94,7 +118,14 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
     form.city_id &&
     (form.is_online_only || form.address.trim().length > 0) &&
     form.category_ids.length > 0 &&
-    (form.contact_phone || form.contact_whatsapp || form.contact_website);
+    // Mirror the server: a contact method only counts if it's plausibly valid
+    // (phone/whatsapp >=7 digits, website a URL) so invalid input doesn't pass
+    // the gate then fail at Publish.
+    Boolean(
+      (form.contact_phone.trim() && looksLikePhone(form.contact_phone)) ||
+      (form.contact_whatsapp.trim() && looksLikePhone(form.contact_whatsapp)) ||
+      (form.contact_website.trim() && looksLikeUrl(form.contact_website)),
+    );
 
   async function submit() {
     setSubmitting(true);
@@ -105,7 +136,7 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
         address: form.address || "",
         contact_phone: form.contact_phone || null,
         contact_whatsapp: form.contact_whatsapp || null,
-        contact_website: form.contact_website || null,
+        contact_website: normalizeWebsite(form.contact_website) || null,
       };
       const res = await fetch(isEdit ? `/api/stores/${entityId}` : "/api/stores", {
         method: isEdit ? "PATCH" : "POST",
@@ -237,6 +268,7 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
             value={form.contact_phone}
             onChange={(e) => set("contact_phone", e.target.value)}
             placeholder="Phone — +91-98xxx-xxxxx"
+            maxLength={40}
           />
           <input
             type="tel"
@@ -244,13 +276,16 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
             value={form.contact_whatsapp}
             onChange={(e) => set("contact_whatsapp", e.target.value)}
             placeholder="WhatsApp — +91-98xxx-xxxxx"
+            maxLength={40}
           />
           <input
             type="url"
             className="input"
             value={form.contact_website}
             onChange={(e) => set("contact_website", e.target.value)}
+            onBlur={(e) => set("contact_website", normalizeWebsite(e.target.value))}
             placeholder="Website — https://example.com"
+            maxLength={500}
           />
         </div>
       </Field>

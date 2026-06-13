@@ -31,7 +31,7 @@ const Schema = z.object({
   rating: z.number().int().min(1).max(5),
   body: z.string().max(2000).optional().nullable(),
   photos: z.array(reviewPhotoPath).max(4).optional().default([]),
-  photo_blurhashes: z.array(z.string().max(500)).max(4).optional().default([]),
+  photo_blurhashes: z.array(z.string().max(2000)).max(4).optional().default([]),
 });
 
 const SEGMENT: Record<string, string> = { CRAFTER: "crafters", STORE: "stores", STUDIO: "learn" };

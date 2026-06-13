@@ -36,12 +36,15 @@ const Schema = z.object({
   event_type: z.enum(["WORKSHOP", "FAIR", "EXHIBITION", "CLASS", "POPUP", "OTHER"]),
   craft_category_id: z.string().max(30).optional().nullable(),
   is_free: z.boolean(),
-  price_amount: z.number().nonnegative().nullable().optional(),
+  price_amount: z.number().int().nonnegative().nullable().optional(),
   registration_url: z.string().url().max(500),
   recurrence_rule: z.string().max(200).optional().nullable(),
 }).refine(
   (v) => new Date(v.end_at) > new Date(v.start_at),
   { message: "End time must be after start time" },
+).refine(
+  (v) => new Date(v.start_at).getTime() > Date.now() - 3600000,
+  { message: "Start time cannot be in the past", path: ["start_at"] },
 );
 
 export async function POST(req: NextRequest) {

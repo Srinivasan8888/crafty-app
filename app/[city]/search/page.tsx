@@ -116,13 +116,31 @@ export default async function SearchPage({
 
   const total = crafters.length + stores.length + studios.length + events.length;
   const hasQuery = q.length >= 2;
+  // A 1-char query is below the FTS minimum — surface a clear hint rather than
+  // the generic pre-search empty state.
+  const tooShort = q.length === 1;
   // V2.0 — let buyers subscribe to this search; cron emails new matches daily.
+  // Offer a subscribe button per non-empty result section so the saved search
+  // carries the entity_type that actually has matches (not a hardcoded CRAFTER).
   const { SaveSearchButton } = await import("@/components/SaveSearchButton");
+  const subscribeSections: Array<{ label: string; entityType: "CRAFTER" | "STORE" | "STUDIO" | "EVENT" }> = [
+    { label: "crafters", entityType: "CRAFTER" },
+    { label: "stores", entityType: "STORE" },
+    { label: "studios", entityType: "STUDIO" },
+    { label: "events", entityType: "EVENT" },
+  ].filter((s) =>
+    s.entityType === "CRAFTER" ? crafters.length > 0
+      : s.entityType === "STORE" ? stores.length > 0
+      : s.entityType === "STUDIO" ? studios.length > 0
+      : events.length > 0,
+  ) as Array<{ label: string; entityType: "CRAFTER" | "STORE" | "STUDIO" | "EVENT" }>;
   const SubscribeBar =
     hasQuery && total > 0 ? (
       <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md bg-canvas-sunken px-3 py-2 text-sm">
         <span className="text-ink-muted">Want to know when new matches appear?</span>
-        <SaveSearchButton cityId={cityFromUrl.id} query={q} entityType="CRAFTER" />
+        {subscribeSections.map((s) => (
+          <SaveSearchButton key={s.entityType} cityId={cityFromUrl.id} query={q} entityType={s.entityType} />
+        ))}
       </div>
     ) : null;
 
@@ -387,6 +405,7 @@ export default async function SearchPage({
             <input
               name="q"
               defaultValue={q}
+              minLength={2}
               placeholder={`Search ${cityFromUrl.display_name} — try yarn, pottery, Cubbon meetup…`}
               type="search"
               aria-label="Search crafters, stores, events"
@@ -415,8 +434,12 @@ export default async function SearchPage({
         {!hasQuery ? (
           <div style={{ marginTop: 24 }}>
             <EmptyState
-              title={`Search Crafty in ${cityFromUrl.display_name}`}
-              body={`Try ${SUGGESTIONS.slice(0, 3).join(", ")} — or any maker name, neighbourhood, or supply.`}
+              title={tooShort ? "Keep typing…" : `Search Crafty in ${cityFromUrl.display_name}`}
+              body={
+                tooShort
+                  ? "Enter at least 2 characters to search."
+                  : `Try ${SUGGESTIONS.slice(0, 3).join(", ")} — or any maker name, neighbourhood, or supply.`
+              }
               variant="mustard"
               glyph="✿"
             />

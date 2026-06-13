@@ -7,14 +7,24 @@
 import { useState } from "react";
 import { Bell, Check, Loader2 } from "lucide-react";
 
+type EntityType = "CRAFTER" | "STORE" | "STUDIO" | "EVENT";
+
 type Props = {
   cityId: string;
   query: string;
-  entityType: "CRAFTER" | "STORE" | "STUDIO" | "EVENT";
+  entityType: EntityType;
+};
+
+const ENTITY_LABEL: Record<EntityType, string> = {
+  CRAFTER: "crafters",
+  STORE: "stores",
+  STUDIO: "studios",
+  EVENT: "events",
 };
 
 export function SaveSearchButton({ cityId, query, entityType }: Props) {
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const label = ENTITY_LABEL[entityType];
 
   async function save() {
     setState("saving");
@@ -35,7 +45,7 @@ export function SaveSearchButton({ cityId, query, entityType }: Props) {
   if (state === "saved") {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-success">
-        <Check size={12} aria-hidden /> We'll email you when new matches appear.
+        <Check size={12} aria-hidden /> We'll email you about new {label}.
       </span>
     );
   }
@@ -46,11 +56,11 @@ export function SaveSearchButton({ cityId, query, entityType }: Props) {
       onClick={save}
       disabled={state === "saving"}
       className="btn btn-ghost btn-sm"
-      aria-label={`Subscribe to ${entityType.toLowerCase()} search for "${query}"`}
+      aria-label={`Subscribe to ${label} search for "${query}"`}
     >
       {state === "saving"
         ? <><Loader2 className="animate-spin" size={12} /> Saving…</>
-        : <><Bell size={12} /> {state === "error" ? "Try again" : "Notify me of new matches"}</>}
+        : <><Bell size={12} /> {state === "error" ? "Try again" : `New ${label}`}</>}
     </button>
   );
 }

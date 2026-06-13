@@ -155,6 +155,9 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
     form.cover_image &&
     form.organizer &&
     form.start_at &&
+    // Past-date guard only on create — server enforces it on POST, and we must
+    // still allow editing fields on an event whose start has already passed.
+    (isEdit || new Date(form.start_at) > new Date()) &&
     form.end_at &&
     new Date(form.end_at) > new Date(form.start_at) &&
     form.city_id &&
@@ -186,7 +189,7 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
         event_type: form.event_type,
         craft_category_id: form.craft_category_id || null,
         is_free: form.is_free,
-        price_amount: form.is_free ? null : Number(form.price_amount),
+        price_amount: form.is_free ? null : Math.floor(Number(form.price_amount)),
         registration_url: form.registration_url,
         recurrence_rule: repeats ? buildRrule(freq, byday, count) : null,
       };
@@ -312,6 +315,7 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
             id="event-start"
             type="datetime-local"
             className="input"
+            min={new Date().toISOString().slice(0, 16)}
             value={form.start_at}
             onChange={(e) => set("start_at", e.target.value)}
           />
@@ -321,6 +325,7 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
             id="event-end"
             type="datetime-local"
             className="input"
+            min={form.start_at || new Date().toISOString().slice(0, 16)}
             value={form.end_at}
             onChange={(e) => set("end_at", e.target.value)}
           />
@@ -394,7 +399,7 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
             step={1}
             className="input"
             value={form.price_amount}
-            onChange={(e) => set("price_amount", e.target.value)}
+            onChange={(e) => set("price_amount", e.target.value === "" ? "" : String(Math.floor(Number(e.target.value))))}
             placeholder="500"
           />
         </Field>

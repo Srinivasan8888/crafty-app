@@ -22,35 +22,53 @@ const SEGMENT: Record<EntityKind, string> = {
   EVENT: "events",
 };
 
+// Table name per entity. Trusted, fixed strings — never user input — so they
+// can be interpolated into the SQL while every value stays parameterized.
+const TABLE: Record<EntityKind, string> = {
+  CRAFTER: "Crafter",
+  STORE: "Store",
+  STUDIO: "Studio",
+  EVENT: "Event",
+};
+
+// Match the live search page exactly: build a `simple` to_tsquery from the
+// query (strip punctuation, AND the tokens together) and run it against
+// `search_vector`. Falls back to no matches when the query has no usable
+// tokens.
+function toTsQuery(query: string): string {
+  return query
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(" & ");
+}
+
 async function findNewMatches(
   entity: EntityKind,
   cityId: string,
   query: string,
   since: Date,
 ): Promise<Array<{ name: string; slug: string; created_at: Date }>> {
-  const q = `%${query}%`;
-  const base = {
-    city_id: cityId,
-    status: "PUBLISHED" as const,
-    created_at: { gte: since },
-    name: { contains: query, mode: "insensitive" as const },
-  };
-  switch (entity) {
-    case "CRAFTER":
-      return prisma.crafter.findMany({ where: base, select: { name: true, slug: true, created_at: true }, take: 20 });
-    case "STORE":
-      return prisma.store.findMany({ where: base, select: { name: true, slug: true, created_at: true }, take: 20 });
-    case "STUDIO":
-      return prisma.studio.findMany({ where: base, select: { name: true, slug: true, created_at: true }, take: 20 });
-    case "EVENT":
-      return prisma.event.findMany({
-        where: { ...base, end_at: { gte: new Date() } },
-        select: { name: true, slug: true, created_at: true },
-        take: 20,
-      });
-  }
-  // Touch `q` so the unused-var linter stays happy in some configs (kept for the LIKE pattern variant).
-  void q;
+  const safe = toTsQuery(query);
+  if (!safe) return [];
+
+  const table = TABLE[entity];
+  // Same FTS predicate as /[city]/search: city_id + PUBLISHED + search_vector.
+  // Events additionally exclude past listings via end_at >= NOW().
+  const eventClause = entity === "EVENT" ? "AND end_at >= NOW() " : "";
+  const sql =
+    `SELECT name, slug, created_at FROM "${table}" ` +
+    `WHERE city_id = $1 AND status = 'PUBLISHED' AND created_at >= $2 ` +
+    eventClause +
+    `AND search_vector @@ to_tsquery('simple', $3) LIMIT 20`;
+
+  return prisma.$queryRawUnsafe<Array<{ name: string; slug: string; created_at: Date }>>(
+    sql,
+    cityId,
+    since,
+    safe,
+  );
 }
 
 export async function GET(req: NextRequest) {

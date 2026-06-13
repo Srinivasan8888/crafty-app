@@ -8,6 +8,30 @@ import { track } from "@/lib/analytics";
 import { useFormDraft } from "@/lib/useFormDraft";
 import { DraftBanner } from "@/components/DraftBanner";
 
+// "myshop.com" passes the type=url input (and step gates) but is rejected by the
+// server z.string().url(). Prepend https:// when the user omitted a scheme so the
+// client and server agree.
+function normalizeWebsite(v: string) {
+  const s = v.trim();
+  if (!s || s.includes("://")) return s;
+  return `https://${s}`;
+}
+
+// Mirror the server phone rule (>=7 digits) for a gentle client-side gate.
+function looksLikePhone(v: string) {
+  return v.replace(/\D/g, "").length >= 7;
+}
+
+// Mirror the server z.string().url() — after normalizing a missing scheme.
+function looksLikeUrl(v: string) {
+  try {
+    new URL(normalizeWebsite(v));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 type Option = { id: string; display_name: string; slug: string };
 type CrafterFormValues = {
   name: string;
@@ -123,7 +147,15 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
 
   function step1Valid() { return form.name.trim().length >= 3 && form.category_ids.length > 0 && form.city_id; }
   function step2Valid() { return Boolean(form.profile_photo); }
-  function step3Valid() { return Boolean(form.contact_whatsapp || form.contact_instagram || form.contact_website); }
+  function step3Valid() {
+    // Mirror the server: a contact method only counts if it's plausibly valid
+    // (whatsapp >=7 digits, website a URL) so invalid input doesn't pass every
+    // step then fail at Publish. Instagram is a free-text handle (max 40).
+    const whatsappOk = form.contact_whatsapp.trim() !== "" && looksLikePhone(form.contact_whatsapp);
+    const instagramOk = form.contact_instagram.trim() !== "";
+    const websiteOk = form.contact_website.trim() !== "" && looksLikeUrl(form.contact_website);
+    return whatsappOk || instagramOk || websiteOk;
+  }
 
   // Field-level error wiring for a11y. Errors only show after the user has
   // touched the field (typed something) so they don't shout at empty fields.
@@ -155,7 +187,7 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
         ...form,
         contact_whatsapp: form.contact_whatsapp || null,
         contact_instagram: form.contact_instagram || null,
-        contact_website: form.contact_website || null,
+        contact_website: normalizeWebsite(form.contact_website) || null,
         tagline: form.tagline || null,
         bio: form.bio || null,
       };
@@ -311,6 +343,7 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
               value={form.contact_whatsapp}
               onChange={(e) => set("contact_whatsapp", e.target.value)}
               placeholder="+91-98865-44321"
+              maxLength={40}
               aria-describedby="step3-contact-help"
             />
           </div>
@@ -323,6 +356,7 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
               value={form.contact_instagram}
               onChange={(e) => set("contact_instagram", e.target.value)}
               placeholder="@aishacrochet"
+              maxLength={40}
               aria-describedby="step3-contact-help"
             />
           </div>
@@ -335,7 +369,9 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
               className="input"
               value={form.contact_website}
               onChange={(e) => set("contact_website", e.target.value)}
+              onBlur={(e) => set("contact_website", normalizeWebsite(e.target.value))}
               placeholder="https://example.com"
+              maxLength={500}
               aria-describedby="step3-contact-help"
             />
           </div>

@@ -4,7 +4,7 @@
 // toast on success. Optimistically disables itself while pending.
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ShoppingBag, Loader2, Check } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
@@ -16,6 +16,7 @@ type Props = {
 
 export function AddToCartButton({ productId, compact }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -30,10 +31,13 @@ export function AddToCartButton({ productId, compact }: Props) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
+        if (j.error === "unauthenticated") {
+          router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
+          return;
+        }
         const msg =
           j.error === "cannot_buy_own_product" ? "You can't buy your own product." :
           j.error === "insufficient_inventory" ? "Not enough stock." :
-          j.error === "unauthenticated" ? "Sign in to add to cart." :
           "Couldn't add to cart.";
         toast.show(msg, "error");
         return;

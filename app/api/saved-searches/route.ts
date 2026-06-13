@@ -38,9 +38,13 @@ export async function POST(req: NextRequest) {
   const city = await prisma.city.findUnique({ where: { id: data.city_id }, select: { is_active: true } });
   if (!city) return NextResponse.json({ error: "invalid_city" }, { status: 400 });
 
+  // Normalize the query (lowercase + collapse whitespace) so dedup is
+  // case-/whitespace-insensitive and stored queries stay consistent.
+  const normalizedQuery = data.query.toLowerCase().replace(/\s+/g, " ").trim();
+
   // Dedup: don't store the same (user, city, entity_type, query) twice.
   const existing = await prisma.savedSearch.findFirst({
-    where: { user_id: user.id, city_id: data.city_id, entity_type: data.entity_type, query: data.query },
+    where: { user_id: user.id, city_id: data.city_id, entity_type: data.entity_type, query: normalizedQuery },
     select: { id: true },
   });
   if (existing) return NextResponse.json({ id: existing.id, already_saved: true });
@@ -50,7 +54,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       city_id: data.city_id,
       entity_type: data.entity_type,
-      query: data.query,
+      query: normalizedQuery,
       // Seed last_run_at to now so the first cron only flags genuinely-new matches.
       last_run_at: new Date(),
     },

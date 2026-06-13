@@ -20,7 +20,19 @@ const CONFIGURED =
   !!process.env.NEXT_PUBLIC_DESCOPE_PROJECT_ID &&
   !process.env.NEXT_PUBLIC_DESCOPE_PROJECT_ID.startsWith("P_placeholder");
 
-export default function SignInPage() {
+export default function SignInPage({
+  searchParams,
+}: {
+  searchParams: { redirect_url?: string };
+}) {
+  // Accept ?redirect_url=... so post-sign-in lands where the user came from.
+  // Only allow same-origin relative paths (a single leading "/", not "//evil").
+  // Prevents an open-redirect via ?redirect_url=https://evil.example.
+  const rawRedirect = searchParams.redirect_url;
+  const after =
+    rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : "/dashboard";
   return (
     <MaybeAuthProvider>
       <header
@@ -65,7 +77,7 @@ export default function SignInPage() {
                 flowId="sign-in"
                 theme="light"
                 themeOverride={craftyDescopeTheme as any}
-                redirectAfterSuccess="/dashboard"
+                redirectAfterSuccess={after}
               />
             )}
           </div>

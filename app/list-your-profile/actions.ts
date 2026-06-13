@@ -28,7 +28,7 @@ export async function startCreatorIntent(dest: string) {
   const safeDest = ALLOWED_DESTS.has(dest) ? dest : "/dashboard";
 
   cookies().set(SIGNUP_INTENT_COOKIE, "creator", {
-    maxAge: 60 * 30,
+    maxAge: 600,
     path: "/",
     httpOnly: true,
     sameSite: "lax",

@@ -61,7 +61,14 @@ export function CheckoutButton({ totalInr }: Props) {
         const j = await res.json().catch(() => ({}));
         if (j.error === "razorpay_not_configured") throw new Error("Payments aren't configured yet.");
         if (j.error === "cart_empty") throw new Error("Your cart is empty.");
-        if (j.error === "insufficient_inventory") throw new Error("One of your items just sold out — review your cart.");
+        if (j.error === "product_unavailable") {
+          router.refresh();
+          throw new Error("One of your items is no longer available — review your cart.");
+        }
+        if (j.error === "insufficient_inventory") {
+          router.refresh();
+          throw new Error("One of your items just sold out — review your cart.");
+        }
         throw new Error("Couldn't start checkout.");
       }
       const j = (await res.json()) as {
