@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Loader2, Upload, X } from "lucide-react";
@@ -72,7 +73,7 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
     const res = await fetch(`/api/upload?folder=${folder}`, { method: "POST", body: fd });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      throw new Error(j.error ?? "upload_failed");
+      throw new Error(apiErrorMessage(j, "Upload failed. Try a smaller image (5MB max)."));
     }
     const j = (await res.json()) as { full: string; medium: string; thumb: string; blurhash: string };
     return { url: j.medium, blurhash: j.blurhash ?? "" };
@@ -165,7 +166,7 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? (isEdit ? "update_failed" : "create_failed"));
+        throw new Error(apiErrorMessage(j, isEdit ? "Could not save your changes. Please try again." : "Could not publish. Please check the form and try again."));
       }
       const j = (await res.json()) as { slug: string; city: string };
       if (!isEdit) {

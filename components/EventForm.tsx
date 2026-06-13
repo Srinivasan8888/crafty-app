@@ -6,6 +6,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiErrorMessage } from "@/lib/api-error";
 import Image from "next/image";
 import { Loader2, Upload } from "lucide-react";
 import { track } from "@/lib/analytics";
@@ -136,7 +137,7 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
       const res = await fetch("/api/upload?folder=event-covers", { method: "POST", body: fd });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? "upload_failed");
+        throw new Error(apiErrorMessage(j, "Upload failed. Try a smaller image (5MB max)."));
       }
       const j = (await res.json()) as { medium: string; blurhash: string };
       set("cover_image", j.medium);
@@ -201,7 +202,7 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? (isEdit ? "update_failed" : "create_failed"));
+        throw new Error(apiErrorMessage(j, isEdit ? "Could not save your changes. Please try again." : "Could not publish. Please check the form and try again."));
       }
       const j = (await res.json()) as { slug: string; city: string };
       if (!isEdit) {

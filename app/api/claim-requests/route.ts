@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { phoneNumber } from "@/lib/phone";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
@@ -16,7 +17,7 @@ const Schema = z.object({
   entity_type: z.enum(["CRAFTER", "STORE", "STUDIO"]),
   entity_id: z.string().min(1).max(40),
   claimant_email: z.string().email().max(120),
-  claimant_phone: z.string().max(40).optional().nullable(),
+  claimant_phone: phoneNumber.optional().nullable(),
   claimant_name: z.string().max(80).optional().nullable(),
   message: z.string().min(10).max(2000),
 });

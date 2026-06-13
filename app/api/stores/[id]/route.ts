@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { phoneNumber } from "@/lib/phone";
+import { uploadedImageUrl } from "@/lib/upload-url";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCreator } from "@/lib/auth";
@@ -9,7 +11,7 @@ import { isSameOrigin } from "@/lib/security";
 
 export const runtime = "nodejs";
 
-const internalUploadPath = z.string().startsWith("/uploads/");
+const internalUploadPath = uploadedImageUrl;
 
 const PatchSchema = z.object({
   name: z.string().min(3).max(80).optional(),
@@ -17,8 +19,8 @@ const PatchSchema = z.object({
   city_id: z.string().min(1).max(30).optional(),
   address: z.string().max(200).optional(),
   is_online_only: z.boolean().optional(),
-  contact_phone: z.string().max(40).nullable().optional(),
-  contact_whatsapp: z.string().max(40).nullable().optional(),
+  contact_phone: phoneNumber.nullable().optional(),
+  contact_whatsapp: phoneNumber.nullable().optional(),
   contact_website: z.string().url().max(500).nullable().optional(),
   category_ids: z.array(z.string().max(30)).min(1).max(5).optional(),
 });

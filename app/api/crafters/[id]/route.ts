@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { phoneNumber } from "@/lib/phone";
+import { uploadedImageUrl } from "@/lib/upload-url";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCreator } from "@/lib/auth";
@@ -15,7 +17,7 @@ import { getMaxPortfolioPhotos } from "@/lib/subscription-gates";
 
 export const runtime = "nodejs";
 
-const internalUploadPath = z.string().startsWith("/uploads/");
+const internalUploadPath = uploadedImageUrl;
 
 const PatchSchema = z.object({
   name: z.string().min(3).max(60).optional(),
@@ -25,7 +27,7 @@ const PatchSchema = z.object({
   profile_photo: internalUploadPath.optional(),
   // V3 — schema cap is 12 (PRO ceiling); runtime check below enforces FREE=6.
   portfolio_photos: z.array(internalUploadPath).max(12).optional(),
-  contact_whatsapp: z.string().max(40).nullable().optional(),
+  contact_whatsapp: phoneNumber.nullable().optional(),
   contact_instagram: z.string().max(40).nullable().optional(),
   contact_website: z.string().url().max(500).nullable().optional(),
   offers_classes: z.boolean().optional(),

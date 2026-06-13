@@ -2,6 +2,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { phoneNumber } from "@/lib/phone";
+import { uploadedImageUrl } from "@/lib/upload-url";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCreator } from "@/lib/auth";
@@ -12,7 +14,7 @@ import { sendListingLive } from "@/lib/email";
 
 export const runtime = "nodejs";
 
-const internalUploadPath = z.string().startsWith("/uploads/");
+const internalUploadPath = uploadedImageUrl;
 
 const Schema = z.object({
   name: z.string().min(3).max(80),
@@ -22,8 +24,8 @@ const Schema = z.object({
   address: z.string().max(200).default(""),
   is_online_only: z.boolean().default(false),
   age_group: z.string().max(40).optional().nullable(),
-  contact_phone: z.string().max(40).optional().nullable(),
-  contact_whatsapp: z.string().max(40).optional().nullable(),
+  contact_phone: phoneNumber.optional().nullable(),
+  contact_whatsapp: phoneNumber.optional().nullable(),
   contact_website: z.string().url().max(500).optional().nullable(),
   discipline_ids: z.array(z.string().max(30)).min(1).max(5),
 })

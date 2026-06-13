@@ -7,6 +7,7 @@
 // Reuses the same /api/upload?folder=product-photos flow as CrafterForm.
 
 import { useState } from "react";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Loader2, Upload, X } from "lucide-react";
@@ -70,7 +71,7 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
           const res = await fetch(`/api/upload?folder=product-photos`, { method: "POST", body: fd });
           if (!res.ok) {
             const j = await res.json().catch(() => ({}));
-            throw new Error(j.error ?? "upload_failed");
+            throw new Error(apiErrorMessage(j, "Upload failed. Try a smaller image (5MB max)."));
           }
           const j = (await res.json()) as { full: string; medium: string; thumb: string; blurhash: string };
           return { url: j.medium, blurhash: j.blurhash ?? "" };
@@ -118,7 +119,7 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? (isEdit ? "update_failed" : "create_failed"));
+        throw new Error(apiErrorMessage(j, isEdit ? "Could not save your changes. Please try again." : "Could not publish. Please check the form and try again."));
       }
       router.push("/dashboard/products");
       router.refresh();

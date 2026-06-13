@@ -5,6 +5,7 @@
 // age-group field.
 
 import { useState } from "react";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Loader2, Upload } from "lucide-react";
@@ -69,7 +70,7 @@ export function StudioForm({ cities, disciplines, entityId, initialValues }: Pro
       const res = await fetch("/api/upload?folder=profile-photos", { method: "POST", body: fd });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? "upload_failed");
+        throw new Error(apiErrorMessage(j, "Upload failed. Try a smaller image (5MB max)."));
       }
       const j = (await res.json()) as { medium: string; blurhash: string };
       set("logo_photo", j.medium);
@@ -116,7 +117,7 @@ export function StudioForm({ cities, disciplines, entityId, initialValues }: Pro
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? (isEdit ? "update_failed" : "create_failed"));
+        throw new Error(apiErrorMessage(j, isEdit ? "Could not save your changes. Please try again." : "Could not publish. Please check the form and try again."));
       }
       const j = (await res.json()) as { slug: string; city: string };
       if (!isEdit) {

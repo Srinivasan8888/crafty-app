@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { phoneNumber } from "@/lib/phone";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
@@ -22,7 +23,7 @@ const COMMISSION_RATE = 0.10;
 const Schema = z.object({
   shipping_name: z.string().min(2).max(120),
   shipping_address: z.string().min(8).max(500),
-  shipping_phone: z.string().min(7).max(40),
+  shipping_phone: phoneNumber,
 });
 
 export async function POST(req: NextRequest) {

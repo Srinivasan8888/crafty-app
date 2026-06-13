@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { phoneNumber } from "@/lib/phone";
+import { uploadedImageUrl } from "@/lib/upload-url";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCreator } from "@/lib/auth";
@@ -14,7 +16,7 @@ export const runtime = "nodejs";
 // S12 — only same-origin uploads are accepted as photo URLs. We previously
 // allowed any external https:// URL, which let attackers store tracker /
 // phishing pixels rendered server-side as og:image and on the public profile.
-const internalUploadPath = z.string().startsWith("/uploads/");
+const internalUploadPath = uploadedImageUrl;
 
 const Schema = z.object({
   name: z.string().min(3).max(60),
@@ -27,7 +29,7 @@ const Schema = z.object({
   // for FREE users via getMaxPortfolioPhotos().
   portfolio_photos: z.array(internalUploadPath).max(12).default([]),
   portfolio_blurhashes: z.array(z.string().max(500)).max(12).default([]),
-  contact_whatsapp: z.string().max(40).optional().nullable(),
+  contact_whatsapp: phoneNumber.optional().nullable(),
   contact_instagram: z.string().max(40).optional().nullable(),
   contact_website: z.string().url().max(500).optional().nullable(),
   offers_classes: z.boolean().default(false),

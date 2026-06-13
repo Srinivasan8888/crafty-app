@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { uploadedImageUrl } from "@/lib/upload-url";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCreator } from "@/lib/auth";
@@ -10,7 +11,7 @@ import { validateRrule } from "@/lib/rrule";
 
 export const runtime = "nodejs";
 
-const internalUploadPath = z.string().startsWith("/uploads/");
+const internalUploadPath = uploadedImageUrl;
 
 const PatchSchema = z.object({
   name: z.string().min(3).max(100).optional(),
