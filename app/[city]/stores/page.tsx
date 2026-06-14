@@ -6,13 +6,13 @@ import { StoreCard } from "@/components/Cards";
 export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
   const city = await getCityBySlug(params.city);
   const cityName = city?.display_name ?? params.city;
-  const title = `Supply stores in ${cityName} — Crafty`;
+  const title = `Supply stores in ${cityName} · Crafty`;
   const description = `Yarn, fabric, beads, tools — find craft supply stores across ${cityName}. Address, hours, contact info.`;
   return {
     title,
     description,
     alternates: { canonical: `/${params.city}/stores` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { title, description, type: "website", images: ["/opengraph-image"] },
   };
 }
 import { BottomNav } from "@/components/BottomNav";

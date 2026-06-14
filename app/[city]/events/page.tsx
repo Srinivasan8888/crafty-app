@@ -6,13 +6,13 @@ import { EventCard } from "@/components/Cards";
 export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
   const city = await getCityBySlug(params.city);
   const cityName = city?.display_name ?? params.city;
-  const title = `Craft events in ${cityName} — Crafty`;
+  const title = `Craft events in ${cityName} · Crafty`;
   const description = `Workshops, fairs, pop-ups, classes happening in ${cityName}. Register directly with organizers.`;
   return {
     title,
     description,
     alternates: { canonical: `/${params.city}/events` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { title, description, type: "website", images: ["/opengraph-image"] },
   };
 }
 import { FeaturedCard } from "@/components/FeaturedCard";

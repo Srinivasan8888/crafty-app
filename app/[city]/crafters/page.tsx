@@ -6,13 +6,13 @@ import { CrafterCard } from "@/components/Cards";
 export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
   const city = await getCityBySlug(params.city);
   const cityName = city?.display_name ?? params.city;
-  const title = `Crafters in ${cityName} — Crafty`;
+  const title = `Crafters in ${cityName} · Crafty`;
   const description = `Discover handmade artists and craft sellers across ${cityName}. Browse profiles, see portfolios, contact directly.`;
   return {
     title,
     description,
     alternates: { canonical: `/${params.city}/crafters` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { title, description, type: "website", images: ["/opengraph-image"] },
   };
 }
 import { FeaturedCard } from "@/components/FeaturedCard";

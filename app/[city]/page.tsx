@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: { city: string } })
     title,
     description,
     alternates: { canonical: `/${params.city}` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { title, description, type: "website", images: ["/opengraph-image"] },
   };
 }
 

@@ -6,13 +6,13 @@ import { StudioCard } from "@/components/Cards";
 export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
   const city = await getCityBySlug(params.city);
   const cityName = city?.display_name ?? params.city;
-  const title = `Learn craft in ${cityName} — Crafty`;
+  const title = `Learn craft in ${cityName} · Crafty`;
   const description = `Studios and academies teaching pottery, ceramics, weaving, and more across ${cityName}. Disciplines, age groups, contact info.`;
   return {
     title,
     description,
     alternates: { canonical: `/${params.city}/learn` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { title, description, type: "website", images: ["/opengraph-image"] },
   };
 }
 import { BottomNav } from "@/components/BottomNav";
