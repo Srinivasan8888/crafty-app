@@ -44,23 +44,25 @@ export function SaveSearchButton({ cityId, query, entityType }: Props) {
 
   if (state === "saved") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-success">
+      <span role="status" aria-live="polite" className="inline-flex items-center gap-1 text-xs text-success">
         <Check size={12} aria-hidden /> We'll email you about new {label}.
       </span>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={save}
-      disabled={state === "saving"}
-      className="btn btn-ghost btn-sm"
-      aria-label={`Subscribe to ${label} search for "${query}"`}
-    >
-      {state === "saving"
-        ? <><Loader2 className="animate-spin" size={12} /> Saving…</>
-        : <><Bell size={12} /> {state === "error" ? "Try again" : `New ${label}`}</>}
-    </button>
+    <span role="status" aria-live="polite">
+      <button
+        type="button"
+        onClick={save}
+        disabled={state === "saving"}
+        className="btn btn-ghost btn-sm"
+        aria-label={`Notify me about new ${label} for "${query}"`}
+      >
+        {state === "saving"
+          ? <><Loader2 className="animate-spin" size={12} /> Saving…</>
+          : <><Bell size={12} /> {state === "error" ? "Try again" : `New ${label}`}</>}
+      </button>
+    </span>
   );
 }

@@ -129,7 +129,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
     ? `https://wa.me/${s.contact_whatsapp.replace(/[^0-9]/g, "")}`
     : s.contact_phone
       ? `tel:${s.contact_phone}`
-      : s.contact_website ?? "#";
+      : s.contact_website ?? undefined;
   const primaryLabel = s.contact_whatsapp
     ? `WhatsApp ${s.contact_whatsapp}`
     : s.contact_phone
@@ -260,23 +260,26 @@ export default async function StudioDetail({ params }: { params: { city: string;
     </section>
   );
 
+  // The real <ReviewSection> renders live at the bottom of the page (mobile +
+  // desktop). The mobile tab just points to it instead of duplicating the
+  // widget or showing a hardcoded "coming soon" placeholder.
   const reviewsPane = (
     <section className="seg-section" style={{ padding: "14px 18px 18px" }}>
       <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>Reviews</h2>
-      <div
-        style={{
-          padding: "20px 16px",
-          background: "var(--tint-mustard)",
-          border: "1px dashed var(--line-strong)",
-          borderRadius: "var(--r-lg)",
-          textAlign: "center",
-          color: "rgb(var(--mustard-dark))",
-          fontFamily: "var(--font-display)",
-          fontStyle: "italic",
-        }}
-      >
-        Reviews coming soon — be the first to leave one.
-      </div>
+      <p className="text-muted" style={{ fontSize: 14, lineHeight: 1.6 }}>
+        {s.owner_user_id
+          ? "Read what makers say below, or leave your own."
+          : "This studio hasn't been claimed yet, so reviews aren't open."}
+      </p>
+      {s.owner_user_id && (
+        <a
+          href="#reviews-heading"
+          className="text-magenta"
+          style={{ display: "inline-block", marginTop: 8, fontSize: 13.5, fontWeight: 600 }}
+        >
+          Jump to reviews →
+        </a>
+      )}
     </section>
   );
 

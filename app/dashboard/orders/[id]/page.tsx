@@ -79,27 +79,32 @@ export default async function OrderDetail({
 
       <section className="card mt-6 p-4 sm:p-6">
         <h2 className="font-display text-lg font-bold">Status</h2>
-        <ol className="mt-3 space-y-2">
-          {STAGES.map((s) => {
-            const done = stageReached(order.status, s.key);
-            const isCurrent = order.status === s.key;
-            return (
-              <li key={s.key} className="flex items-center gap-3">
-                {done ? (
-                  <CheckCircle2 size={18} className="text-success" />
-                ) : isCurrent ? (
-                  <Clock size={18} className="text-mustard" />
-                ) : (
-                  <Circle size={18} className="text-ink-subtle" />
-                )}
-                <span className={`text-sm ${done ? "text-ink" : "text-ink-subtle"}`}>{s.label}</span>
-              </li>
-            );
-          })}
-          {order.status === "FAILED" && (
-            <li className="text-sm text-danger">Payment failed — you weren&apos;t charged.</li>
-          )}
-        </ol>
+        {order.status === "REFUNDED" ? (
+          <p className="mt-3 text-sm text-mustard">Refunded — the amount was returned.</p>
+        ) : order.status === "CANCELLED" ? (
+          <p className="mt-3 text-sm text-ink-subtle">Order cancelled.</p>
+        ) : order.status === "FAILED" ? (
+          <p className="mt-3 text-sm text-danger">Payment failed — you weren&apos;t charged.</p>
+        ) : (
+          <ol className="mt-3 space-y-2">
+            {STAGES.map((s) => {
+              const done = stageReached(order.status, s.key);
+              const isCurrent = order.status === s.key;
+              return (
+                <li key={s.key} className="flex items-center gap-3">
+                  {done ? (
+                    <CheckCircle2 size={18} className="text-success" />
+                  ) : isCurrent ? (
+                    <Clock size={18} className="text-mustard" />
+                  ) : (
+                    <Circle size={18} className="text-ink-subtle" />
+                  )}
+                  <span className={`text-sm ${done ? "text-ink" : "text-ink-subtle"}`}>{s.label}</span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </section>
 
       <section className="card mt-4 p-4 sm:p-6">

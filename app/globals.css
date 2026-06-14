@@ -737,6 +737,18 @@ html, body {
   margin-bottom: 14px;
 }
 .app-footer .links a { color: rgb(var(--cream)); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+/* Social icons keep a 32px disc but get a 44px tap target for thumb-first users. */
+.app-footer .socials a {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+/* Reserve space under the footer for the fixed mobile bottom-nav so it can't
+   overlap the copyright/links row on phones. */
+@media (max-width: 720px) {
+  .app-footer { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+}
 .app-footer .copy {
   font-size: 11px;
   color: rgba(255, 246, 229, 0.75);

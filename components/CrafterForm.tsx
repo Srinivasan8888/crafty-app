@@ -70,7 +70,7 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
   const [portfolioBusy, setPortfolioBusy] = useState(false);
   // Set on a successful first publish so we can show the celebration + share
   // moment before sending the creator on to their new public profile.
-  const [published, setPublished] = useState<{ city: string; url: string; name: string } | null>(null);
+  const [published, setPublished] = useState<{ city: string; url: string; path: string; name: string } | null>(null);
 
   const [form, setForm] = useState<CrafterFormValues>({
     name: initialValues?.name ?? "",
@@ -165,12 +165,18 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
   // touched the field (typed something) so they don't shout at empty fields.
   const errors: Partial<Record<
     | "name"
+    | "categories"
     | "profile_photo"
     | "contact"
     , string
   >> = {};
   if (form.name.length > 0 && form.name.trim().length < 3) {
     errors.name = "Name must be at least 3 characters.";
+  }
+  // Once the user has started step 1 (typed a name) but picked no category, the
+  // disabled Next is otherwise unexplained — surface a brief hint like name/photo.
+  if (step === 1 && form.name.length > 0 && form.category_ids.length === 0) {
+    errors.categories = "Pick at least one category to continue.";
   }
   if (step === 2 && !form.profile_photo) {
     errors.profile_photo = "A profile photo is required.";
@@ -213,7 +219,7 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
         const cityName = cities.find((c) => c.slug === j.city)?.display_name ?? j.city;
         const url =
           typeof window !== "undefined" ? `${window.location.origin}${profilePath}` : profilePath;
-        setPublished({ city: cityName, url, name: form.name });
+        setPublished({ city: cityName, url, path: profilePath, name: form.name });
         return;
       }
       draft.clear();
@@ -229,6 +235,7 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
       <CelebrationScreen
         city={published.city}
         url={published.url}
+        path={published.path}
         name={published.name}
         onContinue={() => router.push("/dashboard")}
       />
@@ -279,7 +286,12 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
           </div>
           <div>
             <label className="label" id="categories-label">Craft categories * <span className="text-ink-subtle">(pick 1–3)</span></label>
-            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="categories-label">
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-labelledby="categories-label"
+              aria-describedby={errors.categories ? "categories-error" : undefined}
+            >
               {categories.map((c) => {
                 const selected = form.category_ids.includes(c.id);
                 return (
@@ -295,6 +307,11 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
                 );
               })}
             </div>
+            {errors.categories && (
+              <p id="categories-error" role="alert" className="mt-1 text-sm text-danger">
+                {errors.categories}
+              </p>
+            )}
             <CategoryCounter count={form.category_ids.length} />
           </div>
           <Nav onNext={() => setStep(2)} disabled={!step1Valid()} />
@@ -503,7 +520,7 @@ function Stepper({ step }: { step: number }) {
         const done = step > n;
         return (
           <li key={label} className="flex flex-1 items-center gap-2">
-            <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${done ? "bg-success text-white" : active ? "bg-ink text-canvas" : "bg-canvas-sunken text-ink-subtle"}`}>{n}</span>
+            <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${done ? "bg-success text-canvas" : active ? "bg-ink text-canvas" : "bg-canvas-sunken text-ink-subtle"}`}>{n}</span>
             <span className={done || active ? "text-ink" : "text-ink-subtle"}>{label}</span>
             {n < 4 && <span className={`mx-1 h-px flex-1 ${done ? "bg-success" : "bg-line"}`} />}
           </li>

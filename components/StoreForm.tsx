@@ -12,6 +12,7 @@ import { Loader2, Upload } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { useFormDraft } from "@/lib/useFormDraft";
 import { DraftBanner } from "@/components/DraftBanner";
+import { looksLikePhone } from "@/lib/phone";
 
 // "myshop.com" passes the type=url input (and the submit gate) but is rejected by
 // the server z.string().url(). Prepend https:// when the user omitted a scheme so
@@ -20,11 +21,6 @@ function normalizeWebsite(v: string) {
   const s = v.trim();
   if (!s || s.includes("://")) return s;
   return `https://${s}`;
-}
-
-// Mirror the server phone rule (>=7 digits) for a gentle client-side gate.
-function looksLikePhone(v: string) {
-  return v.replace(/\D/g, "").length >= 7;
 }
 
 // Mirror the server z.string().url() — after normalizing a missing scheme.
@@ -126,6 +122,22 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
       (form.contact_whatsapp.trim() && looksLikePhone(form.contact_whatsapp)) ||
       (form.contact_website.trim() && looksLikeUrl(form.contact_website)),
     );
+
+  // When Publish is disabled, say why — derived from the same conditions above so
+  // a greyed button always has an honest reason.
+  const unmet: string[] = [];
+  if (form.name.trim().length < 3) unmet.push("Store name needs 3+ characters");
+  if (!form.logo_photo) unmet.push("Add a logo / storefront photo");
+  if (!form.is_online_only && form.address.trim().length === 0) unmet.push("Add an address");
+  if (form.category_ids.length === 0) unmet.push("Pick at least one supply category");
+  if (
+    !(
+      (form.contact_phone.trim() && looksLikePhone(form.contact_phone)) ||
+      (form.contact_whatsapp.trim() && looksLikePhone(form.contact_whatsapp)) ||
+      (form.contact_website.trim() && looksLikeUrl(form.contact_website))
+    )
+  )
+    unmet.push("Add one valid contact (phone, WhatsApp, or website)");
 
   async function submit() {
     setSubmitting(true);
@@ -265,6 +277,7 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
           <input
             type="tel"
             className="input"
+            aria-label="Phone number"
             value={form.contact_phone}
             onChange={(e) => set("contact_phone", e.target.value)}
             placeholder="Phone — +91-98xxx-xxxxx"
@@ -273,6 +286,7 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
           <input
             type="tel"
             className="input"
+            aria-label="WhatsApp number"
             value={form.contact_whatsapp}
             onChange={(e) => set("contact_whatsapp", e.target.value)}
             placeholder="WhatsApp — +91-98xxx-xxxxx"
@@ -281,6 +295,7 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
           <input
             type="url"
             className="input"
+            aria-label="Website"
             value={form.contact_website}
             onChange={(e) => set("contact_website", e.target.value)}
             onBlur={(e) => set("contact_website", normalizeWebsite(e.target.value))}
@@ -290,7 +305,10 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
         </div>
       </Field>
 
-      <div className="flex justify-end gap-3 pt-2">
+      <div className="flex flex-col items-end gap-2 pt-2">
+        {!valid && unmet.length > 0 && (
+          <p className="text-sm text-ink-muted">{unmet.join(" · ")}</p>
+        )}
         <button
           type="button"
           className="btn btn-primary btn-lg"

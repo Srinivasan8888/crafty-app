@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { MobileDrawer } from "./MobileDrawer";
+import { PrimaryNavIsland } from "./BottomNav";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { getCities } from "@/lib/cities";
 import { readLocaleCookie } from "@/lib/i18n/request";
@@ -34,7 +35,7 @@ export async function AppHeader({ city }: { city: string }) {
       </a>
 
       <header
-        className="sticky top-0 z-50"
+        className="web-hdr sticky top-0 z-50"
         style={{
           background: "rgb(var(--cream))",
           borderBottom: "1px solid var(--line)",
@@ -46,7 +47,11 @@ export async function AppHeader({ city }: { city: string }) {
         >
           {/* Mobile: hamburger drawer */}
           <div className="md:hidden">
-            <MobileDrawer cities={drawerCities} currentCity={current.slug} />
+            <MobileDrawer
+              cities={drawerCities}
+              currentCity={current.slug}
+              locale={locale}
+            />
           </div>
 
           {/* Logo (always visible) */}
@@ -58,22 +63,10 @@ export async function AppHeader({ city }: { city: string }) {
             <Logo size="md" />
           </Link>
 
-          {/* Desktop primary nav */}
-          <nav
-            className="hidden md:flex flex-1 gap-6"
-            aria-label="Primary"
-          >
-            {navLinks.map(([label, href]) => (
-              <Link
-                key={href}
-                href={href}
-                className="font-display font-semibold text-[15px]"
-                style={{ color: "rgb(var(--ink))" }}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
+          {/* Desktop primary nav (client island marks the active section) */}
+          <PrimaryNavIsland
+            links={navLinks.map(([label, href]) => ({ label, href }))}
+          />
 
           {/* Mobile city pill (centered) */}
           <Link

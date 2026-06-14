@@ -8,6 +8,24 @@ import { BottomNav } from "@/components/BottomNav";
 import { CitySelector } from "@/components/CitySelector";
 import { SearchTabs } from "./_components/SearchTabs";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: { city: string };
+  searchParams: { q?: string };
+}): Promise<Metadata> {
+  const city = await getCityBySlug(params.city);
+  const cityName = city?.display_name ?? params.city;
+  const q = searchParams.q?.trim();
+  const title = q
+    ? `"${q}" in ${cityName}: search Crafty`
+    : `Search Crafty in ${cityName}`;
+  const description = `Search crafters, supply stores, studios and events across ${cityName}.`;
+  return { title, description, alternates: { canonical: `/${params.city}/search` } };
+}
 
 export const revalidate = 0;
 
@@ -381,7 +399,7 @@ export default async function SearchPage({
               {total} matches across crafters, stores, studios, and events
               {isMultiMode && (
                 <>
-                  {" "}— {selectedCities.map((c) => c.display_name).join(", ")}
+                  {" "}· {selectedCities.map((c) => c.display_name).join(", ")}
                 </>
               )}
             </p>
@@ -406,7 +424,7 @@ export default async function SearchPage({
               name="q"
               defaultValue={q}
               minLength={2}
-              placeholder={`Search ${cityFromUrl.display_name} — try yarn, pottery, Cubbon meetup…`}
+              placeholder={`Search ${cityFromUrl.display_name} · try crochet, pottery, Cubbon meetup…`}
               type="search"
               aria-label="Search crafters, stores, events"
               className="search-input w-full"
@@ -438,7 +456,7 @@ export default async function SearchPage({
               body={
                 tooShort
                   ? "Enter at least 2 characters to search."
-                  : `Try ${SUGGESTIONS.slice(0, 3).join(", ")} — or any maker name, neighbourhood, or supply.`
+                  : `Try ${SUGGESTIONS.slice(0, 3).join(", ")}, or any maker name, neighbourhood, or supply.`
               }
               variant="mustard"
               glyph="✿"

@@ -120,17 +120,22 @@ export function buildEventJsonLd(e: {
   is_online: boolean;
   is_free: boolean;
   price_amount: any;
-  registration_url: string;
+  registration_url: string | null;
   city: { display_name: string; slug: string };
 }) {
+  // Seed/empty events carry a placeholder registration_url (https://example.com/...)
+  // that is a dead outbound link — never emit it as a real offers.url or
+  // VirtualLocation.url. Fall back to the canonical event page URL instead.
+  const eventUrl = `${SITE_URL}/${e.city.slug}/events/${e.slug}`;
+  const liveRegistration = isLiveOutboundUrl(e.registration_url);
   return {
     "@context": "https://schema.org",
     "@type": "Event",
-    "@id": `${SITE_URL}/${e.city.slug}/events/${e.slug}`,
+    "@id": eventUrl,
     name: e.name,
     description: e.description,
     image: absoluteUrl(e.cover_image),
-    url: `${SITE_URL}/${e.city.slug}/events/${e.slug}`,
+    url: eventUrl,
     startDate: e.start_at.toISOString(),
     endDate: e.end_at.toISOString(),
     eventAttendanceMode: e.is_online
@@ -140,7 +145,7 @@ export function buildEventJsonLd(e: {
     location: e.is_online
       ? {
           "@type": "VirtualLocation",
-          url: e.registration_url,
+          url: liveRegistration ?? eventUrl,
         }
       : {
           "@type": "Place",
@@ -154,13 +159,26 @@ export function buildEventJsonLd(e: {
         },
     offers: {
       "@type": "Offer",
-      url: e.registration_url,
+      url: liveRegistration ?? eventUrl,
       price: e.is_free ? "0" : String(e.price_amount ?? "0"),
       priceCurrency: "INR",
       availability: "https://schema.org/InStock",
       validFrom: new Date().toISOString(),
     },
   };
+}
+
+/** Returns the url if it's a real outbound link, else undefined. Rejects
+ *  empty, hash-only, and the placeholder hosts on seed/empty rows. */
+function isLiveOutboundUrl(url: string | null | undefined): string | undefined {
+  if (!url || url === "#") return undefined;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host === "example.com" || host === "example.org") return undefined;
+  } catch {
+    return undefined;
+  }
+  return url;
 }
 
 function absoluteUrl(path: string): string {

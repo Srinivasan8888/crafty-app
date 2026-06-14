@@ -57,7 +57,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <section className="min-w-0">{children}</section>
       </main>
       <AppFooter />
-      <CreatorWalkthrough />
+      {/* Tour copy assumes a crafter — only show to creators/admins. */}
+      {(user.role === "CREATOR" || user.role === "ADMIN") && <CreatorWalkthrough />}
     </MaybeAuthProvider>
   );
 }

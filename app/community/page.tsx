@@ -56,7 +56,6 @@ export default async function CommunityPage() {
         },
       })
     : null;
-  const featureSaveCount = topSaves[0]?._count.entity_id ?? 0;
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const recentSaves = await prisma.save.findMany({
@@ -77,7 +76,7 @@ export default async function CommunityPage() {
         <section className="py-10 md:py-14" style={{ background: "rgb(var(--cream))" }}>
           <div className="mx-auto px-[var(--container-pad)] text-center" style={{ maxWidth: 760 }}>
             <span className="inline-block font-display text-xs font-bold uppercase tracking-[3px] text-forest border-b border-mustard pb-1.5">
-              {t("ambient")}
+              {t("eyebrow")}
             </span>
             <h1 className="mt-5 font-display text-4xl font-extrabold tracking-tight md:text-5xl">
               {t("title")}
@@ -86,7 +85,7 @@ export default async function CommunityPage() {
           </div>
         </section>
 
-        {featured && featureSaveCount >= 1 ? (
+        {featured ? (
           <section className="container py-8 md:py-12">
             <div className="sec-title-bar" style={{ marginBottom: 12 }}>
               <h2 style={{ fontSize: 22 }}>{t("crafterOfWeek")}</h2>
@@ -110,7 +109,7 @@ export default async function CommunityPage() {
                     <p className="mt-4 font-display text-base italic text-muted md:text-lg">{featured.tagline}</p>
                   )}
                   <p className="mt-6 text-sm text-ink-subtle">
-                    Saved {featureSaveCount} time{featureSaveCount === 1 ? "" : "s"} in the last 7 days.
+                    Most-saved crafter in {featured.city.display_name} this week.
                   </p>
                 </div>
               </div>

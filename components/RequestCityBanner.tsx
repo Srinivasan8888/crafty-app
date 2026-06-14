@@ -8,7 +8,15 @@
 import { useState } from "react";
 import { X, MapPin } from "lucide-react";
 
-export function RequestCityBanner({ defaultCity = "" }: { defaultCity?: string }) {
+export function RequestCityBanner({
+  defaultCity = "",
+  headline = "Crafty isn't in your city yet.",
+  dismissable = true,
+}: {
+  defaultCity?: string;
+  headline?: string;
+  dismissable?: boolean;
+}) {
   const [open, setOpen] = useState(true);
   const [cityName, setCityName] = useState(defaultCity);
   const [email, setEmail] = useState("");
@@ -48,16 +56,18 @@ export function RequestCityBanner({ defaultCity = "" }: { defaultCity?: string }
     <div id="request-city" className="card mx-auto my-4 max-w-3xl p-4">
       <div className="mb-2 flex items-start justify-between gap-3">
         <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-          <MapPin size={16} aria-hidden /> Crafty isn't in your city yet.
+          <MapPin size={16} aria-hidden /> {headline}
         </p>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="icon-btn"
-          aria-label="Dismiss"
-        >
-          <X size={14} />
-        </button>
+        {dismissable && (
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="icon-btn"
+            aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
       {ok ? (
         <p className="text-sm text-ink-muted">

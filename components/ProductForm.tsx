@@ -97,6 +97,14 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
     form.photos.length >= 1 &&
     form.parent_listing !== null;
 
+  // When Publish is disabled, say why — derived from the same conditions above so
+  // a greyed button always has an honest reason.
+  const unmet: string[] = [];
+  if (form.name.trim().length < 3) unmet.push("Product name needs 3+ characters");
+  if (!(form.price_inr > 0)) unmet.push("Set a price");
+  if (form.photos.length < 1) unmet.push("Add at least one photo");
+  if (form.parent_listing === null) unmet.push("Choose which listing sells this");
+
   async function submit() {
     if (!valid) return;
     setSubmitting(true);
@@ -270,6 +278,9 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
         )}
       </div>
 
+      {!valid && unmet.length > 0 && (
+        <p className="text-right text-sm text-ink-muted">{unmet.join(" · ")}</p>
+      )}
       <div className="flex justify-end gap-2">
         <button type="button" className="btn" onClick={() => router.back()} disabled={submitting}>
           Cancel

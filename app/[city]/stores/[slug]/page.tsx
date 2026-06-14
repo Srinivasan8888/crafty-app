@@ -126,7 +126,7 @@ export default async function StoreDetail({ params }: { params: { city: string; 
     ? `https://wa.me/${s.contact_whatsapp.replace(/[^0-9]/g, "")}`
     : s.contact_phone
       ? `tel:${s.contact_phone}`
-      : s.contact_website ?? "#";
+      : s.contact_website ?? undefined;
   const primaryLabel = s.contact_whatsapp
     ? `WhatsApp ${s.contact_whatsapp}`
     : s.contact_phone
@@ -160,33 +160,27 @@ export default async function StoreDetail({ params }: { params: { city: string; 
 
   const cataloguePane = (
     <section className="seg-section" style={{ padding: "14px 18px 18px" }}>
-      <div className="sec-head" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>Catalogue</h2>
-        <span className="text-muted" style={{ fontSize: 12 }}>Sample picks</span>
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="aspect-square rounded-md"
-            style={{
-              background: "var(--tint-mustard)",
-              border: "1px dashed var(--line-strong)",
-              display: "grid",
-              placeItems: "center",
-              color: "rgb(var(--mustard-dark))",
-              fontFamily: "var(--font-display)",
-              fontStyle: "italic",
-              fontSize: 11,
-            }}
-          >
-            soon
-          </div>
-        ))}
-      </div>
-      <p className="text-subtle" style={{ marginTop: 10, fontSize: 12.5, fontStyle: "italic" }}>
-        Catalogue uploads coming soon. Message the store for current stock.
-      </p>
+      <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>Catalogue</h2>
+      {productsForSale.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3">
+          {productsForSale.slice(0, 6).map((p) => (
+            <ProductCard
+              key={p.id}
+              id={p.id}
+              name={p.name}
+              price_inr={p.price_inr}
+              photo={p.photos[0] ?? null}
+              photo_blurhash={p.photo_blurhashes[0] ?? null}
+              inventory={p.inventory}
+              ownerIsViewer={viewer?.id === p.owner_user_id}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted" style={{ fontSize: 14, lineHeight: 1.6 }}>
+          No catalogue uploaded yet — message the store for current stock.
+        </p>
+      )}
     </section>
   );
 
@@ -369,32 +363,14 @@ export default async function StoreDetail({ params }: { params: { city: string; 
               </div>
             </section>
 
-            <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
-              <div className="sec-head" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
-                <h2 style={{ fontSize: 22 }}>Catalogue</h2>
-                <span className="text-muted" style={{ fontSize: 13 }}>Sample picks · contact for stock</span>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-md"
-                    style={{
-                      background: "var(--tint-mustard)",
-                      border: "1px dashed var(--line-strong)",
-                      display: "grid",
-                      placeItems: "center",
-                      color: "rgb(var(--mustard-dark))",
-                      fontFamily: "var(--font-display)",
-                      fontStyle: "italic",
-                      fontSize: 13,
-                    }}
-                  >
-                    coming soon
-                  </div>
-                ))}
-              </div>
-            </section>
+            {productsForSale.length === 0 && (
+              <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
+                <h2 style={{ fontSize: 22, marginBottom: 14 }}>Catalogue</h2>
+                <p className="text-muted" style={{ fontSize: 15, lineHeight: 1.7 }}>
+                  No catalogue uploaded yet — message the store for current stock.
+                </p>
+              </section>
+            )}
 
             {upcomingEvents.length > 0 && (
               <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>

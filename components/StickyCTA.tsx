@@ -19,6 +19,21 @@ export type StickyCTAProps = {
   primaryIcon?: React.ReactNode;
 };
 
+/** A live link must resolve somewhere real. Reject empty, hash-only, and the
+ *  placeholder hosts our seed/empty rows carry (registration_url defaults to
+ *  https://example.com/...). When the href is dead we fall back to a <button>
+ *  so we never ship a live <Link href="#"> outbound dead link. */
+function isLiveHref(href?: string): href is string {
+  if (!href || href === "#") return false;
+  try {
+    const host = new URL(href, "http://local").hostname.toLowerCase();
+    if (host === "example.com" || host === "example.org") return false;
+  } catch {
+    return false;
+  }
+  return true;
+}
+
 export function StickyCTA({
   primaryLabel,
   primaryHref,
@@ -48,7 +63,7 @@ export function StickyCTA({
 
   return (
     <div className="sticky-cta md:hidden" role="region" aria-label="Primary actions">
-      {primaryHref ? (
+      {isLiveHref(primaryHref) ? (
         <Link href={primaryHref} className={`btn ${variantClass}`}>
           {inner}
         </Link>

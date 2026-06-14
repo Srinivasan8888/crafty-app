@@ -15,8 +15,6 @@ export type AppliedFilter = {
   label: string;
 };
 
-type SortOption = "newest" | "popular" | "featured" | "saves";
-
 type Props = {
   city: string;
   cityDisplayName: string;
@@ -25,22 +23,6 @@ type Props = {
   appliedFilters: AppliedFilter[];
   total: number;
 };
-
-const NEIGHBOURHOODS: { slug: string; label: string; count: number }[] = [
-  { slug: "commercial-street", label: "Commercial Street", count: 14 },
-  { slug: "indiranagar", label: "Indiranagar", count: 9 },
-  { slug: "jayanagar", label: "Jayanagar", count: 11 },
-  { slug: "malleshwaram", label: "Malleshwaram", count: 7 },
-  { slug: "koramangala", label: "Koramangala", count: 8 },
-  { slug: "whitefield", label: "Whitefield", count: 6 },
-];
-
-const SORTS: { id: SortOption; label: string }[] = [
-  { id: "newest", label: "Newest" },
-  { id: "popular", label: "Popular" },
-  { id: "featured", label: "Featured first" },
-  { id: "saves", label: "Most saves" },
-];
 
 export function StoreFilters({
   city,
@@ -54,50 +36,24 @@ export function StoreFilters({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [draftCategory, setDraftCategory] = useState<string | undefined>(activeCategorySlug);
-  const [draftNbhds, setDraftNbhds] = useState<Set<string>>(new Set());
-  const [draftFlags, setDraftFlags] = useState<{ online: boolean; openNow: boolean; featured: boolean }>({
-    online: false,
-    openNow: false,
-    featured: true,
-  });
-  const [draftSort, setDraftSort] = useState<SortOption>("newest");
 
   const baseHref = `/${city}/stores`;
 
   const onSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (activeCategorySlug) params.set("category", activeCategorySlug);
-    router.push(`${baseHref}${params.toString() ? `?${params.toString()}` : ""}`);
-  };
-
-  const toggleNbhd = (slug: string) => {
-    setDraftNbhds((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
-      return next;
-    });
+    if (!query.trim()) return;
+    router.push(`/${city}/search?q=${encodeURIComponent(query.trim())}`);
   };
 
   const onApply = () => {
     const params = new URLSearchParams();
     if (draftCategory) params.set("category", draftCategory);
-    if (draftNbhds.size > 0) params.set("nbhd", Array.from(draftNbhds).join(","));
-    if (draftFlags.online) params.set("online", "1");
-    if (draftFlags.openNow) params.set("open", "1");
-    if (draftFlags.featured) params.set("featured", "1");
-    if (draftSort !== "newest") params.set("sort", draftSort);
     setOpen(false);
     router.push(`${baseHref}${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
   const clearDrafts = () => {
     setDraftCategory(undefined);
-    setDraftNbhds(new Set());
-    setDraftFlags({ online: false, openNow: false, featured: false });
-    setDraftSort("newest");
   };
 
   const sheetFooter = (
@@ -211,107 +167,9 @@ export function StoreFilters({
               );
             })}
           </div>
-
-          <SheetGroup title="Neighbourhood">
-            {NEIGHBOURHOODS.map((n) => {
-              const checked = draftNbhds.has(n.slug);
-              return (
-                <label
-                  key={n.slug}
-                  className="flex items-center justify-between border-b py-3 last:border-b-0"
-                  style={{ borderColor: "var(--line)" }}
-                >
-                  <span className="text-sm font-medium text-ink">
-                    {n.label}{" "}
-                    <span className="text-subtle" style={{ fontSize: 11.5, fontWeight: 500 }}>{n.count}</span>
-                  </span>
-                  <span className="toggle">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleNbhd(n.slug)}
-                      aria-label={`Toggle ${n.label}`}
-                    />
-                    <span className="slider" />
-                  </span>
-                </label>
-              );
-            })}
-          </SheetGroup>
-
-          <SheetGroup title="Other">
-            <ToggleRow label="Online only" checked={draftFlags.online} onChange={(v) => setDraftFlags((f) => ({ ...f, online: v }))} />
-            <ToggleRow label="Open now" checked={draftFlags.openNow} onChange={(v) => setDraftFlags((f) => ({ ...f, openNow: v }))} />
-            <ToggleRow label="Featured first" checked={draftFlags.featured} onChange={(v) => setDraftFlags((f) => ({ ...f, featured: v }))} />
-          </SheetGroup>
-
-          <SheetGroup title="Sort by">
-            <div className="grid grid-cols-2 gap-1.5">
-              {SORTS.map((s) => {
-                const isActive = draftSort === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setDraftSort(s.id)}
-                    className={`pill w-full${isActive ? " active" : ""}`}
-                    style={{ padding: "9px 8px", fontSize: 12 }}
-                  >
-                    {s.label}
-                  </button>
-                );
-              })}
-            </div>
-          </SheetGroup>
         </div>
       </BottomSheet>
     </>
-  );
-}
-
-function SheetGroup({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mt-4 border-t pt-4" style={{ borderColor: "var(--line)" }}>
-      <div
-        style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 13,
-          fontWeight: 700,
-          color: "rgb(var(--ink))",
-          textTransform: "uppercase",
-          letterSpacing: "1.2px",
-          marginBottom: 10,
-        }}
-      >
-        {title}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function ToggleRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label
-      className="flex items-center justify-between border-b py-3 last:border-b-0"
-      style={{ borderColor: "var(--line)" }}
-    >
-      <span className="text-sm font-medium text-ink">
-        {label}
-      </span>
-      <span className="toggle">
-        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} aria-label={label} />
-        <span className="slider" />
-      </span>
-    </label>
   );
 }
 

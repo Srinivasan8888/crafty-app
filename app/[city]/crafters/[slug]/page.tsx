@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import { GalleryStrip } from "@/components/GalleryStrip";
-import { HCard } from "@/components/HCard";
 import { StickyCTA } from "@/components/StickyCTA";
 import { SaveButton } from "@/components/SaveButton";
 import { ShareButton } from "@/components/ShareButton";
@@ -81,13 +80,6 @@ type ClassEntry = {
   format?: string;
   price?: string | number;
   description?: string;
-};
-
-type ProductEntry = {
-  name?: string;
-  meta?: string;
-  price?: string | number;
-  image?: string;
 };
 
 function parseClasses(json: unknown): ClassEntry[] {
@@ -154,7 +146,6 @@ export default async function CrafterDetail({
   ]);
 
   const classes = parseClasses(c.classes_json);
-  const products: ProductEntry[] = [];
 
   const categoryNames = c.craft_categories.map((j) => j.category.display_name);
   const neighborhood = categoryNames[0] ?? c.city.display_name;
@@ -214,25 +205,25 @@ export default async function CrafterDetail({
     );
 
   const productsBlock =
-    products.length > 0 ? (
+    productsForSale.length > 0 ? (
       <section className="seg-section">
         <div className="sec-head flex items-baseline justify-between mb-2.5">
           <h2 className="font-display text-lg font-bold">Products on order</h2>
           <span className="text-xs text-muted">
-            {products.length} items
+            {productsForSale.length} items
           </span>
         </div>
-        <div className="hcard-list flex flex-col gap-2.5">
-          {products.map((p, i) => (
-            <HCard
-              key={i}
-              href="#"
-              imageSrc={p.image ?? c.profile_photo}
-              title={p.name ?? "Product"}
-              meta={p.meta ?? ""}
-              rightSlot={
-                priceLabel(p.price) ? <span className="price-pill">{priceLabel(p.price)}</span> : null
-              }
+        <div className="grid grid-cols-2 gap-3">
+          {productsForSale.map((p) => (
+            <ProductCard
+              key={p.id}
+              id={p.id}
+              name={p.name}
+              price_inr={p.price_inr}
+              photo={p.photos[0] ?? null}
+              photo_blurhash={p.photo_blurhashes[0] ?? null}
+              inventory={p.inventory}
+              ownerIsViewer={viewer?.id === p.owner_user_id}
             />
           ))}
         </div>

@@ -62,15 +62,27 @@ export function CreatorWalkthrough() {
       else dismiss();
       return;
     }
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
     const update = () => setRect(el.getBoundingClientRect());
     update();
+    // Move focus to the tooltip so the step is announced and Escape works.
+    requestAnimationFrame(() => tipRef.current?.focus());
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
     return () => {
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
+  }, [stepIndex]);
+
+  useEffect(() => {
+    if (stepIndex == null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") dismiss();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [stepIndex]);
 
   function next() {
@@ -100,17 +112,17 @@ export function CreatorWalkthrough() {
     left: rect.left - 4,
     width: rect.width + 8,
     height: rect.height + 8,
-    border: "2px solid rgb(var(--accent))",
+    border: "2px solid rgb(var(--magenta))",
     borderRadius: 12,
     pointerEvents: "none",
     zIndex: 49,
-    boxShadow: "0 0 0 9999px rgba(0,0,0,0.25)",
+    boxShadow: "0 0 0 9999px rgba(26,26,26,0.45)",
   };
 
   return (
     <>
       <div style={haloStyle} aria-hidden />
-      <div ref={tipRef} role="dialog" aria-labelledby="tour-title" style={tipStyle} className="card p-4">
+      <div ref={tipRef} role="dialog" aria-labelledby="tour-title" tabIndex={-1} style={tipStyle} className="card p-4 outline-none">
         <div className="flex items-start justify-between gap-3">
           <p id="tour-title" className="font-semibold text-ink">{step.title}</p>
           <button type="button" onClick={dismiss} className="icon-btn" aria-label="Skip tour">

@@ -14,6 +14,25 @@ import { useFormDraft } from "@/lib/useFormDraft";
 import { DraftBanner } from "@/components/DraftBanner";
 import { previewOccurrences } from "@/lib/rrule";
 
+// "eventbrite.com/x" passes the type=url input (and the old truthiness gate) but is
+// rejected by the server z.string().url(). Prepend https:// when the scheme is
+// missing so the client and server agree. Mirrors CrafterForm/StoreForm/StudioForm.
+function normalizeWebsite(v: string) {
+  const s = v.trim();
+  if (!s || s.includes("://")) return s;
+  return `https://${s}`;
+}
+
+// Mirror the server z.string().url() — after normalizing a missing scheme.
+function looksLikeUrl(v: string) {
+  try {
+    new URL(normalizeWebsite(v));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 type Option = { id: string; display_name: string; slug: string };
 type OwnedListing = { id: string; name: string; kind: "CRAFTER" | "STORE" | "STUDIO" };
 type EventFormValues = {
@@ -163,8 +182,24 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
     form.city_id &&
     form.venue_name.trim().length > 0 &&
     form.event_type &&
-    form.registration_url &&
+    looksLikeUrl(form.registration_url) &&
     (form.is_free || Number(form.price_amount) > 0);
+
+  // When Publish is disabled, say why — derived from the same conditions above so
+  // a greyed button always has an honest reason.
+  const unmet: string[] = [];
+  if (form.name.trim().length < 3) unmet.push("Event name needs 3+ characters");
+  if (form.description.trim().length < 20) unmet.push("Description needs 20+ characters");
+  if (!form.cover_image) unmet.push("Add a cover image");
+  if (!form.organizer) unmet.push("Choose an organizer");
+  if (!form.start_at) unmet.push("Set a start date and time");
+  else if (!isEdit && new Date(form.start_at) <= new Date()) unmet.push("Start must be in the future");
+  if (!form.end_at) unmet.push("Set an end date and time");
+  else if (form.start_at && new Date(form.end_at) <= new Date(form.start_at)) unmet.push("End must be after start");
+  if (!form.city_id) unmet.push("Choose a city");
+  if (form.venue_name.trim().length === 0) unmet.push("Add a venue");
+  if (!looksLikeUrl(form.registration_url)) unmet.push("Add a valid registration URL");
+  if (!form.is_free && !(Number(form.price_amount) > 0)) unmet.push("Set a price");
 
   async function submit() {
     setSubmitting(true);
@@ -190,7 +225,7 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
         craft_category_id: form.craft_category_id || null,
         is_free: form.is_free,
         price_amount: form.is_free ? null : Math.floor(Number(form.price_amount)),
-        registration_url: form.registration_url,
+        registration_url: normalizeWebsite(form.registration_url),
         recurrence_rule: repeats ? buildRrule(freq, byday, count) : null,
       };
       // In edit mode the PATCH route doesn't accept organizer changes (the
@@ -250,8 +285,8 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
         </div>
       )}
 
-      <Field label="Organizer *" hint="Which of your listings is hosting this?">
-        <select className="input" value={form.organizer} onChange={(e) => set("organizer", e.target.value)}>
+      <Field label="Organizer *" htmlFor="event-organizer" hint="Which of your listings is hosting this?">
+        <select id="event-organizer" className="input" value={form.organizer} onChange={(e) => set("organizer", e.target.value)}>
           {ownedListings.map((o) => (
             <option key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id}`}>
               {o.name} ({o.kind.toLowerCase()})
@@ -367,16 +402,16 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
         <span className="text-sm">Online event</span>
       </label>
 
-      <Field label="Type *">
-        <select className="input" value={form.event_type} onChange={(e) => set("event_type", e.target.value as any)}>
+      <Field label="Type *" htmlFor="event-type">
+        <select id="event-type" className="input" value={form.event_type} onChange={(e) => set("event_type", e.target.value as any)}>
           {EVENT_TYPES.map(([v, l]) => (
             <option key={v} value={v}>{l}</option>
           ))}
         </select>
       </Field>
 
-      <Field label="Craft category" hint="Optional. Helps filtering.">
-        <select className="input" value={form.craft_category_id} onChange={(e) => set("craft_category_id", e.target.value)}>
+      <Field label="Craft category" htmlFor="event-category" hint="Optional. Helps filtering.">
+        <select id="event-category" className="input" value={form.craft_category_id} onChange={(e) => set("craft_category_id", e.target.value)}>
           <option value="">— None —</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.display_name}</option>
@@ -495,12 +530,16 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
           className="input"
           value={form.registration_url}
           onChange={(e) => set("registration_url", e.target.value)}
+          onBlur={(e) => set("registration_url", normalizeWebsite(e.target.value))}
           placeholder="https://example.com/register"
           maxLength={500}
         />
       </Field>
 
-      <div className="flex justify-end gap-3 pt-2">
+      <div className="flex flex-col items-end gap-2 pt-2">
+        {!valid && unmet.length > 0 && (
+          <p className="text-sm text-ink-muted">{unmet.join(" · ")}</p>
+        )}
         <button
           type="button"
           className="btn btn-primary btn-lg"

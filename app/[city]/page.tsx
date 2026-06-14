@@ -11,6 +11,20 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
+  const city = await getCityBySlug(params.city);
+  const cityName = city?.display_name ?? params.city;
+  const title = `Crafty in ${cityName}: crafters, stores, studios & events`;
+  const description = `Discover local makers, supply stores, craft studios and events across ${cityName}. Handmade, found near you.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/${params.city}` },
+    openGraph: { title, description, type: "website" },
+  };
+}
 
 export const revalidate = 60;
 
@@ -292,7 +306,13 @@ export default async function CityHome({ params }: { params: { city: string } })
         return <CommunityMoment photoUrl={photoUrl} caption={caption} />;
       })()}
 
-      {showRequestBanner && <RequestCityBanner defaultCity={geo.city ?? ""} />}
+      {/* Always rendered so the header's "Add my city" anchor (#request-city)
+          always resolves. Copy adapts when geo suggests an unserved city. */}
+      <RequestCityBanner
+        defaultCity={showRequestBanner ? geo.city ?? "" : ""}
+        headline={showRequestBanner ? "Crafty isn't in your city yet." : "Don't see your city on Crafty?"}
+        dismissable={false}
+      />
 
       <DiscoveryRail
         title={`Learn in ${city.display_name}`}

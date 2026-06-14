@@ -35,10 +35,15 @@ export default async function StoresListing({
 
   const cats = await prisma.supplyCategory.findMany({ where: { is_active: true }, orderBy: { display_order: "asc" } });
   const activeCat = searchParams.category;
+  const isOnlineFilter = activeCat === "online";
   const where = {
     city_id: city.id,
     status: "PUBLISHED" as const,
-    ...(activeCat ? { supply_categories: { some: { category: { slug: activeCat } } } } : {}),
+    ...(isOnlineFilter
+      ? { is_online_only: true }
+      : activeCat
+        ? { supply_categories: { some: { category: { slug: activeCat } } } }
+        : {}),
   };
   const stores = await prisma.store.findMany({
     where, take: PAGE_SIZE,
@@ -52,7 +57,11 @@ export default async function StoresListing({
 
   const totalCount = await prisma.store.count({ where });
 
-  const activeCatLabel = activeCat ? cats.find((c) => c.slug === activeCat)?.display_name : undefined;
+  const activeCatLabel = isOnlineFilter
+    ? "Online only"
+    : activeCat
+      ? cats.find((c) => c.slug === activeCat)?.display_name
+      : undefined;
   const appliedFilters: AppliedFilter[] = activeCatLabel
     ? [{ key: `category:${activeCat}`, label: activeCatLabel }]
     : [];

@@ -125,7 +125,7 @@ export async function ReviewSection({ entityType, entityId, ownerUserId }: Props
 
               {/* Existing response — render as nested card */}
               {showResponse && (
-                <div className="mt-3 ml-4 rounded-md border-l-2 border-forest/40 bg-canvas-sunken/40 p-3">
+                <div className="mt-3 ml-4 rounded-md border border-line bg-canvas-sunken/40 p-3">
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <p className="text-xs font-semibold uppercase tracking-wider text-forest">
                       Response from the owner

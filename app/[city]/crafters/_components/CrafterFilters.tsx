@@ -16,8 +16,6 @@ export type AppliedFilter = {
   resetHref?: string;
 };
 
-type SortOption = "newest" | "featured";
-
 type Props = {
   city: string;
   cityDisplayName: string;
@@ -26,11 +24,6 @@ type Props = {
   appliedFilters: AppliedFilter[];
   total: number;
 };
-
-const SORTS: { id: SortOption; label: string }[] = [
-  { id: "newest", label: "Newest" },
-  { id: "featured", label: "Featured first" },
-];
 
 export function CrafterFilters({
   city,
@@ -44,38 +37,24 @@ export function CrafterFilters({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [draftCategory, setDraftCategory] = useState<string | undefined>(activeCategorySlug);
-  const [draftFlags, setDraftFlags] = useState<{ teaches: boolean; available: boolean; featured: boolean }>({
-    teaches: true,
-    available: false,
-    featured: true,
-  });
-  const [draftSort, setDraftSort] = useState<SortOption>("newest");
 
   const baseHref = `/${city}/crafters`;
 
   const onSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (activeCategorySlug) params.set("category", activeCategorySlug);
-    router.push(`${baseHref}${params.toString() ? `?${params.toString()}` : ""}`);
+    if (!query.trim()) return;
+    router.push(`/${city}/search?q=${encodeURIComponent(query.trim())}`);
   };
 
   const onApply = () => {
     const params = new URLSearchParams();
     if (draftCategory) params.set("category", draftCategory);
-    if (draftFlags.teaches) params.set("teaches", "1");
-    if (draftFlags.available) params.set("available", "1");
-    if (draftFlags.featured) params.set("featured", "1");
-    if (draftSort !== "newest") params.set("sort", draftSort);
     setOpen(false);
     router.push(`${baseHref}${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
   const clearDrafts = () => {
     setDraftCategory(undefined);
-    setDraftFlags({ teaches: false, available: false, featured: false });
-    setDraftSort("newest");
   };
 
   const sheetFooter = (
@@ -223,97 +202,9 @@ export function CrafterFilters({
               );
             })}
           </div>
-
-          <SheetGroup title="Other">
-            <ToggleRow
-              label="Teaches classes"
-              checked={draftFlags.teaches}
-              onChange={(v) => setDraftFlags((f) => ({ ...f, teaches: v }))}
-            />
-            <ToggleRow
-              label="Available now"
-              checked={draftFlags.available}
-              onChange={(v) => setDraftFlags((f) => ({ ...f, available: v }))}
-            />
-            <ToggleRow
-              label="Featured first"
-              checked={draftFlags.featured}
-              onChange={(v) => setDraftFlags((f) => ({ ...f, featured: v }))}
-            />
-          </SheetGroup>
-
-          <SheetGroup title="Sort by">
-            <div className="grid grid-cols-2 gap-1.5">
-              {SORTS.map((s) => {
-                const isActive = draftSort === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setDraftSort(s.id)}
-                    className={`pill w-full${isActive ? " active" : ""}`}
-                    style={{ padding: "9px 8px", fontSize: 12 }}
-                  >
-                    {s.label}
-                  </button>
-                );
-              })}
-            </div>
-          </SheetGroup>
         </div>
       </BottomSheet>
     </>
-  );
-}
-
-function SheetGroup({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mt-4 border-t pt-4" style={{ borderColor: "var(--line)" }}>
-      <div
-        style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 13,
-          fontWeight: 700,
-          color: "rgb(var(--ink))",
-          textTransform: "uppercase",
-          letterSpacing: "1.2px",
-          marginBottom: 10,
-        }}
-      >
-        {title}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function ToggleRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label
-      className="flex items-center justify-between border-b py-3 last:border-b-0"
-      style={{ borderColor: "var(--line)" }}
-    >
-      <span className="text-sm font-medium text-ink">
-        {label}
-      </span>
-      <span className="toggle">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          aria-label={label}
-        />
-        <span className="slider" />
-      </span>
-    </label>
   );
 }
 

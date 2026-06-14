@@ -7,11 +7,14 @@ import { Copy, Check, Mail, Instagram, MessageCircle, X } from "lucide-react";
 type CelebrationScreenProps = {
   city: string;
   url: string;
+  /** Relative same-origin profile path for next/link client-side nav (the absolute
+      `url` triggers a full reload when passed to <Link>). */
+  path: string;
   name: string;
   onContinue: () => void;
 };
 
-export function CelebrationScreen({ city, url, name, onContinue }: CelebrationScreenProps) {
+export function CelebrationScreen({ city, url, path, name, onContinue }: CelebrationScreenProps) {
   const [copied, setCopied] = useState(false);
   const [igCopied, setIgCopied] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -178,7 +181,7 @@ export function CelebrationScreen({ city, url, name, onContinue }: CelebrationSc
 
         <div className="flex flex-col items-center gap-3 pt-2">
           <Link
-            href={url}
+            href={path}
             className="text-sm font-semibold text-ink underline-offset-4 hover:underline"
           >
             View my profile →

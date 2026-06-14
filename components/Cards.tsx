@@ -60,8 +60,7 @@ export function CrafterCard({
   owner_is_pro,
   priority,
 }: CrafterCardProps) {
-  const neighborhood = categories[0] ?? null;
-  const chips = categories.slice(neighborhood ? 1 : 0, neighborhood ? 4 : 3);
+  const chips = categories.slice(0, 3);
   return (
     <Link href={`/${city}/crafters/${slug}`} className="card block">
       <div className="img relative aspect-square">
@@ -92,7 +91,6 @@ export function CrafterCard({
           {owner_is_pro && <span className="sr-only"> — Crafty Pro member</span>}
         </div>
         {tagline && <p className="muted text-sm line-clamp-2">{tagline}</p>}
-        {neighborhood && <div className="loc">{neighborhood}</div>}
         {chips.length > 0 && (
           <div className="chips">
             {chips.map((c) => (
@@ -135,7 +133,7 @@ export function StoreCard({
   const locText = is_online_only ? "Online only" : address.split(",")[0];
   return (
     <Link href={`/${city}/stores/${slug}`} className="card block">
-      <div className="img relative aspect-square">
+      <div className="img relative aspect-[4/3]">
         <SafeImage
           src={logo_photo}
           alt={name}
@@ -260,9 +258,9 @@ export function EventCard({
   priority,
 }: EventCardProps) {
   const date = new Date(start_at);
-  const day = date.toLocaleDateString("en-IN", { day: "2-digit" });
-  const dow = date.toLocaleDateString("en-IN", { weekday: "short" }).toUpperCase();
-  const mon = date.toLocaleDateString("en-IN", { month: "short" }).toUpperCase();
+  const day = date.toLocaleDateString("en-IN", { day: "2-digit", timeZone: "Asia/Kolkata" });
+  const dow = date.toLocaleDateString("en-IN", { weekday: "short", timeZone: "Asia/Kolkata" }).toUpperCase();
+  const mon = date.toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" }).toUpperCase();
   const priceLabel = is_free
     ? "Free"
     : price_amount != null && price_amount !== ""

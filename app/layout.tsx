@@ -12,7 +12,7 @@ import "./globals.css";
 // globals.css already references via var(--font-fraunces)/var(--font-inter).
 const fraunces = Fraunces({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-fraunces",
   display: "swap",
 });
@@ -40,16 +40,21 @@ const InstallPrompt = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: "Crafty — discover India's craft community",
+  title: "Crafty: discover India's craft community",
   description:
     "City-localized discovery for crafters, supply stores, studios and craft events across India. Starting in Bengaluru.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   // V3 — PWA manifest.
   manifest: "/manifest.webmanifest",
   openGraph: {
-    title: "Crafty — India's craft community, one city at a time",
+    title: "Crafty: India's craft community, one city at a time",
     description: "Crafters, supply stores, studios, and events near you.",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Crafty: India's craft community, one city at a time",
+    description: "Crafters, supply stores, studios, and events near you.",
   },
 };
 

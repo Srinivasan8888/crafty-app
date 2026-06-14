@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, ShoppingBag } from "lucide-react";
 import { formatINR } from "@/lib/util";
 import { runMockCheckout } from "@/lib/mock-checkout";
+import { looksLikePhone } from "@/lib/phone";
 
 type Props = {
   totalInr: number;
@@ -42,7 +43,9 @@ export function CheckoutButton({ totalInr }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const valid = name.trim().length >= 2 && address.trim().length >= 8 && phone.trim().length >= 7;
+  // Mirror the server phone rule (lib/phone.ts) so "(080) 2345678" is caught here
+  // instead of failing the POST with a generic "Couldn't start checkout".
+  const valid = name.trim().length >= 2 && address.trim().length >= 8 && looksLikePhone(phone);
 
   async function pay() {
     setBusy(true);

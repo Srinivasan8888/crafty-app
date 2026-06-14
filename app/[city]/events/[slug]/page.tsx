@@ -1,8 +1,10 @@
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { getCityBySlug } from "@/lib/cities";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import type { Metadata } from "next";
 import { ArrowLeft, MapPin, Share2, Heart } from "lucide-react";
 import { formatINR } from "@/lib/util";
 import { EventCard } from "@/components/Cards";
@@ -25,16 +27,11 @@ const EVENT_TYPE_LABEL: Record<string, string> = {
   OTHER: "Community Meetup",
 };
 
-export default async function EventDetail({
-  params,
-}: {
-  params: { city: string; slug: string };
-}) {
-  const city = await getCityBySlug(params.city);
-  if (!city) notFound();
-
-  const e = await prisma.event.findUnique({
-    where: { slug: params.slug },
+const loadEvent = cache(async (citySlug: string, slug: string) => {
+  const city = await getCityBySlug(citySlug);
+  if (!city) return null;
+  const event = await prisma.event.findUnique({
+    where: { slug },
     include: {
       city: true,
       organizer_crafter: true,
@@ -43,13 +40,55 @@ export default async function EventDetail({
       craft_category: true,
     },
   });
-  if (!e || e.status !== "PUBLISHED" || e.city_id !== city.id) {
+  if (!event || event.status !== "PUBLISHED" || event.city_id !== city.id) return null;
+  return { city, event };
+});
+
+// registration_url is optional in practice: seeded/empty events carry a
+// placeholder like https://example.com/... which is a dead outbound link.
+// Treat empty, hash-only, and placeholder-host values as "no registration".
+function liveRegistrationUrl(url: string | null | undefined): string | undefined {
+  if (!url || url === "#") return undefined;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host === "example.com" || host === "example.org") return undefined;
+  } catch {
+    return undefined;
+  }
+  return url;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { city: string; slug: string };
+}): Promise<Metadata> {
+  const loaded = await loadEvent(params.city, params.slug);
+  if (!loaded) return {};
+  const { event: e } = loaded;
+  const description = e.description?.slice(0, 160);
+  return {
+    title: `${e.name} · Crafty`,
+    description,
+    openGraph: { images: [e.cover_image], title: e.name, description },
+  };
+}
+
+export default async function EventDetail({
+  params,
+}: {
+  params: { city: string; slug: string };
+}) {
+  const loaded = await loadEvent(params.city, params.slug);
+  if (!loaded) {
     const r = await prisma.slugRedirect.findUnique({
       where: { entity_type_old_slug: { entity_type: "event", old_slug: params.slug } },
     }).catch(() => null);
     if (r) redirect(`/${params.city}/events/${r.new_slug}`);
     notFound();
   }
+  const { city, event: e } = loaded;
+  const registrationUrl = liveRegistrationUrl(e.registration_url);
 
   const moreEvents = await prisma.event.findMany({
     where: {
@@ -210,7 +249,7 @@ export default async function EventDetail({
             textAlign: "center",
             lineHeight: 1.15,
             letterSpacing: "0.6px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+            boxShadow: "0 4px 12px rgba(180,80,40,0.18)",
           }}
         >
           <span
@@ -236,7 +275,7 @@ export default async function EventDetail({
             right: 14,
             padding: "7px 14px",
             fontSize: 12,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+            boxShadow: "0 4px 12px rgba(180,80,40,0.18)",
           }}
         >
           {priceLabel}
@@ -670,15 +709,25 @@ export default async function EventDetail({
                     marginTop: 22,
                   }}
                 >
-                  <a
-                    href={e.registration_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-primary w-full"
-                    style={{ padding: 14 }}
-                  >
-                    I&apos;ll be there →
-                  </a>
+                  {registrationUrl ? (
+                    <a
+                      href={registrationUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-primary w-full"
+                      style={{ padding: 14 }}
+                    >
+                      I&apos;ll be there →
+                    </a>
+                  ) : organizerHref ? (
+                    <Link
+                      href={organizerHref}
+                      className="btn btn-primary w-full"
+                      style={{ padding: 14 }}
+                    >
+                      Ask {organizerName} →
+                    </Link>
+                  ) : null}
                   <SaveButton
                     entityType="event"
                     entityId={e.id}
@@ -765,8 +814,8 @@ export default async function EventDetail({
       </div>
 
       <StickyCTA
-        primaryLabel="I'll be there →"
-        primaryHref={e.registration_url}
+        primaryLabel={registrationUrl ? "I'll be there →" : organizerHref ? `Ask ${organizerName} →` : "Add to calendar"}
+        primaryHref={registrationUrl ?? organizerHref ?? `/${city.slug}/events/${e.slug}/ics`}
         primaryVariant="magenta"
         iconActions={
           <>

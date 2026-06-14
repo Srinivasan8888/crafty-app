@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
+  Check,
   ChevronRight,
   Compass,
   Heart,
   Home,
+  Languages,
   Menu,
   Search,
   Store,
@@ -17,15 +20,20 @@ import {
   X,
 } from "lucide-react";
 import { Logo } from "./Logo";
+import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/i18n/config";
+import { setLocale } from "@/app/actions/locale";
 
 type Props = {
   cities: { slug: string; display_name: string }[];
   currentCity: string;
+  locale: Locale;
 };
 
-export function MobileDrawer({ cities, currentCity }: Props) {
+export function MobileDrawer({ cities, currentCity, locale }: Props) {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLElement | null>(null);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
@@ -185,6 +193,68 @@ export function MobileDrawer({ cities, currentCity }: Props) {
                       )}
                     </span>
                   </Link>
+                );
+              })}
+            </div>
+
+            <div
+              className="font-display text-forest inline-flex items-center gap-1.5"
+              style={{
+                fontWeight: 600,
+                fontSize: 12,
+                textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                marginTop: 18,
+                marginBottom: 6,
+                padding: "0 6px",
+              }}
+            >
+              <Languages size={13} aria-hidden="true" />
+              Language
+            </div>
+            <div className="flex flex-col">
+              {LOCALES.map((loc) => {
+                const isCurrent = loc === locale;
+                return (
+                  <button
+                    key={loc}
+                    type="button"
+                    className="list-compact"
+                    style={{
+                      minHeight: 44,
+                      width: "100%",
+                      textAlign: "left",
+                      borderTop: 0,
+                      borderLeft: 0,
+                      borderRight: 0,
+                      cursor: "pointer",
+                      font: "inherit",
+                    }}
+                    disabled={isPending}
+                    aria-current={isCurrent ? "true" : undefined}
+                    onClick={() => {
+                      if (isCurrent) {
+                        close();
+                        return;
+                      }
+                      startTransition(async () => {
+                        await setLocale(loc);
+                        router.refresh();
+                        close();
+                      });
+                    }}
+                  >
+                    <span className="ttl">{LOCALE_LABELS[loc].native}</span>
+                    <span className="trailing">
+                      {isCurrent ? (
+                        <Check size={14} aria-hidden="true" />
+                      ) : (
+                        <span className="text-xs text-muted">
+                          {LOCALE_LABELS[loc].english}
+                        </span>
+                      )}
+                    </span>
+                  </button>
                 );
               })}
             </div>
