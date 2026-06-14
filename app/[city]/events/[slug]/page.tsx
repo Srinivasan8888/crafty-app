@@ -8,7 +8,6 @@ import { formatINR } from "@/lib/util";
 import { EventCard } from "@/components/Cards";
 import { HCard } from "@/components/HCard";
 import { StickyCTA } from "@/components/StickyCTA";
-import { BottomNav } from "@/components/BottomNav";
 import { SaveButton } from "@/components/SaveButton";
 import { ShareButton } from "@/components/ShareButton";
 import { EventTracker } from "@/components/EventTracker";
@@ -137,13 +136,6 @@ export default async function EventDetail({
     : `${e.venue_name}, ${cityName}`;
 
   const paragraphs = e.description.split(/\n{2,}/).filter(Boolean);
-
-  const bringList = [
-    "Yarn or your current project — any weight, leftover scraps welcome",
-    "Tools relevant to the craft (hooks, needles, paint kit, etc.)",
-    "A water bottle and something light to sit on",
-    "An open mind and curiosity — beginners genuinely encouraged",
-  ];
 
   return (
     <article>
@@ -322,7 +314,6 @@ export default async function EventDetail({
                 <span className={e.is_free ? "tag mustard" : "tag"}>
                   {priceLabel}
                 </span>
-                <span className="tag magenta">20–30 makers expected</span>
               </div>
             </header>
 
@@ -370,60 +361,6 @@ export default async function EventDetail({
                   </p>
                 ))
               )}
-            </section>
-
-            <section
-              className="detail-section"
-              style={{
-                paddingTop: 22,
-                paddingBottom: 22,
-                borderBottom: "1px solid var(--line)",
-              }}
-            >
-              <h2
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: 22,
-                  fontWeight: 700,
-                  marginBottom: 12,
-                  letterSpacing: "-0.4px",
-                }}
-              >
-                What to bring
-              </h2>
-              <div className="alert info" style={{ display: "block" }}>
-                <ul
-                  className="bring-list"
-                  style={{ listStyle: "none", padding: 0, margin: 0 }}
-                >
-                  {bringList.map((item) => (
-                    <li
-                      key={item}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        alignItems: "flex-start",
-                        padding: "6px 0",
-                        fontSize: 13.5,
-                        lineHeight: 1.5,
-                        color: "rgb(var(--ink))",
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: "rgb(var(--mustard))",
-                          fontSize: 14,
-                          flexShrink: 0,
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        ✿
-                      </span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
             </section>
 
             <section
@@ -821,32 +758,6 @@ export default async function EventDetail({
                     Copy link
                   </ShareButton>
                 </div>
-
-                <div
-                  style={{
-                    marginTop: 18,
-                    padding: "12px 14px",
-                    background: "var(--tint-mustard)",
-                    borderRadius: "var(--r-md)",
-                    border: "1px solid rgb(var(--mustard) / 0.3)",
-                    fontSize: 12.5,
-                    color: "rgb(var(--muted))",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  <strong
-                    style={{
-                      color: "rgb(var(--ink))",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
-                    Capacity
-                  </strong>
-                  <div style={{ marginTop: 2 }}>
-                    20–30 makers typically attend. All welcome — beginners
-                    genuinely encouraged.
-                  </div>
-                </div>
               </div>
             </div>
           </aside>
@@ -890,8 +801,6 @@ export default async function EventDetail({
       </section>
 
       <CoSaveRecommendations entityType="EVENT" entityId={e.id} />
-
-      <BottomNav city={city.slug} active="explore" />
     </article>
   );
 }

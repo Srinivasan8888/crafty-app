@@ -254,17 +254,10 @@ export default async function EventsListing({
                   fontStyle: "italic",
                   color: "rgb(var(--muted))",
                   fontSize: 13,
-                  marginBottom: 12,
                 }}
               >
-                Showing {events.length} of {events.length} events
+                Showing {events.length} {events.length === 1 ? "event" : "events"}
               </div>
-              <Link
-                href={`/${city.slug}/events`}
-                className="btn btn-secondary btn-block"
-              >
-                Load more events
-              </Link>
             </div>
           </>
         )}

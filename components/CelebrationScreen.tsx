@@ -119,7 +119,7 @@ export function CelebrationScreen({ city, url, name, onContinue }: CelebrationSc
       role="dialog"
       aria-modal="true"
       aria-labelledby="celebration-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/95 p-4 backdrop-blur"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 p-4"
     >
       <button
         type="button"
@@ -131,7 +131,7 @@ export function CelebrationScreen({ city, url, name, onContinue }: CelebrationSc
       </button>
 
       <div className="card mx-auto w-full max-w-xl space-y-6 p-8 text-center shadow-pop">
-        <h1 id="celebration-title" className="text-3xl font-bold leading-tight">
+        <h1 id="celebration-title" className="font-display text-3xl font-bold leading-tight">
           You're live in {city} <span aria-hidden>🌻</span>
         </h1>
 

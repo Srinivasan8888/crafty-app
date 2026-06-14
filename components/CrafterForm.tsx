@@ -7,6 +7,7 @@ import { Loader2, Upload, X } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { useFormDraft } from "@/lib/useFormDraft";
 import { DraftBanner } from "@/components/DraftBanner";
+import { CelebrationScreen } from "@/components/CelebrationScreen";
 
 // "myshop.com" passes the type=url input (and step gates) but is rejected by the
 // server z.string().url(). Prepend https:// when the user omitted a scheme so the
@@ -67,6 +68,9 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
   const [error, setError] = useState<string | null>(null);
   const [profileBusy, setProfileBusy] = useState(false);
   const [portfolioBusy, setPortfolioBusy] = useState(false);
+  // Set on a successful first publish so we can show the celebration + share
+  // moment before sending the creator on to their new public profile.
+  const [published, setPublished] = useState<{ city: string; url: string; name: string } | null>(null);
 
   const [form, setForm] = useState<CrafterFormValues>({
     name: initialValues?.name ?? "",
@@ -201,15 +205,34 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
         throw new Error(apiErrorMessage(j, isEdit ? "Could not save your changes. Please try again." : "Could not publish. Please check the form and try again."));
       }
       const j = (await res.json()) as { slug: string; city: string };
+      const profilePath = `/${j.city}/crafters/${j.slug}`;
       if (!isEdit) {
         track("profile_completed", { entity_type: "CRAFTER", slug: j.slug, city: j.city });
+        draft.clear();
+        // First publish — celebrate before handing them their public link.
+        const cityName = cities.find((c) => c.slug === j.city)?.display_name ?? j.city;
+        const url =
+          typeof window !== "undefined" ? `${window.location.origin}${profilePath}` : profilePath;
+        setPublished({ city: cityName, url, name: form.name });
+        return;
       }
       draft.clear();
-      router.push(`/${j.city}/crafters/${j.slug}`);
+      router.push(profilePath);
     } catch (err: any) {
       setError(err.message);
       setSubmitting(false);
     }
+  }
+
+  if (published) {
+    return (
+      <CelebrationScreen
+        city={published.city}
+        url={published.url}
+        name={published.name}
+        onContinue={() => router.push("/dashboard")}
+      />
+    );
   }
 
   return (

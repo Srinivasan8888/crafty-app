@@ -25,34 +25,67 @@ export function runMockCheckout(args: MockCheckoutArgs): Promise<boolean> {
       return;
     }
     const inr = "₹" + args.amountInr.toLocaleString("en-IN");
-    const btn = "padding:8px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid #E6DED0;";
-    const primary = "padding:8px 14px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:#FF90E8;color:#171614;";
+    // Sunday Bazaar palette so the money moment still looks like Crafty: cream
+    // surface, rose action button, warm walnut text, terracotta shadow.
+    const sans = "var(--font-sans),system-ui,-apple-system,sans-serif";
+    const btn = `padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid rgba(31,95,60,0.35);background:#FFF6E5;color:#1F5F3C;font-family:${sans};`;
+    const primary = `padding:10px 16px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:#B5365B;color:#FFF6E5;font-family:${sans};`;
 
     const overlay = document.createElement("div");
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-label", "Mock payment");
     overlay.style.cssText =
-      "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);padding:16px;";
+      "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(26,26,26,0.45);padding:16px;";
     overlay.innerHTML = `
-      <div style="background:#fff;color:#171614;max-width:380px;width:100%;border-radius:16px;padding:20px;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 12px 40px -8px rgba(0,0,0,0.3);">
-        <span style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;background:#FFE0F6;color:#B5365B;padding:2px 8px;border-radius:999px;">Mock payment</span>
-        <h2 style="font-size:18px;font-weight:700;margin:10px 0 2px;">${escapeHtml(args.title ?? "Crafty")}</h2>
-        <p style="font-size:13px;color:#545049;margin:0;">${escapeHtml(args.description ?? "")}</p>
-        <p style="font-size:28px;font-weight:800;margin:10px 0 0;">${inr}</p>
-        <p style="font-size:12px;color:#868076;margin:2px 0 16px;">No real charge — demo mode.</p>
+      <div style="background:#FFF6E5;color:#1A1A1A;max-width:380px;width:100%;border-radius:16px;padding:20px;font-family:${sans};border:1px solid rgba(31,95,60,0.25);box-shadow:0 12px 40px -8px rgba(180,80,40,0.30);">
+        <span style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;background:#FBEBC8;color:#B5365B;padding:2px 8px;border-radius:999px;">Mock payment</span>
+        <h2 style="font-family:var(--font-display),Georgia,serif;font-size:20px;font-weight:700;margin:10px 0 2px;color:#1A1A1A;">${escapeHtml(args.title ?? "Crafty")}</h2>
+        <p style="font-size:13px;color:#6B5A3E;margin:0;">${escapeHtml(args.description ?? "")}</p>
+        <p style="font-size:28px;font-weight:800;margin:10px 0 0;color:#1A1A1A;">${inr}</p>
+        <p style="font-size:12px;color:#6B5A3E;margin:2px 0 16px;">No real charge. Demo mode.</p>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
           <button data-act="cancel" style="${btn}">Cancel</button>
           <button data-act="pay" style="${primary}">Pay ${inr}</button>
         </div>
-        <p data-err role="alert" style="display:none;color:#D3404A;font-size:13px;margin:8px 0 0;"></p>
+        <p data-err role="alert" style="display:none;color:#B5365B;font-size:13px;margin:8px 0 0;"></p>
       </div>`;
     document.body.appendChild(overlay);
 
-    const cleanup = () => overlay.remove();
     const payBtn = overlay.querySelector('[data-act="pay"]') as HTMLButtonElement;
     const cancelBtn = overlay.querySelector('[data-act="cancel"]') as HTMLButtonElement;
     const errEl = overlay.querySelector("[data-err]") as HTMLElement;
+
+    // Keyboard safety on the money moment: Escape dismisses, Tab is trapped
+    // between Cancel and Pay so focus can't wander to the page behind.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        dismiss();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusables = [cancelBtn, payBtn].filter((b) => !b.disabled);
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const firstF = focusables[0];
+      const lastF = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === firstF) {
+        e.preventDefault();
+        lastF.focus();
+      } else if (!e.shiftKey && document.activeElement === lastF) {
+        e.preventDefault();
+        firstF.focus();
+      }
+    };
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const cleanup = () => {
+      document.removeEventListener("keydown", onKey);
+      overlay.remove();
+      previouslyFocused?.focus?.();
+    };
 
     const dismiss = () => {
       cleanup();
@@ -62,6 +95,8 @@ export function runMockCheckout(args: MockCheckoutArgs): Promise<boolean> {
     overlay.onclick = (e) => {
       if (e.target === overlay) dismiss();
     };
+    document.addEventListener("keydown", onKey);
+    payBtn.focus();
 
     payBtn.onclick = async () => {
       payBtn.disabled = true;

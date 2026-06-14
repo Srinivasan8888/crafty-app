@@ -206,11 +206,6 @@ export default async function StoresListing({
         >
           Showing {stores.length} of {totalCount} {totalCount === 1 ? "store" : "stores"}
         </div>
-        {totalCount > stores.length && (
-          <Link href={`${baseHref}?page=2${activeCat ? `&category=${activeCat}` : ""}`} className="btn btn-secondary btn-block">
-            Load more stores
-          </Link>
-        )}
       </div>
 
       <BottomNav city={city.slug} active="explore" />

@@ -120,14 +120,6 @@ export default async function StoreDetail({ params }: { params: { city: string; 
 
   const hours = readHours(s.operating_hours);
   const categoryNames = s.supply_categories.map((j) => j.category.display_name);
-  const yearsListed = Math.max(0, new Date().getFullYear() - new Date(s.created_at).getFullYear());
-  // Only render tiles with real data — drop bare "—" placeholders
-  // (they made the platform look broken e.g. "— SAVES", "— HOURS").
-  const stats = [
-    { label: "Years open", value: yearsListed > 0 ? `${yearsListed}+` : "New" },
-    { label: "Categories", value: categoryNames.length > 0 ? String(categoryNames.length) : null },
-    { label: "Hours", value: s.operating_hours ? "Listed" : null },
-  ].filter((t): t is { label: string; value: string } => t.value !== null && t.value !== "—");
 
   const phoneDigits = s.contact_whatsapp?.replace(/[^0-9]/g, "") ?? s.contact_phone?.replace(/[^0-9]/g, "");
   const primaryHref = s.contact_whatsapp
@@ -343,19 +335,6 @@ export default async function StoreDetail({ params }: { params: { city: string; 
           ))}
         </div>
       </section>
-
-      {stats.length > 0 && (
-        <div className="md:hidden" style={{ padding: "14px 18px 0" }}>
-          <div className="stat-row">
-            {stats.map((st) => (
-              <div className="stat" key={st.label}>
-                <span className="num">{st.value}</span>
-                <span className="lbl">{st.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <MobileTabs about={aboutPane} catalogue={cataloguePane} hours={hoursPane} findUs={findUsPane} />
 

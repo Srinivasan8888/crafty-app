@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { Fraunces, Inter } from "next/font/google";
+import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
 // Brand typefaces (PRD §17.2 / §19.2 — self-optimized, preloaded). Fraunces
@@ -81,10 +82,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-screen bg-cream text-ink antialiased font-sans">
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <PostHogProvider />
-          {children}
-          <CookieConsent />
-          <InstallPrompt />
+          <ToastProvider>
+            <PostHogProvider />
+            {children}
+            <CookieConsent />
+            <InstallPrompt />
+          </ToastProvider>
         </NextIntlClientProvider>
         {/* V3 — PWA service worker registration. Loaded after interactive. */}
         <Script src="/sw-register.js" strategy="afterInteractive" />

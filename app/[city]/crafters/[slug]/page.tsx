@@ -173,9 +173,6 @@ export default async function CrafterDetail({
     year: "numeric",
   });
 
-  const savesPlaceholder = 142;
-  const responsePlaceholder = "< 2h";
-
   const aboutBlock = (
     <section className="seg-section about">
       <h2 className="font-display text-lg font-bold" style={{ marginBottom: 10 }}>
@@ -193,7 +190,6 @@ export default async function CrafterDetail({
         </p>
       )}
       <div className="about-meta mt-4 flex flex-wrap gap-1.5">
-        <span className="tag">{savesPlaceholder} saves</span>
         <span className="tag mustard">Listed since {listedSince}</span>
         {neighborhood && <span className="tag magenta">{neighborhood}</span>}
       </div>
@@ -431,27 +427,6 @@ export default async function CrafterDetail({
       </section>
 
       <div className="md:hidden">
-        {(() => {
-          // Hide tiles with no data so the strip doesn't render bare em-dashes
-          // ("— SALES", "— CONTACTS"). Grid collapses to populated cells only.
-          const tiles = [
-            { lbl: "Saves", num: String(savesPlaceholder) },
-            { lbl: "Response", num: responsePlaceholder },
-            { lbl: "Listed", num: listedSince },
-          ].filter((t) => t.num && t.num !== "—");
-          if (tiles.length === 0) return null;
-          return (
-            <div className="stat-row mt-4">
-              {tiles.map((t) => (
-                <div className="stat" key={t.lbl}>
-                  <span className="num">{t.num}</span>
-                  <span className="lbl">{t.lbl}</span>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
-
         <MobileTabs
           aboutContent={aboutBlock}
           portfolioContent={portfolioBlock}
@@ -568,7 +543,6 @@ export default async function CrafterDetail({
                     </span>
                   )}
                   {c.offers_classes && <span className="badge classes">Teaches classes</span>}
-                  <span className="tag">{savesPlaceholder} saves</span>
                   <span className="tag mustard">Listed since {listedSince}</span>
                 </div>
                 {categoryNames.length > 0 && (
@@ -617,7 +591,6 @@ export default async function CrafterDetail({
                   </p>
                 )}
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="tag">{savesPlaceholder} saves</span>
                   <span className="tag mustard">Listed since {listedSince}</span>
                   {neighborhood && <span className="tag magenta">{neighborhood} local</span>}
                 </div>
@@ -845,9 +818,7 @@ export default async function CrafterDetail({
                     padding: 20,
                   }}
                 >
-                  <StatRow label="Saved by community" value={`${savesPlaceholder} saves`} highlight />
                   <StatRow label="Listed since" value={listedSince} />
-                  <StatRow label="Response time" value={responsePlaceholder} />
                 </div>
 
                 {(otherStore || otherStudio) && (

@@ -16,7 +16,7 @@ export type AppliedFilter = {
   resetHref?: string;
 };
 
-type SortOption = "newest" | "popular" | "featured" | "saves";
+type SortOption = "newest" | "featured";
 
 type Props = {
   city: string;
@@ -27,21 +27,9 @@ type Props = {
   total: number;
 };
 
-const NEIGHBOURHOODS: { slug: string; label: string; count: number }[] = [
-  { slug: "indiranagar", label: "Indiranagar", count: 23 },
-  { slug: "whitefield", label: "Whitefield", count: 18 },
-  { slug: "koramangala", label: "Koramangala", count: 31 },
-  { slug: "hsr-layout", label: "HSR Layout", count: 15 },
-  { slug: "jayanagar", label: "Jayanagar", count: 11 },
-  { slug: "malleshwaram", label: "Malleshwaram", count: 9 },
-  { slug: "jp-nagar", label: "JP Nagar", count: 12 },
-];
-
 const SORTS: { id: SortOption; label: string }[] = [
   { id: "newest", label: "Newest" },
-  { id: "popular", label: "Popular" },
   { id: "featured", label: "Featured first" },
-  { id: "saves", label: "Most saves" },
 ];
 
 export function CrafterFilters({
@@ -56,14 +44,12 @@ export function CrafterFilters({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [draftCategory, setDraftCategory] = useState<string | undefined>(activeCategorySlug);
-  const [draftNbhds, setDraftNbhds] = useState<Set<string>>(new Set());
   const [draftFlags, setDraftFlags] = useState<{ teaches: boolean; available: boolean; featured: boolean }>({
     teaches: true,
     available: false,
     featured: true,
   });
   const [draftSort, setDraftSort] = useState<SortOption>("newest");
-  const [draftDistance, setDraftDistance] = useState(9);
 
   const baseHref = `/${city}/crafters`;
 
@@ -75,34 +61,21 @@ export function CrafterFilters({
     router.push(`${baseHref}${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
-  const toggleNbhd = (slug: string) => {
-    setDraftNbhds((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
-      return next;
-    });
-  };
-
   const onApply = () => {
     const params = new URLSearchParams();
     if (draftCategory) params.set("category", draftCategory);
-    if (draftNbhds.size > 0) params.set("nbhd", Array.from(draftNbhds).join(","));
     if (draftFlags.teaches) params.set("teaches", "1");
     if (draftFlags.available) params.set("available", "1");
     if (draftFlags.featured) params.set("featured", "1");
     if (draftSort !== "newest") params.set("sort", draftSort);
-    if (draftDistance !== 20) params.set("dist", String(draftDistance));
     setOpen(false);
     router.push(`${baseHref}${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
   const clearDrafts = () => {
     setDraftCategory(undefined);
-    setDraftNbhds(new Set());
     setDraftFlags({ teaches: false, available: false, featured: false });
     setDraftSort("newest");
-    setDraftDistance(20);
   };
 
   const sheetFooter = (
@@ -251,35 +224,6 @@ export function CrafterFilters({
             })}
           </div>
 
-          <SheetGroup title="Neighbourhood">
-            {NEIGHBOURHOODS.map((n) => {
-              const checked = draftNbhds.has(n.slug);
-              return (
-                <label
-                  key={n.slug}
-                  className="flex items-center justify-between border-b py-3 last:border-b-0"
-                  style={{ borderColor: "var(--line)" }}
-                >
-                  <span className="text-sm font-medium text-ink">
-                    {n.label}{" "}
-                    <span className="text-subtle" style={{ fontSize: 11.5, fontWeight: 500 }}>
-                      {n.count}
-                    </span>
-                  </span>
-                  <span className="toggle">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleNbhd(n.slug)}
-                      aria-label={`Toggle ${n.label}`}
-                    />
-                    <span className="slider" />
-                  </span>
-                </label>
-              );
-            })}
-          </SheetGroup>
-
           <SheetGroup title="Other">
             <ToggleRow
               label="Teaches classes"
@@ -315,25 +259,6 @@ export function CrafterFilters({
                 );
               })}
             </div>
-          </SheetGroup>
-
-          <SheetGroup title="Distance">
-            <div className="flex items-center justify-between text-xs text-muted">
-              <span>Within</span>
-              <strong className="text-ink" style={{ fontWeight: 700 }}>
-                {draftDistance} km of MG Road
-              </strong>
-            </div>
-            <input
-              type="range"
-              min={1}
-              max={20}
-              value={draftDistance}
-              onChange={(e) => setDraftDistance(Number(e.target.value))}
-              aria-label="Distance in km"
-              className="mt-2 w-full"
-              style={{ accentColor: "rgb(var(--magenta))" }}
-            />
           </SheetGroup>
         </div>
       </BottomSheet>

@@ -189,11 +189,6 @@ export default async function CraftersListing({
               >
                 Showing {crafters.length} of {totalCount} crafters
               </p>
-              {crafters.length < totalCount && (
-                <Link href={`${cityHref}?page=2`} className="btn btn-secondary">
-                  Load more crafters
-                </Link>
-              )}
             </div>
           </>
         )}

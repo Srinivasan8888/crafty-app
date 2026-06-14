@@ -124,13 +124,6 @@ export default async function StudioDetail({ params }: { params: { city: string;
   const hours = readHours(s.operating_hours);
   const courses = readCourses(s.ongoing_courses);
   const disciplineNames = s.craft_disciplines.map((j) => j.discipline.display_name);
-  // Only render tiles with real data — drop bare "—" placeholders
-  // (they made the platform look broken e.g. "— SAVES", "— STUDENTS").
-  const stats = [
-    { label: "Disciplines", value: disciplineNames.length > 0 ? String(disciplineNames.length) : null },
-    { label: "Age", value: s.age_group ?? "All ages" },
-    { label: "Format", value: s.is_online_only ? "Online" : "In-studio" },
-  ].filter((t): t is { label: string; value: string } => t.value !== null && t.value !== "—");
 
   const primaryHref = s.contact_whatsapp
     ? `https://wa.me/${s.contact_whatsapp.replace(/[^0-9]/g, "")}`
@@ -372,19 +365,6 @@ export default async function StudioDetail({ params }: { params: { city: string;
           ))}
         </div>
       </section>
-
-      {stats.length > 0 && (
-        <div className="md:hidden" style={{ padding: "14px 18px 0" }}>
-          <div className="stat-row">
-            {stats.map((st) => (
-              <div className="stat" key={st.label}>
-                <span className="num">{st.value}</span>
-                <span className="lbl">{st.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <MobileTabs about={aboutPane} disciplines={disciplinesPane} schedule={schedulePane} reviews={reviewsPane} />
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Heart } from "lucide-react";
 
 type EntityType = "crafter" | "store" | "studio" | "event";
@@ -29,6 +30,8 @@ export function SaveButton({
   className,
   style,
 }: SaveButtonProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [saved, setSaved] = useState(initialSaved);
   const [pending, setPending] = useState(false);
 
@@ -48,7 +51,12 @@ export function SaveButton({
           entity_id: entityId,
         }),
       });
-      if (!res.ok) {
+      if (res.status === 401) {
+        // Signed-out buyer tapped Save — send them to sign in and bring them
+        // back here, instead of silently flickering the heart back to empty.
+        setSaved(!next);
+        router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname || "/")}`);
+      } else if (!res.ok) {
         // rollback on failure
         setSaved(!next);
       } else {

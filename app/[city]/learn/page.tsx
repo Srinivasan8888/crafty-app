@@ -200,11 +200,6 @@ export default async function LearnListing({
         >
           Showing {studios.length} of {totalCount} {totalCount === 1 ? "studio" : "studios"}
         </div>
-        {totalCount > studios.length && (
-          <Link href={`${baseHref}?page=2${active ? `&discipline=${active}` : ""}`} className="btn btn-secondary btn-block">
-            Load more studios
-          </Link>
-        )}
       </div>
 
       <BottomNav city={city.slug} active="explore" />
