@@ -8,6 +8,24 @@ import { isSameOrigin, safeReferer } from "@/lib/security";
 
 export const runtime = "nodejs";
 
+// GET — the current user's saved set, as "TYPE:id" keys. Powers SaveButton
+// hydration so hearts render filled on load (and re-tapping doesn't un-save).
+// Signed-out callers get an empty set (200, not 401) so the client provider
+// doesn't treat "not logged in" as an error.
+export async function GET() {
+  let user;
+  try { user = await requireUser(); }
+  catch { return NextResponse.json({ saved: [] }); }
+  const rows = await prisma.save.findMany({
+    where: { user_id: user.id },
+    select: { entity_type: true, entity_id: true },
+  });
+  return NextResponse.json(
+    { saved: rows.map((r) => `${r.entity_type}:${r.entity_id}`) },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
+}
+
 const Schema = z.object({
   entity_type: z.enum(ENTITY_TYPES),
   entity_id: z.string().min(1).max(30),

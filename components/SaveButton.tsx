@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Heart } from "lucide-react";
+import { useSavedState } from "@/components/SavedStateProvider";
 
 type EntityType = "crafter" | "store" | "studio" | "event";
 
@@ -32,8 +33,18 @@ export function SaveButton({
 }: SaveButtonProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const savedState = useSavedState();
+  const key = `${TYPE_TO_API[entityType]}:${entityId}`;
   const [saved, setSaved] = useState(initialSaved);
   const [pending, setPending] = useState(false);
+
+  // Hydrate from the shared saved set once it loads (and stay in sync if the
+  // same entity is toggled from another card). Without this, hearts render
+  // empty on revisit and re-tapping a saved item silently un-saves it.
+  const ctxSaved = savedState?.loaded ? savedState.isSaved(key) : undefined;
+  useEffect(() => {
+    if (ctxSaved !== undefined) setSaved(ctxSaved);
+  }, [ctxSaved]);
 
   async function toggle(e?: React.MouseEvent) {
     e?.preventDefault();
@@ -41,6 +52,7 @@ export function SaveButton({
     if (pending) return;
     const next = !saved;
     setSaved(next); // optimistic
+    savedState?.setSaved(key, next);
     setPending(true);
     try {
       const res = await fetch("/api/saves", {
@@ -55,18 +67,22 @@ export function SaveButton({
         // Signed-out buyer tapped Save — send them to sign in and bring them
         // back here, instead of silently flickering the heart back to empty.
         setSaved(!next);
+        savedState?.setSaved(key, !next);
         router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname || "/")}`);
       } else if (!res.ok) {
         // rollback on failure
         setSaved(!next);
+        savedState?.setSaved(key, !next);
       } else {
         const data = await res.json().catch(() => null);
         if (data && typeof data.saved === "boolean") {
           setSaved(data.saved);
+          savedState?.setSaved(key, data.saved);
         }
       }
     } catch {
       setSaved(!next);
+      savedState?.setSaved(key, !next);
     } finally {
       setPending(false);
     }

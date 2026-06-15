@@ -98,6 +98,7 @@ export function MobileDrawer({ cities, currentCity, locale }: Props) {
     { href: `/${currentCity}/learn`, label: "Learn", icon: <Sparkles size={16} aria-hidden="true" /> },
     { href: `/${currentCity}/events`, label: "Events", icon: <Calendar size={16} aria-hidden="true" /> },
     { href: `/${currentCity}/search`, label: "Search", icon: <Search size={16} aria-hidden="true" /> },
+    { href: "/dashboard/saved?redirect_url=/dashboard/saved", label: "Saved", icon: <Heart size={16} aria-hidden="true" /> },
     { href: "/list-your-profile", label: "List your profile", icon: <UserPlus size={16} aria-hidden="true" /> },
     { href: "/sign-in", label: "Sign in", icon: <LogIn size={16} aria-hidden="true" /> },
   ];

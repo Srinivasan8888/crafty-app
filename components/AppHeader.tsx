@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, Heart } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
@@ -112,6 +112,17 @@ export async function AppHeader({ city }: { city: string }) {
             >
               <span>{current.display_name}</span>
               <ChevronDown size={14} aria-hidden="true" />
+            </Link>
+
+            {/* Saved: reachable while browsing, not just the mobile bottom nav.
+                redirect_url brings signed-out buyers back here after sign-in. */}
+            <Link
+              href="/dashboard/saved?redirect_url=/dashboard/saved"
+              className="icon-btn hidden md:inline-flex"
+              aria-label={t("saved")}
+              title={t("saved")}
+            >
+              <Heart size={16} aria-hidden="true" />
             </Link>
 
             <LocaleSwitcher current={locale} />
