@@ -76,9 +76,20 @@ export async function getCoSaves(
 /**
  * "For you" — personalized recs based on the user's full save shelf.
  * Excludes the user's own saves. Returns mixed-type hits, up to `limit`.
+ *
+ * `opts.cityId` (optional) scopes the materialized results to a single city —
+ * used by the city landing's "Picks for you in {City}" rail so the surface
+ * stays city-scoped (no global feed). PUBLISHED + non-expired filtering still
+ * applies. The co-save graph itself is computed globally (saves anywhere can
+ * inform the score); only hydration is filtered to the city.
  */
-export async function getForYou(userId: string, limit = 12): Promise<RecHit[]> {
+export async function getForYou(
+  userId: string,
+  limit = 12,
+  opts?: { cityId?: string },
+): Promise<RecHit[]> {
   const cap = Math.min(Math.max(limit, 1), 36);
+  const cityId = opts?.cityId;
 
   // We fan out per entity_type so we can hydrate cheaply (one query per type
   // rather than four conditional joins). Each per-type query mirrors getCoSaves
@@ -115,7 +126,7 @@ export async function getForYou(userId: string, limit = 12): Promise<RecHit[]> {
 
   // Hydrate each bucket in parallel, then merge by global score.
   const hydrated = await Promise.all(
-    perType.map(({ type, rows }) => (rows.length === 0 ? Promise.resolve([] as RecHit[]) : hydrate(type, rows))),
+    perType.map(({ type, rows }) => (rows.length === 0 ? Promise.resolve([] as RecHit[]) : hydrate(type, rows, cityId))),
   );
 
   const merged = hydrated.flat();
@@ -128,16 +139,20 @@ export async function getForYou(userId: string, limit = 12): Promise<RecHit[]> {
 // of RecHit by issuing exactly ONE findMany per type — no N+1. Filters out
 // entities that are no longer PUBLISHED (deleted_at IS NULL, status = PUBLISHED).
 
-async function hydrate(entityType: string, rows: CountRow[]): Promise<RecHit[]> {
+async function hydrate(entityType: string, rows: CountRow[], cityId?: string): Promise<RecHit[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.entity_id);
   const scoreById = new Map<string, number>();
   for (const r of rows) scoreById.set(r.entity_id, Number(r.score));
+  // When city-scoped, narrow each materialization to the city (keeps the
+  // landing rail city-scoped — no global feed). Spread into the existing
+  // where so PUBLISHED / non-expired filters are preserved.
+  const cityWhere = cityId ? { city_id: cityId } : {};
 
   switch (entityType) {
     case "CRAFTER": {
       const records = await prisma.crafter.findMany({
-        where: { id: { in: ids }, status: "PUBLISHED" },
+        where: { id: { in: ids }, status: "PUBLISHED", ...cityWhere },
         select: {
           id: true,
           slug: true,
@@ -162,7 +177,7 @@ async function hydrate(entityType: string, rows: CountRow[]): Promise<RecHit[]> 
     }
     case "STORE": {
       const records = await prisma.store.findMany({
-        where: { id: { in: ids }, status: "PUBLISHED" },
+        where: { id: { in: ids }, status: "PUBLISHED", ...cityWhere },
         select: {
           id: true,
           slug: true,
@@ -187,7 +202,7 @@ async function hydrate(entityType: string, rows: CountRow[]): Promise<RecHit[]> 
     }
     case "STUDIO": {
       const records = await prisma.studio.findMany({
-        where: { id: { in: ids }, status: "PUBLISHED" },
+        where: { id: { in: ids }, status: "PUBLISHED", ...cityWhere },
         select: {
           id: true,
           slug: true,
@@ -218,6 +233,7 @@ async function hydrate(entityType: string, rows: CountRow[]): Promise<RecHit[]> 
           id: { in: ids },
           status: "PUBLISHED",
           end_at: { gte: new Date() },
+          ...cityWhere,
         },
         select: {
           id: true,

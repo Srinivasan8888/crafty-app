@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
 
@@ -13,6 +14,12 @@ export const runtime = "nodejs";
 const Schema = z.object({
   city_name: z.string().min(2).max(80).trim(),
   region: z.string().max(80).trim().nullable().optional(),
+  // S7 — never accept reporter_email from the caller; we derive it from the
+  // authenticated session below. Accepting an attacker-supplied email lets
+  // someone frame a victim as the requester (the admin queue renders it as
+  // "First reporter") and is a DPDP lawful-purpose violation. Anonymous
+  // requests persist with a null reporter_email. Field kept only for
+  // forward-compat, matching /api/flags.
   reporter_email: z.string().email().max(200).nullable().optional(),
 });
 
@@ -31,6 +38,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "validation", details: parsed.error.flatten() }, { status: 400 });
   }
   const data = parsed.data;
+  // Derive reporter_email ONLY from the session (see S7 note on the schema).
+  const user = await getCurrentUser();
+  const reporterEmail = user?.email ?? null;
   const ip_country = req.headers.get("x-vercel-ip-country")
     ?? req.headers.get("cf-ipcountry")
     ?? null;
@@ -46,7 +56,7 @@ export async function POST(req: NextRequest) {
     create: {
       city_name: normalized,
       region: data.region ?? null,
-      reporter_email: data.reporter_email ?? null,
+      reporter_email: reporterEmail,
       ip_country,
     },
     update: {

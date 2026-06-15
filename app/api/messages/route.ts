@@ -16,8 +16,50 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
+import { sendNewMessageNotice } from "@/lib/email";
 
 export const runtime = "nodejs";
+
+const THROTTLE_MS = 60 * 60 * 1000; // 1h between owner notifications per conversation
+
+// Resolve the human-readable listing name for an email subject, best-effort.
+async function loadEntityName(kind: "CRAFTER" | "STORE" | "STUDIO", id: string): Promise<string> {
+  if (kind === "CRAFTER") return (await prisma.crafter.findUnique({ where: { id }, select: { name: true } }))?.name ?? "your listing";
+  if (kind === "STORE") return (await prisma.store.findUnique({ where: { id }, select: { name: true } }))?.name ?? "your listing";
+  return (await prisma.studio.findUnique({ where: { id }, select: { name: true } }))?.name ?? "your listing";
+}
+
+// Notify the listing owner that a buyer messaged them. Fire-and-forget: any
+// failure here must never affect the message write. Throttled so a buyer
+// sending several messages in a row only triggers one email per hour, computed
+// purely from existing Message timestamps (no schema change). `priorMessageAt`
+// is the created_at of the previous message in this conversation, or null if
+// the one we just wrote is the first.
+async function maybeNotifyOwner(args: {
+  ownerId: string;
+  entityType: "CRAFTER" | "STORE" | "STUDIO";
+  entityId: string;
+  conversationId: string;
+  priorMessageAt: Date | null;
+}) {
+  try {
+    if (args.priorMessageAt && Date.now() - args.priorMessageAt.getTime() <= THROTTLE_MS) return;
+    const owner = await prisma.user.findUnique({
+      where: { id: args.ownerId },
+      select: { email: true, display_name: true, email_bounced: true },
+    });
+    if (!owner || !owner.email || owner.email_bounced) return;
+    const listingName = await loadEntityName(args.entityType, args.entityId);
+    await sendNewMessageNotice({
+      to: owner.email,
+      firstName: owner.display_name,
+      listingName,
+      conversationId: args.conversationId,
+    });
+  } catch (e) {
+    console.error("[messages:notify-error]", e);
+  }
+}
 
 const Schema = z.object({
   entity_type: z.enum(["CRAFTER", "STORE", "STUDIO"]),
@@ -80,6 +122,14 @@ export async function POST(req: NextRequest) {
     select: { id: true },
   });
 
+  // Throttle basis: timestamp of the most recent existing message in this
+  // conversation BEFORE we write the new one (null = this is the first).
+  const prior = await prisma.message.findFirst({
+    where: { conversation_id: conv.id },
+    orderBy: { created_at: "desc" },
+    select: { created_at: true },
+  });
+
   await prisma.message.create({
     data: {
       conversation_id: conv.id,
@@ -92,6 +142,17 @@ export async function POST(req: NextRequest) {
   await prisma.conversation.update({
     where: { id: conv.id },
     data: { buyer_last_read_at: new Date() },
+  });
+
+  // The sender here is always the buyer (conversation is keyed on
+  // buyer_user_id = user.id and self-messaging is blocked above), so the
+  // recipient is the listing owner. Notify best-effort; never await/block.
+  void maybeNotifyOwner({
+    ownerId,
+    entityType: data.entity_type,
+    entityId: data.entity_id,
+    conversationId: conv.id,
+    priorMessageAt: prior?.created_at ?? null,
   });
 
   return NextResponse.json({ conversation_id: conv.id }, { status: 201 });

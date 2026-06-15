@@ -21,6 +21,8 @@ const ApproveSchema = z.object({
   approved_user_id: z.string().min(1).max(40).optional(),
   /** Or email — we create/find a User row. */
   approved_user_email: z.string().email().max(120).optional(),
+  /** Explicit override to reassign a listing already owned by someone else. */
+  override_existing_owner: z.boolean().optional(),
   admin_note: z.string().max(1000).optional(),
 });
 const RejectSchema = z.object({
@@ -36,9 +38,9 @@ const Schema = z.discriminatedUnion("action", [ApproveSchema, RejectSchema, With
 const SEGMENT: Record<string, string> = { CRAFTER: "crafters", STORE: "stores", STUDIO: "learn" };
 
 async function loadEntity(kind: "CRAFTER" | "STORE" | "STUDIO", id: string) {
-  if (kind === "CRAFTER") return prisma.crafter.findUnique({ where: { id }, select: { id: true, name: true, slug: true, city: { select: { slug: true } } } });
-  if (kind === "STORE")   return prisma.store.findUnique({ where: { id }, select: { id: true, name: true, slug: true, city: { select: { slug: true } } } });
-  return prisma.studio.findUnique({ where: { id }, select: { id: true, name: true, slug: true, city: { select: { slug: true } } } });
+  if (kind === "CRAFTER") return prisma.crafter.findUnique({ where: { id }, select: { id: true, name: true, slug: true, owner_user_id: true, city: { select: { slug: true } } } });
+  if (kind === "STORE")   return prisma.store.findUnique({ where: { id }, select: { id: true, name: true, slug: true, owner_user_id: true, city: { select: { slug: true } } } });
+  return prisma.studio.findUnique({ where: { id }, select: { id: true, name: true, slug: true, owner_user_id: true, city: { select: { slug: true } } } });
 }
 
 async function transferOwnership(kind: "CRAFTER" | "STORE" | "STUDIO", id: string, newOwnerId: string) {
@@ -129,6 +131,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (upserted.role === "VISITOR") {
       await prisma.user.update({ where: { id: upserted.id }, data: { role: "CREATOR" } });
     }
+  }
+
+  // Guard: don't silently clobber a listing that's already owned by a
+  // different user (e.g. approving a stale claim after someone else claimed
+  // it). The UI's "still claimable" hint is advisory and races; the server is
+  // authoritative. An explicit override lets an admin reassign deliberately.
+  if (
+    entity.owner_user_id &&
+    entity.owner_user_id !== targetUserId &&
+    !body.override_existing_owner
+  ) {
+    return NextResponse.json(
+      { error: "already_owned", current_owner_user_id: entity.owner_user_id },
+      { status: 409 },
+    );
   }
 
   await transferOwnership(claim.entity_type as any, claim.entity_id, targetUserId);

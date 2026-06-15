@@ -3,7 +3,11 @@
 // Public route. Three sections:
 //   1. Vertical timeline of per-city CommunityMoment JSON, ordered by
 //      city.display_order DESC (the moment itself has no timestamp).
-//   2. "Crafter of the week" — highest-engaged crafter by saves in last 7d.
+//   2. "This week in {City}" — an editorial spotlight on one crafter in the
+//      city. Selection is NOT a popularity ranking: an admin pin
+//      (crafter.is_featured) wins first; otherwise a deterministic rotation
+//      across published crafters that is stable within an ISO week and shifts
+//      week to week. No save/popularity count is ever rendered here.
 //   3. Ambient signal feed — last-24h aggregates, no PII.
 //
 // Schema is locked. Comments tease V3.1 as italic footer note.
@@ -21,6 +25,18 @@ export const revalidate = 300; // editorial, not real-time
 
 type Moment = { photoUrl?: string; caption?: string } | null;
 
+// ISO-8601 week number for a given date (weeks start Monday; week 1 contains
+// the first Thursday of the year). Stable within a week, varies across weeks —
+// used to rotate the weekly spotlight deterministically.
+function isoWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  // Thursday of the current ISO week (day 0 = Sunday → treat as 7).
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
 export const metadata = {
   title: "Community — Crafty",
   description: "Moments from across India's craft community — by city.",
@@ -35,27 +51,39 @@ export default async function CommunityPage() {
     select: { id: true, slug: true, display_name: true, community_moment: true },
   });
 
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const topSaves = await prisma.save.groupBy({
-    by: ["entity_id"],
-    where: { entity_type: "CRAFTER", created_at: { gte: sevenDaysAgo } },
-    _count: { entity_id: true },
-    orderBy: { _count: { entity_id: "desc" } },
-    take: 1,
+  // Weekly spotlight — city-scoped, NOT a popularity ranking.
+  // 1) Admin pin: an is_featured crafter in the city wins (most recent first).
+  // 2) Otherwise rotate deterministically across published crafters in the
+  //    city — stable within an ISO week, shifting week to week.
+  const defaultCity = process.env.NEXT_PUBLIC_DEFAULT_CITY ?? "bengaluru";
+  const crafterSelect = {
+    id: true,
+    slug: true,
+    name: true,
+    tagline: true,
+    profile_photo: true,
+    city: { select: { slug: true, display_name: true } },
+  } as const;
+
+  let featured = await prisma.crafter.findFirst({
+    where: { status: "PUBLISHED", is_featured: true, city: { slug: defaultCity } },
+    orderBy: { updated_at: "desc" },
+    select: crafterSelect,
   });
-  const featured = topSaves[0]
-    ? await prisma.crafter.findFirst({
-        where: { id: topSaves[0].entity_id, status: "PUBLISHED" },
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          tagline: true,
-          profile_photo: true,
-          city: { select: { slug: true, display_name: true } },
-        },
-      })
-    : null;
+
+  if (!featured) {
+    // Stable, lightweight rotation pool: published crafters in the city,
+    // ordered deterministically so the index is reproducible across requests.
+    const pool = await prisma.crafter.findMany({
+      where: { status: "PUBLISHED", city: { slug: defaultCity } },
+      orderBy: { created_at: "asc" },
+      select: crafterSelect,
+    });
+    if (pool.length > 0) {
+      const week = isoWeekNumber(new Date());
+      featured = pool[week % pool.length];
+    }
+  }
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const recentSaves = await prisma.save.findMany({
@@ -88,7 +116,7 @@ export default async function CommunityPage() {
         {featured ? (
           <section className="container py-8 md:py-12">
             <div className="sec-title-bar" style={{ marginBottom: 12 }}>
-              <h2 style={{ fontSize: 22 }}>{t("crafterOfWeek")}</h2>
+              <h2 style={{ fontSize: 22 }}>{t("thisWeekInCity", { city: featured.city.display_name })}</h2>
             </div>
             <Link
               href={`/${featured.city.slug}/crafters/${featured.slug}`}
@@ -109,7 +137,7 @@ export default async function CommunityPage() {
                     <p className="mt-4 font-display text-base italic text-muted md:text-lg">{featured.tagline}</p>
                   )}
                   <p className="mt-6 text-sm text-ink-subtle">
-                    Most-saved crafter in {featured.city.display_name} this week.
+                    {t("thisWeekBlurb", { city: featured.city.display_name })}
                   </p>
                 </div>
               </div>

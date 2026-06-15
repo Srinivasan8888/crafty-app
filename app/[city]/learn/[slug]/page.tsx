@@ -18,6 +18,7 @@ import { ReviewSection } from "@/components/ReviewSection";
 import { CoSaveRecommendations } from "@/components/CoSaveRecommendations";
 import { MessageButton } from "@/components/MessageButton";
 import { ProductCard } from "@/components/ProductCard";
+import { CrossLinkCard } from "@/components/CrossLinkCard";
 import { getCurrentUser } from "@/lib/auth";
 import { isPro } from "@/lib/subscription-gates";
 import { ClaimRequestForm } from "@/components/ClaimRequestForm";
@@ -120,6 +121,21 @@ export default async function StudioDetail({ params }: { params: { city: string;
     take: 3,
     select: { id: true, slug: true, name: true, profile_photo: true, tagline: true },
   });
+
+  // Cross-links: other listings the same owner runs (real pages only).
+  const [ownerCrafter, ownerStore] = s.owner_user_id
+    ? await Promise.all([
+        prisma.crafter.findFirst({
+          where: { owner_user_id: s.owner_user_id, status: "PUBLISHED" },
+          select: { slug: true, name: true, profile_photo: true },
+        }),
+        prisma.store.findFirst({
+          where: { owner_user_id: s.owner_user_id, status: "PUBLISHED" },
+          select: { slug: true, name: true, logo_photo: true },
+        }),
+      ])
+    : [null, null];
+  const hasOwnerLinks = Boolean(ownerCrafter || ownerStore);
 
   const hours = readHours(s.operating_hours);
   const courses = readCourses(s.ongoing_courses);
@@ -582,6 +598,32 @@ export default async function StudioDetail({ params }: { params: { city: string;
               </div>
             </div>
 
+            {hasOwnerLinks && (
+              <div className="card p-5">
+                <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 10 }}>
+                  Also runs
+                </h2>
+                <div className="flex flex-col gap-2">
+                  {ownerCrafter && (
+                    <CrossLinkCard
+                      type="crafter"
+                      name={ownerCrafter.name}
+                      thumb={ownerCrafter.profile_photo}
+                      href={`/${s.city.slug}/crafters/${ownerCrafter.slug}`}
+                    />
+                  )}
+                  {ownerStore && (
+                    <CrossLinkCard
+                      type="store"
+                      name={ownerStore.name}
+                      thumb={ownerStore.logo_photo}
+                      href={`/${s.city.slug}/stores/${ownerStore.slug}`}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="card p-5">
               <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <Clock size={14} /> Studio hours
@@ -659,6 +701,32 @@ export default async function StudioDetail({ params }: { params: { city: string;
           </aside>
         </div>
       </div>
+
+      {hasOwnerLinks && (
+        <section className="md:hidden px-[18px] py-4">
+          <h2 className="font-display" style={{ fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
+            Also runs
+          </h2>
+          <div className="flex flex-col gap-2">
+            {ownerCrafter && (
+              <CrossLinkCard
+                type="crafter"
+                name={ownerCrafter.name}
+                thumb={ownerCrafter.profile_photo}
+                href={`/${s.city.slug}/crafters/${ownerCrafter.slug}`}
+              />
+            )}
+            {ownerStore && (
+              <CrossLinkCard
+                type="store"
+                name={ownerStore.name}
+                thumb={ownerStore.logo_photo}
+                href={`/${s.city.slug}/stores/${ownerStore.slug}`}
+              />
+            )}
+          </div>
+        </section>
+      )}
 
       <StickyCTA
         primaryLabel={primaryLabel}

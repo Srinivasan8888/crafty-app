@@ -7,11 +7,23 @@ import { CommunityMoment, FALLBACK_COMMUNITY_MOMENT } from "@/components/Communi
 import { RequestCityBanner } from "@/components/RequestCityBanner";
 import { readGeoHint } from "@/lib/geo";
 import { BottomNav } from "@/components/BottomNav";
+import { getCurrentUser } from "@/lib/auth";
+import { getForYou, type RecHit } from "@/lib/recommendations";
+import { RecCard } from "@/components/ForYouSection";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
+
+// Subtle freshness caption — "Added today / yesterday / N days ago".
+// Bounded to the 14-day window the rail already filters on.
+function addedAgo(createdAt: Date, now: Date): string {
+  const days = Math.floor((now.getTime() - new Date(createdAt).getTime()) / (24 * 60 * 60 * 1000));
+  if (days <= 0) return "Added today";
+  if (days === 1) return "Added yesterday";
+  return `Added ${days} days ago`;
+}
 
 export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
   const city = await getCityBySlug(params.city);
@@ -48,7 +60,22 @@ export default async function CityHome({ params }: { params: { city: string } })
   const cities = await getCities();
   const where = { city_id: city.id, status: "PUBLISHED" as const };
 
-  const [crafters, stores, studios, events] = await Promise.all([
+  // "New this week" freshness window — anything PUBLISHED in the last 14 days.
+  const now = new Date();
+  const freshSince = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  const freshWhere = { ...where, created_at: { gte: freshSince } };
+  const freshSelectBase = { created_at: true } as const;
+
+  const [
+    crafters,
+    stores,
+    studios,
+    events,
+    freshCrafters,
+    freshStores,
+    freshStudios,
+    freshEvents,
+  ] = await Promise.all([
     prisma.crafter.findMany({
       where,
       take: 8,
@@ -115,7 +142,99 @@ export default async function CityHome({ params }: { params: { city: string } })
         event_type: true,
       },
     }),
+    // ── "New this week in {City}" freshness rail — bounded, newest first ──
+    prisma.crafter.findMany({
+      where: freshWhere,
+      take: 6,
+      orderBy: { created_at: "desc" },
+      select: {
+        ...freshSelectBase,
+        id: true,
+        slug: true,
+        name: true,
+        tagline: true,
+        profile_photo: true,
+        is_featured: true,
+        offers_classes: true,
+        craft_categories: {
+          select: { category: { select: { display_name: true } } },
+        },
+      },
+    }),
+    prisma.store.findMany({
+      where: freshWhere,
+      take: 6,
+      orderBy: { created_at: "desc" },
+      select: {
+        ...freshSelectBase,
+        id: true,
+        slug: true,
+        name: true,
+        logo_photo: true,
+        address: true,
+        is_online_only: true,
+        is_claimed: true,
+        supply_categories: {
+          select: { category: { select: { display_name: true } } },
+        },
+      },
+    }),
+    prisma.studio.findMany({
+      where: freshWhere,
+      take: 6,
+      orderBy: { created_at: "desc" },
+      select: {
+        ...freshSelectBase,
+        id: true,
+        slug: true,
+        name: true,
+        logo_photo: true,
+        address: true,
+        age_group: true,
+        craft_disciplines: {
+          select: { discipline: { select: { display_name: true } } },
+        },
+      },
+    }),
+    // Upcoming events added in the window (created recently AND not yet ended).
+    prisma.event.findMany({
+      where: { ...freshWhere, end_at: { gte: now } },
+      take: 6,
+      orderBy: { created_at: "desc" },
+      select: {
+        ...freshSelectBase,
+        id: true,
+        slug: true,
+        name: true,
+        cover_image: true,
+        start_at: true,
+        venue_name: true,
+        is_free: true,
+        price_amount: true,
+        event_type: true,
+      },
+    }),
   ]);
+
+  const freshCount =
+    freshCrafters.length + freshStores.length + freshStudios.length + freshEvents.length;
+  // Only render the freshness rail when there's genuine substance (>=3 items)
+  // so we never ship a thin/empty section.
+  const showFreshRail = freshCount >= 3;
+
+  // ── "Picks for you in {City}" — signed-in buyers with >=1 save only ──
+  // The page is already dynamically rendered (readGeoHint() reads headers(),
+  // getCurrentUser() reads cookies()), so personalization is computed per
+  // request and never cached across users — safe to server-render directly.
+  const user = await getCurrentUser();
+  let pickHits: RecHit[] = [];
+  if (user) {
+    const saveCount = await prisma.save.count({ where: { user_id: user.id } });
+    if (saveCount >= 1) {
+      pickHits = await getForYou(user.id, 8, { cityId: city.id });
+    }
+  }
+  const showPicksRail = pickHits.length > 0;
 
   const collageImages = crafters
     .filter((c) => c.profile_photo)
@@ -242,6 +361,96 @@ export default async function CityHome({ params }: { params: { city: string } })
       </div>
 
       <div className="motif" aria-hidden="true"></div>
+
+      {showPicksRail && (
+        <DiscoveryRail
+          title={`Picks for you in ${city.display_name}`}
+          count={pickHits.length}
+        >
+          {pickHits.map((h) => (
+            <div
+              key={`${h.entity_type}:${h.entity_id}`}
+              className="shrink-0"
+              style={{ width: "var(--rail-card-w)" }}
+            >
+              <RecCard hit={h} />
+            </div>
+          ))}
+        </DiscoveryRail>
+      )}
+
+      {showFreshRail && (
+        <DiscoveryRail
+          title={`New this week in ${city.display_name}`}
+          count={freshCount}
+        >
+          {freshCrafters.map((c) => (
+            <div key={`c:${c.id}`} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
+              <CrafterCard
+                id={c.id}
+                city={city.slug}
+                slug={c.slug}
+                name={c.name}
+                tagline={c.tagline}
+                profile_photo={c.profile_photo}
+                categories={c.craft_categories.map((j) => j.category.display_name)}
+                is_featured={c.is_featured}
+                offers_classes={c.offers_classes}
+                priority={false}
+              />
+              <p className="mt-1.5 px-1 text-xs text-ink-muted">{addedAgo(c.created_at, now)}</p>
+            </div>
+          ))}
+          {freshStores.map((s) => (
+            <div key={`s:${s.id}`} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
+              <StoreCard
+                id={s.id}
+                city={city.slug}
+                slug={s.slug}
+                name={s.name}
+                logo_photo={s.logo_photo}
+                address={s.address}
+                categories={s.supply_categories.map((j) => j.category.display_name)}
+                is_online_only={s.is_online_only}
+                is_claimed={s.is_claimed}
+              />
+              <p className="mt-1.5 px-1 text-xs text-ink-muted">{addedAgo(s.created_at, now)}</p>
+            </div>
+          ))}
+          {freshStudios.map((s) => (
+            <div key={`st:${s.id}`} className="shrink-0" style={{ width: "var(--rail-card-w)" }}>
+              <StudioCard
+                id={s.id}
+                city={city.slug}
+                slug={s.slug}
+                name={s.name}
+                logo_photo={s.logo_photo}
+                address={s.address}
+                age_group={s.age_group}
+                disciplines={s.craft_disciplines.map((j) => j.discipline.display_name)}
+              />
+              <p className="mt-1.5 px-1 text-xs text-ink-muted">{addedAgo(s.created_at, now)}</p>
+            </div>
+          ))}
+          {freshEvents.map((e) => (
+            <div key={`e:${e.id}`} className="shrink-0" style={{ width: "var(--rail-card-w-wide)" }}>
+              <EventCard
+                id={e.id}
+                city={city.slug}
+                slug={e.slug}
+                name={e.name}
+                cover_image={e.cover_image}
+                start_at={e.start_at}
+                venue_name={e.venue_name}
+                is_free={e.is_free}
+                price_amount={e.price_amount?.toString()}
+                event_type={e.event_type}
+              />
+              <p className="mt-1.5 px-1 text-xs text-ink-muted">{addedAgo(e.created_at, now)}</p>
+            </div>
+          ))}
+        </DiscoveryRail>
+      )}
 
       <DiscoveryRail
         title={`Crafters in ${city.display_name}`}

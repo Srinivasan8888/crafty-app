@@ -10,6 +10,7 @@ import { uploadedImageUrl } from "@/lib/upload-url";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCreator } from "@/lib/auth";
+import { exceedsProductCap, getMaxProducts } from "@/lib/subscription-gates";
 import { ensureUniqueSlug } from "@/lib/util";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
@@ -53,6 +54,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "validation", details: parsed.error.flatten() }, { status: 400 });
   }
   const data = parsed.data;
+
+  // Enforce the per-tier product cap (5 free / 25 Pro). Count excludes
+  // soft-deleted rows so deleting a product frees a slot.
+  const [account, existingCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { subscription_tier: true, subscription_expires_at: true },
+    }),
+    prisma.product.count({
+      where: { owner_user_id: user.id, status: { not: "DELETED" } },
+    }),
+  ]);
+  if (exceedsProductCap(account, existingCount)) {
+    return NextResponse.json(
+      { error: "product_limit_reached", max: getMaxProducts(account) },
+      { status: 403 },
+    );
+  }
 
   // Verify the caller actually owns the parent listing. Without this anyone
   // could spam Products under another seller's storefront.

@@ -141,6 +141,30 @@ export async function sendSellerNewOrder(args: {
   });
 }
 
+// V2.0 — notify a listing owner that a buyer messaged them. Sent best-effort
+// from the messages API; throttled there so a chatty buyer doesn't spam the
+// owner. Links straight to the conversation thread.
+export async function sendNewMessageNotice(args: {
+  to: string;
+  firstName?: string | null;
+  listingName: string;
+  conversationId: string;
+}) {
+  const threadUrl = `${SITE_URL}/dashboard/messages/${args.conversationId}`;
+  return sendEmail({
+    to: args.to,
+    subject: `A buyer messaged you about ${args.listingName} on Crafty`,
+    html: wrap(`
+      <p>Hi ${escape(args.firstName || "there")},</p>
+      <p>Someone is interested in <strong>${escape(args.listingName)}</strong> and sent you a message on Crafty.</p>
+      <p><a href="${threadUrl}" class="cta">Read &amp; reply</a></p>
+      <p>Replying quickly is the best way to turn interest into a sale.</p>
+      <p>— The Crafty team</p>
+    `),
+    text: `Hi ${args.firstName || "there"},\n\nSomeone is interested in ${args.listingName} and sent you a message on Crafty.\n\nRead & reply: ${threadUrl}\n\n— The Crafty team`,
+  });
+}
+
 export async function sendClaimConfirm(args: {
   to: string;
   storeName: string;

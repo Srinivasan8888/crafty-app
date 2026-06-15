@@ -9,12 +9,26 @@ const CreatorWalkthrough = dynamic(
 );
 import { AppFooter } from "@/components/AppFooter";
 import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { SubscriptionStatus } from "@/components/SubscriptionStatus";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
+
+  // Unread-conversation count for the owner inbox, computed from the existing
+  // read pointers (same rule as /dashboard/messages): a conversation is unread
+  // when owner_last_read_at is null or older than last_message_at. Clears as
+  // soon as the owner opens/reads the thread. No schema change.
+  const ownerConvs = await prisma.conversation.findMany({
+    where: { owner_user_id: user.id },
+    select: { owner_last_read_at: true, last_message_at: true },
+    take: 200,
+  });
+  const unreadMessages = ownerConvs.filter(
+    (c) => !c.owner_last_read_at || c.owner_last_read_at.getTime() < c.last_message_at.getTime(),
+  ).length;
 
   return (
     <MaybeAuthProvider>
@@ -46,9 +60,26 @@ export default async function DashboardLayout({ children }: { children: React.Re
               ["Messages", "/dashboard/messages"],
               ["Crafty Pro", "/dashboard/subscription"],
               ["API keys", "/dashboard/api-keys"],
-            ].map(([label, href]) => (
-              <Link key={href as string} href={href as string} className="rounded-md px-3 py-2 hover:bg-canvas-sunken">{label}</Link>
-            ))}
+            ].map(([label, href]) => {
+              const showBadge = href === "/dashboard/messages" && unreadMessages > 0;
+              return (
+                <Link
+                  key={href as string}
+                  href={href as string}
+                  className="flex items-center justify-between gap-2 rounded-md px-3 py-2 hover:bg-canvas-sunken"
+                >
+                  <span>{label}</span>
+                  {showBadge && (
+                    <span
+                      className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-fg"
+                      aria-label={`${unreadMessages} unread ${unreadMessages === 1 ? "conversation" : "conversations"}`}
+                    >
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
             {user.is_admin && (
               <Link href="/admin" className="mt-3 rounded-md px-3 py-2 text-accent hover:bg-canvas-sunken">Admin →</Link>
             )}

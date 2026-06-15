@@ -3,7 +3,7 @@ import Link from "next/link";
 
 type Props = {
   title: string;
-  seeAllHref: string;
+  seeAllHref?: string;
   seeAllLabel?: string;
   count: number;
   emptyText?: string;
@@ -44,6 +44,8 @@ export function DiscoveryRail({
   children,
   priorityFirstCard = false,
 }: Props) {
+  // Mixed/curated rails (e.g. "New this week", "Picks for you") have no single
+  // listing page — omit seeAllHref and we render no (dead) See-all link.
   let priorityApplied = false;
   const decoratedChildren = priorityFirstCard
     ? Children.map(children, (child) => {
@@ -71,7 +73,7 @@ export function DiscoveryRail({
     <section>
       <div className="sec-title-bar">
         {renderTitle(title)}
-        {count > 0 && (
+        {count > 0 && seeAllHref && (
           <Link href={seeAllHref} className="see-all">
             {seeAllLabel} &rarr;
           </Link>

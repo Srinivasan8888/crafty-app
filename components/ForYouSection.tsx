@@ -79,6 +79,12 @@ export async function ForYouSection({ userId, limit = 8 }: Props) {
   );
 }
 
+// Exported so the city landing's "Picks for you in {City}" rail can reuse the
+// exact same rec card styling. Renamed export keeps the internal usage intact.
+export function RecCard({ hit }: { hit: RecHit }) {
+  return <MiniRecCard hit={hit} />;
+}
+
 function MiniRecCard({ hit }: { hit: RecHit }) {
   const typeLabel: Record<RecHit["entity_type"], string> = {
     CRAFTER: "Crafter",

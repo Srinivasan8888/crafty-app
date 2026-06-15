@@ -32,10 +32,20 @@ export function getMaxPortfolioPhotos(user: UserLike | null | undefined): number
   return isPro(user) ? 12 : 6;
 }
 
-// V3 — product cap on Crafty's on-platform commerce. Agent A's
-// /api/products POST enforces this.
+// V3 — product cap on Crafty's on-platform commerce. Enforced by the
+// /api/products POST handler.
 export function getMaxProducts(user: UserLike | null | undefined): number {
   return isPro(user) ? 25 : 5;
+}
+
+// True when the seller already has at least their tier's max non-deleted
+// products, so creating another would exceed the cap. `existingCount` MUST
+// be the count of the seller's products excluding status === "DELETED".
+export function exceedsProductCap(
+  user: UserLike | null | undefined,
+  existingCount: number,
+): boolean {
+  return existingCount >= getMaxProducts(user);
 }
 
 // V3 — ranking nudge. The discovery ranker (future) will use:

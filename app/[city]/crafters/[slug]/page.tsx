@@ -9,6 +9,7 @@ import { ReviewSection } from "@/components/ReviewSection";
 import { CoSaveRecommendations } from "@/components/CoSaveRecommendations";
 import { MessageButton } from "@/components/MessageButton";
 import { ProductCard } from "@/components/ProductCard";
+import { CrossLinkCard } from "@/components/CrossLinkCard";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 import {
@@ -430,44 +431,20 @@ export default async function CrafterDetail({
             <h2 className="font-display text-lg font-bold mb-2.5">Also runs</h2>
             <div className="flex flex-col gap-2">
               {otherStore && (
-                <Link
+                <CrossLinkCard
+                  type="store"
+                  name={otherStore.name}
+                  thumb={otherStore.logo_photo}
                   href={`/${c.city.slug}/stores/${otherStore.slug}`}
-                  className="hcard"
-                >
-                  <div className="img relative shrink-0 overflow-hidden">
-                    <Image
-                      src={otherStore.logo_photo}
-                      alt={otherStore.name}
-                      fill
-                      sizes="96px"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="info">
-                    <div className="ttl">{otherStore.name}</div>
-                    <div className="meta">Store · {c.city.display_name}</div>
-                  </div>
-                </Link>
+                />
               )}
               {otherStudio && (
-                <Link
+                <CrossLinkCard
+                  type="studio"
+                  name={otherStudio.name}
+                  thumb={otherStudio.logo_photo}
                   href={`/${c.city.slug}/learn/${otherStudio.slug}`}
-                  className="hcard"
-                >
-                  <div className="img relative shrink-0 overflow-hidden">
-                    <Image
-                      src={otherStudio.logo_photo}
-                      alt={otherStudio.name}
-                      fill
-                      sizes="96px"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="info">
-                    <div className="ttl">{otherStudio.name}</div>
-                    <div className="meta">Studio · {c.city.display_name}</div>
-                  </div>
-                </Link>
+                />
               )}
             </div>
           </section>

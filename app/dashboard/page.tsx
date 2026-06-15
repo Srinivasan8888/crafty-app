@@ -194,6 +194,17 @@ export default async function DashboardOverview() {
           },
         });
 
+  // Unread-conversation count for the activity strip — same rule as the sidebar
+  // badge and /dashboard/messages: unread when owner_last_read_at is null or
+  // older than last_message_at.
+  const ownerConvs = await prisma.conversation.findMany({
+    where: { owner_user_id: user.id },
+    select: { owner_last_read_at: true, last_message_at: true },
+  });
+  const unreadMessages = ownerConvs.filter(
+    (c) => !c.owner_last_read_at || c.owner_last_read_at.getTime() < c.last_message_at.getTime(),
+  ).length;
+
   // Build "latest listing" — most recently created across all owned entities.
   type LatestCandidate = {
     name: string;
@@ -250,6 +261,7 @@ export default async function DashboardOverview() {
       <div className="mt-5">
         <ActivityStrip
           savesThisWeek={savesThisWeek}
+          unreadMessages={unreadMessages}
           latestListing={latestListing}
           cityName={crafters[0]?.city.display_name}
         />

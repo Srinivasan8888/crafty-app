@@ -89,6 +89,8 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       create: { email, display_name: name, role: "ADMIN", is_admin: true },
       update: {},
     });
+    // A banned account is treated as anonymous everywhere (PRD §12 moderation).
+    if (user.is_banned) return null;
     return {
       id: user.id, descope_id: user.descope_id, email: user.email,
       display_name: user.display_name, role: user.role, is_admin: user.is_admin,
@@ -100,6 +102,10 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
   const existing = await prisma.user.findUnique({ where: { descope_id: claims.sub } });
   if (existing) {
+    // Banned accounts are denied here, before any promotion, so the admin
+    // "Ban" control (app/admin/users/actions.ts) actually blocks access —
+    // requireUser/requireCreator/requireAdmin all inherit this via getCurrentUser.
+    if (existing.is_banned) return null;
     // Idempotent CREATOR promotion (Issue 2.1 follow-up). The Descope audit
     // webhook may have created this row as VISITOR before our first
     // authenticated request could read the signup-intent cookie. Without this,
@@ -144,6 +150,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   if (!preExisting && !email.endsWith("@noreply.crafty.app")) {
     void sendSignupWelcome({ to: email, firstName: created.display_name });
   }
+
+  // The email upsert can resolve to a pre-existing (possibly banned) row.
+  if (created.is_banned) return null;
 
   return {
     id: created.id, descope_id: created.descope_id, email: created.email,
