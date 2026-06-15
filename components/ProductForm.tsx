@@ -68,8 +68,11 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
   // it physically impossible to type "-5" or "19.99" into a numeric input — we
   // sanitize the raw string on every keystroke rather than trusting Number().
   const sanitizeInt = (raw: string) => {
-    const digits = raw.replace(/[^0-9]/g, "");
-    return digits === "" ? 0 : parseInt(digits, 10);
+    // Integer rupees/units only. Keep the whole-number part *before* any decimal
+    // point so "12.5" becomes "12" and "-19.99" becomes "19" (never 125/1999);
+    // commas (thousands separators) are stripped, so "1,200" stays "1200".
+    const whole = String(raw).split(".")[0].replace(/[^0-9]/g, "");
+    return whole === "" ? 0 : parseInt(whole, 10);
   };
 
   async function uploadPhotos(e: React.ChangeEvent<HTMLInputElement>) {

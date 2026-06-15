@@ -153,8 +153,11 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
   // negative or fractional value ("-5", "19.99"). Empty stays empty so the
   // placeholder shows; otherwise it's a non-negative integer string.
   const sanitizePriceInput = (raw: string) => {
-    const digits = raw.replace(/[^0-9]/g, "");
-    return digits === "" ? "" : String(parseInt(digits, 10));
+    // Integer rupees only. Keep the whole-number part *before* any decimal point so
+    // a fat-fingered "12.5" becomes "12" and "-19.99" becomes "19" (never 125/1999);
+    // commas (thousands separators) are stripped, so "1,200" stays "1200".
+    const whole = raw.split(".")[0].replace(/[^0-9]/g, "");
+    return whole === "" ? "" : String(parseInt(whole, 10));
   };
 
   const draft = useFormDraft(isEdit ? `event:edit:${entityId}` : "event:new", form, { skip: isEdit });
