@@ -36,5 +36,5 @@
 
 - [x] 6.1 `bun run typecheck` clean.
 - [x] 6.2 `DEV_AUTH=false bun run build` succeeds.
-- [ ] 6.3 Commit on `demo-launch-pass`, deploy to Vercel prod, push to `origin`.
-- [ ] 6.4 Live smoke: landing shows new-this-week (+ picks-for-you when signed in), detail pages show cross-links, community has no most-saved label; confirm the bookmark loop still works.
+- [x] 6.3 Commit on `demo-launch-pass`, deploy to Vercel prod, push to `origin`.
+- [x] 6.4 Live smoke: landing shows new-this-week (+ picks-for-you when signed in), detail pages show cross-links, community has no most-saved label; confirm the bookmark loop still works.

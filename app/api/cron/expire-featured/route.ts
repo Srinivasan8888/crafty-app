@@ -25,12 +25,29 @@ export async function GET(req: NextRequest) {
   let flipped = 0;
   for (const o of expired) {
     try {
-      if (o.entity_type === "CRAFTER") await prisma.crafter.update({ where: { id: o.entity_id }, data: { is_featured: false } });
-      if (o.entity_type === "STORE")   await prisma.store.update({   where: { id: o.entity_id }, data: { is_featured: false } });
-      if (o.entity_type === "STUDIO")  await prisma.studio.update({  where: { id: o.entity_id }, data: { is_featured: false } });
-      if (o.entity_type === "EVENT")   await prisma.event.update({   where: { id: o.entity_id }, data: { is_featured: false } });
+      // Don't un-feature a listing that's still covered by another active paid
+      // window (a renewal or overlapping purchase). Without this, expiring the
+      // older order prematurely drops featuring the creator already paid for.
+      const stillCovered = await prisma.featureOrder.findFirst({
+        where: {
+          id: { not: o.id },
+          entity_type: o.entity_type,
+          entity_id: o.entity_id,
+          status: "PAID",
+          feature_expires_at: { gte: now },
+        },
+        select: { id: true },
+      });
+
+      if (!stillCovered) {
+        if (o.entity_type === "CRAFTER") await prisma.crafter.update({ where: { id: o.entity_id }, data: { is_featured: false } });
+        if (o.entity_type === "STORE")   await prisma.store.update({   where: { id: o.entity_id }, data: { is_featured: false } });
+        if (o.entity_type === "STUDIO")  await prisma.studio.update({  where: { id: o.entity_id }, data: { is_featured: false } });
+        if (o.entity_type === "EVENT")   await prisma.event.update({   where: { id: o.entity_id }, data: { is_featured: false } });
+        flipped++;
+      }
+      // This order is expired either way; only the is_featured flip is gated.
       await prisma.featureOrder.update({ where: { id: o.id }, data: { status: "EXPIRED" } });
-      flipped++;
     } catch (e) {
       console.error("[expire-featured] flip failed", o.id, e);
     }

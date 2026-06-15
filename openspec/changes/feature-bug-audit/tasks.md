@@ -1,17 +1,17 @@
 ## 1. Security & enforcement
 
-- [ ] 1.1 Enforce `is_banned` in `lib/auth.ts` at the shared resolver (`getCurrentUser`/`requireUser`) so banned accounts are treated as anonymous/denied; `requireCreator()` and `requireAdmin()` inherit it.
-- [ ] 1.2 Add a test asserting a banned user is denied on an authenticated page and on a creator mutation route, and that a non-banned user is unaffected.
-- [ ] 1.3 Enforce the per-tier product cap in `POST /api/products` (`app/api/products/route.ts`): count the seller's non-`DELETED` products and reject when creating another would exceed `getMaxProducts(user)`.
-- [ ] 1.4 Add a test: free-tier seller at the cap is blocked, soft-deleted products are excluded from the count, within-cap create still succeeds.
-- [ ] 1.5 Add a server-side ownership guard in `app/api/admin/claim-requests/[id]/route.ts`: re-read the listing and reject approval when `owner_user_id` belongs to a different user (unless an explicit override flag is passed).
-- [ ] 1.6 Derive `reporter_email` from the session in `app/api/city-requests/route.ts` (or omit for anonymous); stop trusting the client-supplied field, matching `/api/flags`.
+- [x] 1.1 Enforce `is_banned` in `lib/auth.ts` at the shared resolver (`getCurrentUser`/`requireUser`) so banned accounts are treated as anonymous/denied; `requireCreator()` and `requireAdmin()` inherit it.
+- [x] 1.2 Add a test asserting a banned user is denied on an authenticated page and on a creator mutation route, and that a non-banned user is unaffected.
+- [x] 1.3 Enforce the per-tier product cap in `POST /api/products` (`app/api/products/route.ts`): count the seller's non-`DELETED` products and reject when creating another would exceed `getMaxProducts(user)`.
+- [x] 1.4 Add a test: free-tier seller at the cap is blocked, soft-deleted products are excluded from the count, within-cap create still succeeds.
+- [x] 1.5 Add a server-side ownership guard in `app/api/admin/claim-requests/[id]/route.ts`: re-read the listing and reject approval when `owner_user_id` belongs to a different user (unless an explicit override flag is passed).
+- [x] 1.6 Derive `reporter_email` from the session in `app/api/city-requests/route.ts` (or omit for anonymous); stop trusting the client-supplied field, matching `/api/flags`.
 
 ## 2. Scheduled jobs (cron)
 
-- [ ] 2.1 Align event reminders: set the `vercel.json` schedule for `/api/cron/event-reminders` to hourly (`0 * * * *`) to match the 24–26h window, and fix the handler comment to match the schedule.
-- [ ] 2.2 In `app/api/cron/expire-featured/route.ts`, before clearing `is_featured`, confirm no other `FeatureOrder` for the same `entity_id` is still active (`status = PAID AND feature_expires_at >= now`); only un-feature when none exist.
-- [ ] 2.3 Fix the dead-code noreply guard in `app/api/cron/message-digest/route.ts:59` so recipients ending in `@noreply.crafty.app` (and bounced addresses) are actually skipped.
+- [x] 2.1 Align event reminders: set the `vercel.json` schedule for `/api/cron/event-reminders` to hourly (`0 * * * *`) to match the 24–26h window, and fix the handler comment to match the schedule.
+- [x] 2.2 In `app/api/cron/expire-featured/route.ts`, before clearing `is_featured`, confirm no other `FeatureOrder` for the same `entity_id` is still active (`status = PAID AND feature_expires_at >= now`); only un-feature when none exist.
+- [x] 2.3 Fix the dead-code noreply guard in `app/api/cron/message-digest/route.ts:59` so recipients ending in `@noreply.crafty.app` (and bounced addresses) are actually skipped.
 
 ## 3. Learn discovery filters
 

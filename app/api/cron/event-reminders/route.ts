@@ -1,9 +1,15 @@
 // PRD §15.2 — event-reminder T-24h email cron.
 //
-// Endpoint is meant to be hit by a scheduler every ~hour (Replit Cron / Vercel
-// Cron / GitHub Actions on schedule). It finds events whose start_at falls
-// within the next 24-26h window AND that haven't received a reminder yet,
-// sends one email to the organizer, and marks `reminder_sent_at`.
+// Endpoint MUST be hit hourly — vercel.json schedules it at "0 * * * *". The
+// handler queries a 24-26h look-ahead window, so an hourly cadence covers
+// every event exactly once: as the window slides 1h per run, each event falls
+// inside it for ~2 runs, and the `reminder_sent_at` guard prevents a second
+// send. (A daily run would only ever cover a 2h band of start times and skip
+// the rest — that was the bug this comment now guards against.)
+//
+// It finds events whose start_at falls within the next 24-26h window AND that
+// haven't received a reminder yet, sends one email to the organizer, and marks
+// `reminder_sent_at`.
 //
 // Auth: protected by a shared secret in CRON_SECRET to keep public crawlers
 // from accidentally firing it.

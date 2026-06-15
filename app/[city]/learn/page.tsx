@@ -29,20 +29,29 @@ const PAGE_SIZE = 24;
 
 export default async function LearnListing({
   params, searchParams,
-}: { params: { city: string }; searchParams: { discipline?: string } }) {
+}: { params: { city: string }; searchParams: { discipline?: string; online?: string; sort?: string } }) {
   const city = await getCityBySlug(params.city);
   if (!city) notFound();
 
   const disciplines = await prisma.discipline.findMany({ where: { is_active: true }, orderBy: { display_order: "asc" } });
   const active = searchParams.discipline;
+  const onlineOnly = searchParams.online === "1";
+  const sort = searchParams.sort === "newest" ? "newest" : "featured";
   const where = {
     city_id: city.id,
     status: "PUBLISHED" as const,
     ...(active ? { craft_disciplines: { some: { discipline: { slug: active } } } } : {}),
+    ...(onlineOnly ? { is_online_only: true } : {}),
   };
+  // "Featured first" (default) floats paid/featured studios up; "Newest" sorts
+  // purely by recency.
+  const orderBy =
+    sort === "newest"
+      ? [{ created_at: "desc" as const }]
+      : [{ is_featured: "desc" as const }, { created_at: "desc" as const }];
   const studios = await prisma.studio.findMany({
     where, take: PAGE_SIZE,
-    orderBy: [{ is_featured: "desc" }, { created_at: "desc" }],
+    orderBy,
     include: {
       craft_disciplines: { include: { discipline: true } },
       // V3 — owner Pro tier for the Pro pill on cards.
@@ -53,9 +62,10 @@ export default async function LearnListing({
   const totalCount = await prisma.studio.count({ where });
 
   const activeLabel = active ? disciplines.find((d) => d.slug === active)?.display_name : undefined;
-  const appliedFilters: AppliedFilter[] = activeLabel
-    ? [{ key: `discipline:${active}`, label: activeLabel }]
-    : [];
+  const appliedFilters: AppliedFilter[] = [
+    ...(activeLabel ? [{ key: `discipline:${active}`, label: activeLabel }] : []),
+    ...(onlineOnly ? [{ key: "online", label: "Online only" }] : []),
+  ];
 
   const baseHref = `/${city.slug}/learn`;
   const visibleDisciplines = disciplines.slice(0, 8);

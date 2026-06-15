@@ -56,7 +56,9 @@ export async function GET(req: NextRequest) {
   const { sendListingLive } = await import("@/lib/email");
   let sent = 0;
   for (const [, b] of byUser) {
-    if (b.bounced || !b.email.endsWith("@") === false && b.email.endsWith("@noreply.crafty.app")) continue;
+    // Skip bounced addresses and the internal pseudo-emails we mint for users
+    // who signed in before their real email claim resolved.
+    if (b.bounced || b.email.endsWith("@noreply.crafty.app")) continue;
     void sendListingLive({
       to: b.email,
       firstName: b.name,
