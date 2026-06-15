@@ -520,6 +520,10 @@ model Save {
   entity_type SavedEntityType
   entity_id   String
   created_at  DateTime         @default(now())
+  // Watermark for the saved-listing update digest: "new activity" on a saved
+  // maker means created after this (or created_at when null). Advanced after a
+  // digest is sent so updates never repeat. Null = baseline at save time.
+  last_notified_at DateTime?
   @@unique([user_id, entity_type, entity_id])
   @@index([user_id, entity_type])
   // Dashboard activity-strip "saves on entity X in last 7 days" query

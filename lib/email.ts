@@ -184,6 +184,64 @@ export async function sendClaimConfirm(args: {
   });
 }
 
+// saved-item-notifications — one batched email when makers a buyer saved post
+// new work (new product / new event). Strictly buyer-facing content; no save
+// or popularity counts. Best-effort + email_bounced honored by the caller cron.
+export async function sendSavedUpdatesDigest(args: {
+  to: string;
+  firstName?: string | null;
+  items: Array<{ name: string; what: string; url: string }>;
+}) {
+  const rows = args.items
+    .map(
+      (i) =>
+        `<p style="margin:10px 0;"><a href="${i.url}"><strong>${escape(i.name)}</strong></a><br><span style="color:#6B5A3E;">${escape(i.what)}</span></p>`,
+    )
+    .join("");
+  const count = args.items.length;
+  return sendEmail({
+    to: args.to,
+    subject:
+      count === 1
+        ? `Something new from a maker you saved on Crafty`
+        : `${count} makers you saved have something new on Crafty`,
+    html: wrap(`
+      <p>Hi ${escape(args.firstName || "there")},</p>
+      <p>Makers you saved on Crafty have posted something new:</p>
+      ${rows}
+      <p>— The Crafty team</p>
+    `),
+    text:
+      `Hi ${args.firstName || "there"},\n\nMakers you saved on Crafty have posted something new:\n\n` +
+      args.items.map((i) => `• ${i.name} — ${i.what}\n  ${i.url}`).join("\n") +
+      `\n\n— The Crafty team`,
+  });
+}
+
+// saved-item-notifications — T-24h reminder to a buyer who SAVED an event
+// (distinct from the organizer reminder). Sent from the event-reminders cron.
+export async function sendEventReminderAttendee(args: {
+  to: string;
+  firstName?: string | null;
+  eventName: string;
+  cityName: string;
+  venue?: string | null;
+  publicUrl: string;
+}) {
+  const where = args.venue ? ` at ${args.venue}` : "";
+  return sendEmail({
+    to: args.to,
+    subject: `Tomorrow: ${args.eventName} in ${args.cityName}`,
+    html: wrap(`
+      <p>Hi ${escape(args.firstName || "there")},</p>
+      <p>An event you saved is happening tomorrow: <strong>${escape(args.eventName)}</strong>${escape(where)} in ${escape(args.cityName)}.</p>
+      <p><a href="${args.publicUrl}" class="cta">See details &amp; add to calendar</a></p>
+      <p>— The Crafty team</p>
+    `),
+    text: `Hi ${args.firstName || "there"},\n\nAn event you saved is tomorrow: ${args.eventName}${where} in ${args.cityName}.\n\nDetails: ${args.publicUrl}\n\n— The Crafty team`,
+  });
+}
+
 // ─── HTML helpers ──────────────────────────────────────────────────
 
 function wrap(body: string): string {

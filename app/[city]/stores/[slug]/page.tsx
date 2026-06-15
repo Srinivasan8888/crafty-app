@@ -137,7 +137,6 @@ export default async function StoreDetail({ params }: { params: { city: string; 
   const hours = readHours(s.operating_hours);
   const categoryNames = s.supply_categories.map((j) => j.category.display_name);
 
-  const phoneDigits = s.contact_whatsapp?.replace(/[^0-9]/g, "") ?? s.contact_phone?.replace(/[^0-9]/g, "");
   const primaryHref = s.contact_whatsapp
     ? `https://wa.me/${s.contact_whatsapp.replace(/[^0-9]/g, "")}`
     : s.contact_phone
@@ -418,9 +417,9 @@ export default async function StoreDetail({ params }: { params: { city: string; 
             )}
 
             <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
-              <h2 style={{ fontSize: 22, marginBottom: 14 }}>Crafters who source here</h2>
+              <h2 style={{ fontSize: 22, marginBottom: 14 }}>Crafters in {s.city.display_name}</h2>
               {sampleCrafters.length === 0 ? (
-                <p className="text-muted" style={{ fontSize: 14 }}>No crafters tagged this store yet.</p>
+                <p className="text-muted" style={{ fontSize: 14 }}>No crafters listed in {s.city.display_name} yet.</p>
               ) : (
                 <ul style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {sampleCrafters.map((c) => (
@@ -436,7 +435,7 @@ export default async function StoreDetail({ params }: { params: { city: string; 
                 </ul>
               )}
               <p className="text-subtle" style={{ marginTop: 10, fontSize: 12, fontStyle: "italic" }}>
-                Suggested crafters from {s.city.display_name} — sourcing tags coming soon.
+                Other crafters in {s.city.display_name} — sourcing tags coming soon.
               </p>
             </section>
 
@@ -647,7 +646,6 @@ export default async function StoreDetail({ params }: { params: { city: string; 
         }
       />
 
-      {phoneDigits === undefined ? null : null}
       {s.owner_user_id && (
         <div className="container mt-4 flex justify-center">
           <MessageButton entityType="STORE" entityId={s.id} ownerDisplayName={s.name} />

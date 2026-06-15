@@ -53,9 +53,13 @@ export async function setStatus(kind: Kind, id: string, status: "PUBLISHED" | "H
   const admin = await requireAdmin();
   const entity = await loadEntity(kind, id);
   if (!entity) return;
-  const data: Record<string, unknown> = { status };
-  if (status === "DELETED") data.deleted_at = new Date();
-  if (status === "PUBLISHED") data.deleted_at = null;
+  // Keep deleted_at consistent with status: set it only for DELETED, clear it
+  // for every other status (PUBLISHED *and* HIDDEN) so a restored/hidden row
+  // never carries a stale deletion timestamp.
+  const data: Record<string, unknown> = {
+    status,
+    deleted_at: status === "DELETED" ? new Date() : null,
+  };
   if (kind === "crafter") await prisma.crafter.update({ where: { id }, data });
   if (kind === "store") await prisma.store.update({ where: { id }, data });
   if (kind === "studio") await prisma.studio.update({ where: { id }, data });

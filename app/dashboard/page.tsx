@@ -31,6 +31,7 @@ export default async function DashboardOverview() {
     }),
     prisma.event.findMany({
       where: { organizer_user_id: user.id },
+      include: { city: true },
       orderBy: { start_at: "desc" },
     }),
   ]);
@@ -322,11 +323,11 @@ export default async function DashboardOverview() {
               key={e.id}
               kind="Event"
               name={e.name}
-              cityName={null}
+              cityName={e.city.display_name}
               status={e.status}
               thumb={e.cover_image}
-              viewHref={`/dashboard/events`}
-              editHref={`/dashboard/events`}
+              viewHref={`/${e.city.slug}/events/${e.slug}`}
+              editHref={`/dashboard/events/${e.id}/edit`}
             />
           ))}
         </ul>

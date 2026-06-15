@@ -49,9 +49,11 @@ export async function GET(req: NextRequest) {
 
   // Avoid pulling in the email module unless we actually have work.
   let sent = 0;
+  let attendeesNotified = 0;
   if (events.length > 0) {
-    const { sendListingLive } = await import("@/lib/email");
+    const { sendListingLive, sendEventReminderAttendee } = await import("@/lib/email");
     for (const e of events) {
+      // Organizer reminder (unchanged).
       void sendListingLive({
         to: e.organizer.email,
         firstName: e.organizer.display_name,
@@ -59,6 +61,28 @@ export async function GET(req: NextRequest) {
         name: `Reminder: ${e.name} starts in 24h`,
         publicUrl: `${SITE_URL}/${e.city.slug}/events/${e.slug}`,
       });
+
+      // RSVP-lite: also remind everyone who SAVED this event. The event-level
+      // reminder_sent_at guard (set below, once) means organizer + all savers
+      // are notified exactly once — no per-attendee state needed.
+      const savers = await prisma.save.findMany({
+        where: { entity_type: "EVENT", entity_id: e.id },
+        include: { user: { select: { email: true, display_name: true, email_bounced: true } } },
+      });
+      const publicUrl = `${SITE_URL}/${e.city.slug}/events/${e.slug}`;
+      for (const s of savers) {
+        if (!s.user.email || s.user.email_bounced) continue;
+        void sendEventReminderAttendee({
+          to: s.user.email,
+          firstName: s.user.display_name,
+          eventName: e.name,
+          cityName: e.city.display_name,
+          venue: e.venue_name,
+          publicUrl,
+        });
+        attendeesNotified++;
+      }
+
       await prisma.event.update({
         where: { id: e.id },
         data: { reminder_sent_at: new Date() },
@@ -67,6 +91,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  await prisma.cronRun.create({ data: { job_name: "event_reminders", status: "success", completed_at: new Date(), rows_affected: sent } }).catch((e) => console.error("[cron] record", e));
-  return NextResponse.json({ window: { from: t24, to: t26 }, candidates: events.length, sent });
+  await prisma.cronRun.create({ data: { job_name: "event_reminders", status: "success", completed_at: new Date(), rows_affected: sent + attendeesNotified } }).catch((e) => console.error("[cron] record", e));
+  return NextResponse.json({ window: { from: t24, to: t26 }, candidates: events.length, sent, attendeesNotified });
 }

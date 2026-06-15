@@ -11,6 +11,7 @@ export const CRON_JOBS = [
   { name: "materialize_recurring_events", label: "Materialize recurring events", cadence: "daily" },
   { name: "message_digest", label: "Unread-message digest", cadence: "daily" },
   { name: "saved_search_alerts", label: "Saved-search alerts", cadence: "daily" },
+  { name: "saved_listing_updates", label: "Saved-listing update digest", cadence: "daily" },
   { name: "lifecycle_emails", label: "Lifecycle re-engagement", cadence: "daily" },
   { name: "warehouse_sync", label: "Warehouse export", cadence: "daily" },
   { name: "for_you_digest", label: "For-you weekly digest", cadence: "weekly" },

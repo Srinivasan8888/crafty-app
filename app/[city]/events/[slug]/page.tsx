@@ -403,11 +403,13 @@ export default async function EventDetail({
             </section>
 
             <section
+              id="getting-there"
               className="detail-section"
               style={{
                 paddingTop: 22,
                 paddingBottom: 22,
                 borderBottom: "1px solid var(--line)",
+                scrollMarginTop: 80,
               }}
             >
               <h2

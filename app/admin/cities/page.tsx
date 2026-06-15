@@ -16,10 +16,28 @@ async function toggleCityActive(id: string, active: boolean) {
 async function reorderCity(id: string, delta: number) {
   "use server";
   await requireAdmin();
-  const c = await prisma.city.findUnique({ where: { id }, select: { display_order: true } });
-  if (!c) return;
-  await prisma.city.update({ where: { id }, data: { display_order: c.display_order + delta } });
+  // Load the cities in their current visible order, swap the target with its
+  // neighbour, then renormalise display_order to sequential integers. The old
+  // `display_order + delta` approach drifted values and let two rows collide
+  // on the same order (so a single click often didn't change the order).
+  const ordered = await prisma.city.findMany({
+    orderBy: [{ display_order: "asc" }, { display_name: "asc" }],
+    select: { id: true },
+  });
+  const index = ordered.findIndex((c) => c.id === id);
+  if (index === -1) return;
+  const target = index + delta;
+  if (target < 0 || target >= ordered.length) return;
+
+  const reordered = [...ordered];
+  [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+  await prisma.$transaction(
+    reordered.map((c, i) =>
+      prisma.city.update({ where: { id: c.id }, data: { display_order: i } }),
+    ),
+  );
   revalidatePath("/admin/cities");
+  revalidatePath("/");
 }
 
 export default async function AdminCitiesPage() {

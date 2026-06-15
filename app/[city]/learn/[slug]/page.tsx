@@ -523,9 +523,9 @@ export default async function StudioDetail({ params }: { params: { city: string;
             )}
 
             <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
-              <h2 style={{ fontSize: 22, marginBottom: 14 }}>Crafters who teach here</h2>
+              <h2 style={{ fontSize: 22, marginBottom: 14 }}>Crafters in {s.city.display_name}</h2>
               {sampleCrafters.length === 0 ? (
-                <p className="text-muted" style={{ fontSize: 14 }}>No crafters tagged this studio yet.</p>
+                <p className="text-muted" style={{ fontSize: 14 }}>No crafters listed in {s.city.display_name} yet.</p>
               ) : (
                 <ul style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {sampleCrafters.map((c) => (
@@ -541,7 +541,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
                 </ul>
               )}
               <p className="text-subtle" style={{ marginTop: 10, fontSize: 12, fontStyle: "italic" }}>
-                Suggested crafters who teach in {s.city.display_name} — studio tagging coming soon.
+                Other crafters in {s.city.display_name} — studio tagging coming soon.
               </p>
             </section>
 

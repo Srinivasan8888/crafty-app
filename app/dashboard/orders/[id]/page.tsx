@@ -52,8 +52,8 @@ export default async function OrderDetail({
       {isWelcome && order.status === "PENDING" && (
         <div className="card mb-4 border-mustard bg-mustard/10 p-4">
           <p className="text-sm">
-            Thanks! We&apos;re waiting on Razorpay to confirm payment — this page
-            will update automatically once we hear back (usually under a minute).
+            Thanks! We&apos;re waiting on Razorpay to confirm payment (usually
+            under a minute). Refresh this page to check the latest status.
           </p>
         </div>
       )}

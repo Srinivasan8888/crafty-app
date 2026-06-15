@@ -30,18 +30,18 @@
 
 ## 5. Admin state integrity
 
-- [ ] 5.1 Rewrite `reorderCity` in `app/admin/cities/page.tsx` to swap `display_order` with the adjacent city at the target rank inside a `prisma.$transaction` (no value drift/collisions).
-- [ ] 5.2 In `app/admin/listings/actions.ts` `setStatus`, clear `deleted_at` on any transition to a non-`DELETED` status (including `HIDDEN`).
+- [x] 5.1 Rewrite `reorderCity` in `app/admin/cities/page.tsx` to swap `display_order` with the adjacent city at the target rank inside a `prisma.$transaction` (no value drift/collisions).
+- [x] 5.2 In `app/admin/listings/actions.ts` `setStatus`, clear `deleted_at` on any transition to a non-`DELETED` status (including `HIDDEN`).
 
 ## 6. Discovery & UX correctness
 
-- [ ] 6.1 Add `id="getting-there"` to the "Getting there" section in `app/[city]/events/[slug]/page.tsx` so the "View on map" anchor resolves.
-- [ ] 6.2 Delete the no-op `{phoneDigits === undefined ? null : null}` JSX and the unused `phoneDigits` const in `app/[city]/stores/[slug]/page.tsx`.
-- [ ] 6.3 Deep-link dashboard event rows in `app/dashboard/page.tsx`: select event `slug` + `city`, set "View" to the public event page and "Edit" to `/dashboard/events/{id}/edit`, and show the event's city.
-- [ ] 6.4 Broaden the events "Today" filter in `app/[city]/events/page.tsx` to match events whose `[start_at, end_at]` interval overlaps today (include in-progress multi-day events).
-- [ ] 6.5 Relabel the "Crafters who source/teach here" headings to "Crafters in {city}" in `app/[city]/stores/[slug]/page.tsx` and `app/[city]/learn/[slug]/page.tsx` (or gate until real tagging exists).
-- [ ] 6.6 Soften the PENDING "updates automatically" copy in `app/dashboard/orders/[id]/page.tsx` to tell the user how to check status (no polling exists).
-- [ ] 6.7 Add the missing `community.eyebrow` key to `messages/hi.json`, `messages/kn.json`, and `messages/ta.json`.
+- [x] 6.1 Add `id="getting-there"` to the "Getting there" section in `app/[city]/events/[slug]/page.tsx` so the "View on map" anchor resolves.
+- [x] 6.2 Delete the no-op `{phoneDigits === undefined ? null : null}` JSX and the unused `phoneDigits` const in `app/[city]/stores/[slug]/page.tsx`.
+- [x] 6.3 Deep-link dashboard event rows in `app/dashboard/page.tsx`: select event `slug` + `city`, set "View" to the public event page and "Edit" to `/dashboard/events/{id}/edit`, and show the event's city.
+- [x] 6.4 Broaden the events "Today" filter in `app/[city]/events/page.tsx` to match events whose `[start_at, end_at]` interval overlaps today (include in-progress multi-day events).
+- [x] 6.5 Relabel the "Crafters who source/teach here" headings to "Crafters in {city}" in `app/[city]/stores/[slug]/page.tsx` and `app/[city]/learn/[slug]/page.tsx` (or gate until real tagging exists).
+- [x] 6.6 Soften the PENDING "updates automatically" copy in `app/dashboard/orders/[id]/page.tsx` to tell the user how to check status (no polling exists).
+- [x] 6.7 Add the missing `community.eyebrow` key to `messages/hi.json`, `messages/kn.json`, and `messages/ta.json`.
 
 ## 7. Verification
 

@@ -91,11 +91,17 @@ export default async function EventsListing({
   const when = searchParams.when ?? "all";
   const now = new Date();
   const window = whenWindow(when, now);
+  // Interval-overlap windowing: an event matches a date filter when it starts
+  // before the window ends AND hasn't ended before the window starts. This
+  // keeps in-progress multi-day events (start before the window, still running)
+  // in "Today"/"This weekend"/etc., instead of only matching events whose
+  // start_at falls inside the window.
+  const lowerEnd = window ? new Date(Math.max(now.getTime(), window.start.getTime())) : now;
   const where = {
     city_id: city.id,
     status: "PUBLISHED" as const,
-    end_at: { gte: now },
-    ...(window ? { start_at: { gte: window.start, lt: window.end } } : {}),
+    end_at: { gte: lowerEnd },
+    ...(window ? { start_at: { lt: window.end } } : {}),
     ...(active ? { event_type: active as (typeof TYPES)[number] } : {}),
   };
   const events = await prisma.event.findMany({
