@@ -24,7 +24,8 @@ const Schema = z.object({
   name: z.string().min(3).max(100),
   description: z.string().min(20).max(2000),
   cover_image: internalUploadPath,
-  cover_image_blurhash: z.string().max(500).optional().default(""),
+  // generated base64 data-URL placeholder from lib/image.ts can exceed 500 chars
+  cover_image_blurhash: z.string().max(4000).optional().default(""),
   organizer_kind: z.enum(["CRAFTER", "STORE", "STUDIO"]),
   organizer_id: z.string().min(1).max(40),
   start_at: z.string().datetime(),

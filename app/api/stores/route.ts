@@ -20,7 +20,8 @@ const internalUploadPath = uploadedImageUrl;
 const Schema = z.object({
   name: z.string().min(3).max(80),
   logo_photo: internalUploadPath,
-  logo_photo_blurhash: z.string().max(500).optional().default(""),
+  // generated base64 data-URL placeholder from lib/image.ts can exceed 500 chars
+  logo_photo_blurhash: z.string().max(4000).optional().default(""),
   city_id: z.string().min(1).max(30),
   address: z.string().max(200).default(""),
   is_online_only: z.boolean().default(false),

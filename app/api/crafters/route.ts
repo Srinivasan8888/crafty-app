@@ -24,11 +24,13 @@ const Schema = z.object({
   bio: z.string().max(2000).optional().nullable(),
   city_id: z.string().min(1).max(30),
   profile_photo: internalUploadPath,
-  profile_photo_blurhash: z.string().max(500).optional().default(""),
+  // generated base64 data-URL placeholder from lib/image.ts can exceed 500 chars
+  profile_photo_blurhash: z.string().max(4000).optional().default(""),
   // V3 — schema cap is 12 (the PRO ceiling); runtime check below enforces 6
   // for FREE users via getMaxPortfolioPhotos().
   portfolio_photos: z.array(internalUploadPath).max(12).default([]),
-  portfolio_blurhashes: z.array(z.string().max(500)).max(12).default([]),
+  // generated base64 data-URL placeholder from lib/image.ts can exceed 500 chars
+  portfolio_blurhashes: z.array(z.string().max(4000)).max(12).default([]),
   contact_whatsapp: phoneNumber.optional().nullable(),
   contact_instagram: z.string().max(40).optional().nullable(),
   contact_website: z.string().url().max(500).optional().nullable(),

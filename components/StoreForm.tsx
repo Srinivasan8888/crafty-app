@@ -12,7 +12,7 @@ import { Loader2, Upload } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { useFormDraft } from "@/lib/useFormDraft";
 import { DraftBanner } from "@/components/DraftBanner";
-import { looksLikePhone } from "@/lib/phone";
+import { looksLikePhone, sanitizePhoneInput } from "@/lib/phone";
 
 // "myshop.com" passes the type=url input (and the submit gate) but is rejected by
 // the server z.string().url(). Prepend https:// when the user omitted a scheme so
@@ -138,6 +138,20 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
     )
   )
     unmet.push("Add one valid contact (phone, WhatsApp, or website)");
+
+  // Field-level inline errors for a11y, mirroring CrafterForm. Each entry is
+  // only populated once the field is non-empty (touched), so empty optional
+  // contact fields don't shout before the user has typed anything.
+  const errors: Partial<Record<"contact_phone" | "contact_whatsapp" | "contact_website", string>> = {};
+  if (form.contact_phone.trim() && !looksLikePhone(form.contact_phone)) {
+    errors.contact_phone = "Enter a valid phone number.";
+  }
+  if (form.contact_whatsapp.trim() && !looksLikePhone(form.contact_whatsapp)) {
+    errors.contact_whatsapp = "Enter a valid phone number.";
+  }
+  if (form.contact_website.trim() && !looksLikeUrl(form.contact_website)) {
+    errors.contact_website = "Enter a valid URL (e.g. https://example.com).";
+  }
 
   async function submit() {
     setSubmitting(true);
@@ -274,34 +288,67 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
 
       <Field label="Contact" hint="At least one is required.">
         <div className="space-y-3">
-          <input
-            type="tel"
-            className="input"
-            aria-label="Phone number"
-            value={form.contact_phone}
-            onChange={(e) => set("contact_phone", e.target.value)}
-            placeholder="Phone — +91-98xxx-xxxxx"
-            maxLength={40}
-          />
-          <input
-            type="tel"
-            className="input"
-            aria-label="WhatsApp number"
-            value={form.contact_whatsapp}
-            onChange={(e) => set("contact_whatsapp", e.target.value)}
-            placeholder="WhatsApp — +91-98xxx-xxxxx"
-            maxLength={40}
-          />
-          <input
-            type="url"
-            className="input"
-            aria-label="Website"
-            value={form.contact_website}
-            onChange={(e) => set("contact_website", e.target.value)}
-            onBlur={(e) => set("contact_website", normalizeWebsite(e.target.value))}
-            placeholder="Website — https://example.com"
-            maxLength={500}
-          />
+          <div>
+            <input
+              id="store-phone"
+              type="tel"
+              inputMode="tel"
+              className="input"
+              aria-label="Phone number"
+              value={form.contact_phone}
+              onChange={(e) => set("contact_phone", sanitizePhoneInput(e.target.value))}
+              placeholder="Phone — +91-98xxx-xxxxx"
+              maxLength={40}
+              aria-invalid={!!errors.contact_phone}
+              aria-describedby={errors.contact_phone ? "store-phone-error" : undefined}
+            />
+            {errors.contact_phone && (
+              <p id="store-phone-error" role="alert" className="mt-1 text-sm text-danger">
+                {errors.contact_phone}
+              </p>
+            )}
+          </div>
+          <div>
+            <input
+              id="store-whatsapp"
+              type="tel"
+              inputMode="tel"
+              className="input"
+              aria-label="WhatsApp number"
+              value={form.contact_whatsapp}
+              onChange={(e) => set("contact_whatsapp", sanitizePhoneInput(e.target.value))}
+              placeholder="WhatsApp — +91-98xxx-xxxxx"
+              maxLength={40}
+              aria-invalid={!!errors.contact_whatsapp}
+              aria-describedby={errors.contact_whatsapp ? "store-whatsapp-error" : undefined}
+            />
+            {errors.contact_whatsapp && (
+              <p id="store-whatsapp-error" role="alert" className="mt-1 text-sm text-danger">
+                {errors.contact_whatsapp}
+              </p>
+            )}
+          </div>
+          <div>
+            <input
+              id="store-website"
+              type="url"
+              inputMode="url"
+              className="input"
+              aria-label="Website"
+              value={form.contact_website}
+              onChange={(e) => set("contact_website", e.target.value)}
+              onBlur={(e) => set("contact_website", normalizeWebsite(e.target.value))}
+              placeholder="Website — https://example.com"
+              maxLength={500}
+              aria-invalid={!!errors.contact_website}
+              aria-describedby={errors.contact_website ? "store-website-error" : undefined}
+            />
+            {errors.contact_website && (
+              <p id="store-website-error" role="alert" className="mt-1 text-sm text-danger">
+                {errors.contact_website}
+              </p>
+            )}
+          </div>
         </div>
       </Field>
 

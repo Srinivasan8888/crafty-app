@@ -17,7 +17,8 @@ const PatchSchema = z.object({
   name: z.string().min(3).max(100).optional(),
   description: z.string().min(20).max(2000).optional(),
   cover_image: internalUploadPath.optional(),
-  cover_image_blurhash: z.string().max(500).nullable().optional(),
+  // generated base64 data-URL placeholder from lib/image.ts can exceed 500 chars
+  cover_image_blurhash: z.string().max(4000).nullable().optional(),
   start_at: z.string().datetime().optional(),
   end_at: z.string().datetime().optional(),
   city_id: z.string().min(1).max(30).optional(),

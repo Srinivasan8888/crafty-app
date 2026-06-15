@@ -58,8 +58,23 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
   const set = <K extends keyof ProductFormValues>(k: K, v: ProductFormValues[K]) =>
     setForm((p) => ({ ...p, [k]: v }));
 
+  // Touched-field tracking so inline errors only appear after the user has
+  // interacted with a field (typed into it or blurred it) — matching the
+  // pattern in CrafterForm. Empty untouched fields stay quiet.
+  const [touched, setTouched] = useState<Partial<Record<"name" | "price_inr" | "photos", boolean>>>({});
+  const touch = (k: "name" | "price_inr" | "photos") => setTouched((p) => ({ ...p, [k]: true }));
+
+  // Strip everything but digits, then clamp to a non-negative integer. This makes
+  // it physically impossible to type "-5" or "19.99" into a numeric input — we
+  // sanitize the raw string on every keystroke rather than trusting Number().
+  const sanitizeInt = (raw: string) => {
+    const digits = raw.replace(/[^0-9]/g, "");
+    return digits === "" ? 0 : parseInt(digits, 10);
+  };
+
   async function uploadPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
+    touch("photos");
     const remaining = 6 - form.photos.length;
     if (remaining <= 0) return;
     setPhotosBusy(true);
@@ -104,6 +119,20 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
   if (!(form.price_inr > 0)) unmet.push("Set a price");
   if (form.photos.length < 1) unmet.push("Add at least one photo");
   if (form.parent_listing === null) unmet.push("Choose which listing sells this");
+
+  // Inline per-field errors. Only populated once the field is touched (typed or
+  // blurred) so empty fields don't shout. Mirrors the CrafterForm pattern.
+  const errors: Partial<Record<"name" | "price_inr" | "photos", string>> = {};
+  if ((touched.name || form.name.length > 0) && form.name.trim().length < 3) {
+    errors.name = "Product name must be at least 3 characters.";
+  }
+  // Server requires an integer price >= 1, so 0 is not a valid product price.
+  if (touched.price_inr && !(form.price_inr > 0)) {
+    errors.price_inr = "Price must be at least ₹1.";
+  }
+  if (touched.photos && form.photos.length < 1) {
+    errors.photos = "Add at least one photo.";
+  }
 
   async function submit() {
     if (!valid) return;
@@ -183,9 +212,15 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
           className="input"
           value={form.name}
           onChange={(e) => set("name", e.target.value)}
+          onBlur={() => touch("name")}
           placeholder="Hand-crocheted heirloom shawl"
           maxLength={80}
+          aria-invalid={!!errors.name}
+          aria-describedby={errors.name ? "pname-error" : undefined}
         />
+        {errors.name && (
+          <p id="pname-error" role="alert" className="mt-1 text-sm text-danger">{errors.name}</p>
+        )}
       </div>
 
       <div>
@@ -208,11 +243,18 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
             type="number"
             inputMode="numeric"
             min={1}
+            step={1}
             className="input"
             value={form.price_inr || ""}
-            onChange={(e) => set("price_inr", Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+            onChange={(e) => set("price_inr", sanitizeInt(e.target.value))}
+            onBlur={() => touch("price_inr")}
             placeholder="1499"
+            aria-invalid={!!errors.price_inr}
+            aria-describedby={errors.price_inr ? "pprice-error" : undefined}
           />
+          {errors.price_inr && (
+            <p id="pprice-error" role="alert" className="mt-1 text-sm text-danger">{errors.price_inr}</p>
+          )}
         </div>
         <div>
           <label className="label" htmlFor="pinv">Inventory</label>
@@ -231,9 +273,10 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
               type="number"
               inputMode="numeric"
               min={0}
+              step={1}
               className="input"
               value={form.inventory}
-              onChange={(e) => set("inventory", Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+              onChange={(e) => set("inventory", sanitizeInt(e.target.value))}
             />
           )}
         </div>
@@ -257,8 +300,13 @@ export function ProductForm({ ownedListings, entityId, initialValues }: Props) {
             multiple
             disabled={photosBusy || form.photos.length >= 6}
             onChange={uploadPhotos}
+            aria-invalid={!!errors.photos}
+            aria-describedby={errors.photos ? "pphotos-error" : undefined}
           />
         </label>
+        {errors.photos && (
+          <p id="pphotos-error" role="alert" className="mt-1 text-sm text-danger">{errors.photos}</p>
+        )}
         {form.photos.length > 0 && (
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
             {form.photos.map((u, i) => (

@@ -23,7 +23,8 @@ const PatchSchema = z.object({
   price_inr: z.number().int().positive().max(10_000_000).optional(),
   inventory: z.number().int().min(-1).max(1_000_000).optional(),
   photos: z.array(internalUploadPath).min(1).max(6).optional(),
-  photo_blurhashes: z.array(z.string().max(500)).max(6).optional(),
+  // generated base64 data-URL placeholder from lib/image.ts can exceed 500 chars
+  photo_blurhashes: z.array(z.string().max(4000)).max(6).optional(),
   status: z.enum(["PUBLISHED", "UNPUBLISHED"]).optional(),
 });
 

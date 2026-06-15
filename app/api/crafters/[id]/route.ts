@@ -25,10 +25,12 @@ const PatchSchema = z.object({
   bio: z.string().max(2000).nullable().optional(),
   city_id: z.string().min(1).max(30).optional(),
   profile_photo: internalUploadPath.optional(),
-  profile_photo_blurhash: z.string().max(500).nullable().optional(),
+  // generated base64 data-URL placeholder from lib/image.ts can exceed 500 chars
+  profile_photo_blurhash: z.string().max(4000).nullable().optional(),
   // V3 — schema cap is 12 (PRO ceiling); runtime check below enforces FREE=6.
   portfolio_photos: z.array(internalUploadPath).max(12).optional(),
-  portfolio_blurhashes: z.array(z.string().max(500)).max(12).optional(),
+  // generated base64 data-URL placeholder from lib/image.ts can exceed 500 chars
+  portfolio_blurhashes: z.array(z.string().max(4000)).max(12).optional(),
   contact_whatsapp: phoneNumber.nullable().optional(),
   contact_instagram: z.string().max(40).nullable().optional(),
   contact_website: z.string().url().max(500).nullable().optional(),

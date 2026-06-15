@@ -144,6 +144,19 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((p) => ({ ...p, [k]: v }));
 
+  // Touched-field tracking so inline errors only appear after the user has
+  // interacted with a field (typed into it or blurred it) — matching CrafterForm.
+  const [touched, setTouched] = useState<Partial<Record<"name" | "description" | "venue_name" | "price_amount", boolean>>>({});
+  const touch = (k: "name" | "description" | "venue_name" | "price_amount") => setTouched((p) => ({ ...p, [k]: true }));
+
+  // Strip everything but digits so the price input physically cannot hold a
+  // negative or fractional value ("-5", "19.99"). Empty stays empty so the
+  // placeholder shows; otherwise it's a non-negative integer string.
+  const sanitizePriceInput = (raw: string) => {
+    const digits = raw.replace(/[^0-9]/g, "");
+    return digits === "" ? "" : String(parseInt(digits, 10));
+  };
+
   const draft = useFormDraft(isEdit ? `event:edit:${entityId}` : "event:new", form, { skip: isEdit });
 
   async function onCover(e: React.ChangeEvent<HTMLInputElement>) {
@@ -183,7 +196,10 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
     form.venue_name.trim().length > 0 &&
     form.event_type &&
     looksLikeUrl(form.registration_url) &&
-    (form.is_free || Number(form.price_amount) > 0);
+    // "Free" is expressed via the Free entry checkbox. A paid event therefore
+    // needs a real ticket price (>= 1); a price of 0 with the box unchecked would
+    // render as "Paid" on the public pages (which key off is_free), so disallow it.
+    (form.is_free || Number(form.price_amount) >= 1);
 
   // When Publish is disabled, say why — derived from the same conditions above so
   // a greyed button always has an honest reason.
@@ -199,7 +215,26 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
   if (!form.city_id) unmet.push("Choose a city");
   if (form.venue_name.trim().length === 0) unmet.push("Add a venue");
   if (!looksLikeUrl(form.registration_url)) unmet.push("Add a valid registration URL");
-  if (!form.is_free && !(Number(form.price_amount) > 0)) unmet.push("Set a price");
+  // A paid event needs a real ticket price; free events use the Free entry box.
+  if (!form.is_free && !(Number(form.price_amount) >= 1)) {
+    unmet.push("Set a ticket price of at least ₹1 (or check Free entry)");
+  }
+
+  // Inline per-field errors. Only populated once the field is touched (typed or
+  // blurred) so empty fields don't shout. Mirrors the CrafterForm pattern.
+  const errors: Partial<Record<"name" | "description" | "venue_name" | "price_amount", string>> = {};
+  if ((touched.name || form.name.length > 0) && form.name.trim().length < 3) {
+    errors.name = "Event name must be at least 3 characters.";
+  }
+  if ((touched.description || form.description.length > 0) && form.description.trim().length < 20) {
+    errors.description = "Description must be at least 20 characters.";
+  }
+  if ((touched.venue_name || form.venue_name.length > 0) && form.venue_name.trim().length === 0) {
+    errors.venue_name = "Add a venue.";
+  }
+  if (!form.is_free && (touched.price_amount || form.price_amount.length > 0) && !(Number(form.price_amount) >= 1)) {
+    errors.price_amount = "Enter a ticket price of at least ₹1, or check Free entry.";
+  }
 
   async function submit() {
     setSubmitting(true);
@@ -213,6 +248,10 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
         name: form.name,
         description: form.description,
         cover_image: form.cover_image,
+        // Always a string ("" or a data-URL). The POST schema is non-nullable,
+        // so send the raw value (matches the ...form spread the other forms
+        // use) — without this the event cover blurhash was never sent.
+        cover_image_blurhash: form.cover_image_blurhash,
         organizer_kind: orgKind,
         organizer_id: orgId,
         start_at: new Date(form.start_at).toISOString(),
@@ -224,7 +263,8 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
         event_type: form.event_type,
         craft_category_id: form.craft_category_id || null,
         is_free: form.is_free,
-        price_amount: form.is_free ? null : Math.floor(Number(form.price_amount)),
+        // price 0 is a valid (free) event per the server's .nonnegative() — send it as-is.
+        price_amount: form.is_free ? null : Math.max(1, Math.floor(Number(form.price_amount) || 1)),
         registration_url: normalizeWebsite(form.registration_url),
         recurrence_rule: repeats ? buildRrule(freq, byday, count) : null,
       };
@@ -301,9 +341,15 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
           className="input"
           value={form.name}
           onChange={(e) => set("name", e.target.value)}
+          onBlur={() => touch("name")}
           placeholder="Sunday Cubbon Crochet Meetup"
           maxLength={100}
+          aria-invalid={!!errors.name}
+          aria-describedby={errors.name ? "event-name-error" : undefined}
         />
+        {errors.name && (
+          <p id="event-name-error" role="alert" className="mt-1 text-sm text-danger">{errors.name}</p>
+        )}
       </Field>
 
       <Field label="Description *" htmlFor="event-desc" hint="20+ characters">
@@ -312,9 +358,15 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
           className="input min-h-[120px]"
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
+          onBlur={() => touch("description")}
           placeholder="What is the event, who is it for, what to expect…"
           maxLength={2000}
+          aria-invalid={!!errors.description}
+          aria-describedby={errors.description ? "event-desc-error" : undefined}
         />
+        {errors.description && (
+          <p id="event-desc-error" role="alert" className="mt-1 text-sm text-danger">{errors.description}</p>
+        )}
       </Field>
 
       <Field label="Cover image *" htmlFor="event-cover">
@@ -381,9 +433,15 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
           className="input"
           value={form.venue_name}
           onChange={(e) => set("venue_name", e.target.value)}
+          onBlur={() => touch("venue_name")}
           placeholder="Cubbon Park / Studio name / Zoom"
           maxLength={120}
+          aria-invalid={!!errors.venue_name}
+          aria-describedby={errors.venue_name ? "event-venue-error" : undefined}
         />
+        {errors.venue_name && (
+          <p id="event-venue-error" role="alert" className="mt-1 text-sm text-danger">{errors.venue_name}</p>
+        )}
       </Field>
 
       <Field label="Venue address" htmlFor="event-venue-addr" hint="Optional. Skip if online.">
@@ -425,18 +483,24 @@ export function EventForm({ cities, categories, ownedListings, entityId, initial
       </label>
 
       {!form.is_free && (
-        <Field label="Price (INR) *" htmlFor="event-price">
+        <Field label="Price (INR) *" htmlFor="event-price" hint="Ticket price per person, in rupees.">
           <input
             id="event-price"
             type="number"
-            inputMode="decimal"
-            min={0}
+            inputMode="numeric"
+            min={1}
             step={1}
             className="input"
             value={form.price_amount}
-            onChange={(e) => set("price_amount", e.target.value === "" ? "" : String(Math.floor(Number(e.target.value))))}
+            onChange={(e) => set("price_amount", sanitizePriceInput(e.target.value))}
+            onBlur={() => touch("price_amount")}
             placeholder="500"
+            aria-invalid={!!errors.price_amount}
+            aria-describedby={errors.price_amount ? "event-price-error" : undefined}
           />
+          {errors.price_amount && (
+            <p id="event-price-error" role="alert" className="mt-1 text-sm text-danger">{errors.price_amount}</p>
+          )}
         </Field>
       )}
 

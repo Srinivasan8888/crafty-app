@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+// Restricts raw input to the character set that can form a valid phone number,
+// mirroring the allowed characters of the server's looksLikePhone rule (digits,
+// optional leading "+", and the separators [ space . - ( ) ]). Disallowed
+// characters (letters, emoji, etc.) are stripped so they can never enter a field.
+// A "+" is only valid as the very first character, so any later "+" is removed.
+// Spacing within the allowed set is preserved exactly as the user typed it.
+export function sanitizePhoneInput(value: string): string {
+  // Keep only digits, "+", "(", ")", "-", ".", and whitespace; drop everything else.
+  const filtered = value.replace(/[^\d+()\-.\s]/g, "");
+  // Allow "+" only at the very start: keep a leading "+" (if present) and strip the rest.
+  const head = filtered.startsWith("+") ? "+" : "";
+  return head + filtered.slice(head.length).replace(/\+/g, "");
+}
+
 // Shared client/server phone rule. Optional leading +, then digits with common
 // separators (space, dash, dot, parens), and at least 7 real digits. Exported so
 // client gates (CheckoutButton, StoreForm, StudioForm) match the server exactly —

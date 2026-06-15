@@ -8,6 +8,7 @@ import { track } from "@/lib/analytics";
 import { useFormDraft } from "@/lib/useFormDraft";
 import { DraftBanner } from "@/components/DraftBanner";
 import { CelebrationScreen } from "@/components/CelebrationScreen";
+import { looksLikePhone, sanitizePhoneInput } from "@/lib/phone";
 
 // "myshop.com" passes the type=url input (and step gates) but is rejected by the
 // server z.string().url(). Prepend https:// when the user omitted a scheme so the
@@ -16,11 +17,6 @@ function normalizeWebsite(v: string) {
   const s = v.trim();
   if (!s || s.includes("://")) return s;
   return `https://${s}`;
-}
-
-// Mirror the server phone rule (>=7 digits) for a gentle client-side gate.
-function looksLikePhone(v: string) {
-  return v.replace(/\D/g, "").length >= 7;
 }
 
 // Mirror the server z.string().url() — after normalizing a missing scheme.
@@ -168,6 +164,7 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
     | "categories"
     | "profile_photo"
     | "contact"
+    | "contact_whatsapp"
     , string
   >> = {};
   if (form.name.length > 0 && form.name.trim().length < 3) {
@@ -187,6 +184,13 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
     form.contact_website.length > 0;
   if (step === 3 && !anyContactTouched) {
     // Only treat as error after the user has tried to advance — keep silent here.
+  }
+  // WhatsApp uses the SAME strict rule as the server (>=7 digits, no leading
+  // separator). Surface it inline on step 3 while typing so a number that passes
+  // the lenient field can't sail through every step then fail at Publish. Only
+  // shown once the field is non-empty, so an empty field stays silent.
+  if (step === 3 && form.contact_whatsapp.trim() !== "" && !looksLikePhone(form.contact_whatsapp)) {
+    errors.contact_whatsapp = "Enter a valid phone number.";
   }
 
   async function submit() {
@@ -381,11 +385,17 @@ export function CrafterForm({ cities, categories, entityId, initialValues }: Pro
               inputMode="tel"
               className="input"
               value={form.contact_whatsapp}
-              onChange={(e) => set("contact_whatsapp", e.target.value)}
+              onChange={(e) => set("contact_whatsapp", sanitizePhoneInput(e.target.value))}
               placeholder="+91-98865-44321"
               maxLength={40}
-              aria-describedby="step3-contact-help"
+              aria-invalid={!!errors.contact_whatsapp}
+              aria-describedby={errors.contact_whatsapp ? "step3-whatsapp-error" : "step3-contact-help"}
             />
+            {errors.contact_whatsapp && (
+              <p id="step3-whatsapp-error" role="alert" className="mt-1 text-sm text-danger">
+                {errors.contact_whatsapp}
+              </p>
+            )}
           </div>
           <div>
             <label className="label" htmlFor="step3-instagram">Instagram handle</label>

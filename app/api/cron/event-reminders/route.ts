@@ -1,15 +1,12 @@
-// PRD §15.2 — event-reminder T-24h email cron.
+// PRD §15.2 — event-reminder email cron.
 //
-// Endpoint MUST be hit hourly — vercel.json schedules it at "0 * * * *". The
-// handler queries a 24-26h look-ahead window, so an hourly cadence covers
-// every event exactly once: as the window slides 1h per run, each event falls
-// inside it for ~2 runs, and the `reminder_sent_at` guard prevents a second
-// send. (A daily run would only ever cover a 2h band of start times and skip
-// the rest — that was the bug this comment now guards against.)
-//
-// It finds events whose start_at falls within the next 24-26h window AND that
-// haven't received a reminder yet, sends one email to the organizer, and marks
-// `reminder_sent_at`.
+// Runs DAILY (vercel.json "0 2 * * *"). The Vercel Hobby plan forbids
+// sub-daily crons, so instead of an hourly 24-26h sliding window we use one
+// daily pass over a wide 48h look-ahead: every PUBLISHED event starting within
+// the next 48h that hasn't been reminded yet gets its reminder now, and the
+// `reminder_sent_at` guard ensures it is sent exactly once. Net effect: each
+// event's organizer + everyone who saved it are reminded once, ~1-2 days
+// ahead (less precise than hourly, but every event is covered).
 //
 // Auth: protected by a shared secret in CRON_SECRET to keep public crawlers
 // from accidentally firing it.
@@ -33,16 +30,14 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
-  const t24 = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  const t26 = new Date(now.getTime() + 26 * 60 * 60 * 1000);
+  // Daily pass: remind every upcoming event in the next 48h not yet reminded.
+  const t48 = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
-  // Two-hour overlap window covers hourly cron drift without double-sending
-  // (reminder_sent_at check guards that).
   const events = await prisma.event.findMany({
     where: {
       status: "PUBLISHED",
       reminder_sent_at: null,
-      start_at: { gte: t24, lt: t26 },
+      start_at: { gte: now, lt: t48 },
     },
     include: { organizer: { select: { email: true, display_name: true } }, city: true },
   });
@@ -92,5 +87,5 @@ export async function GET(req: NextRequest) {
   }
 
   await prisma.cronRun.create({ data: { job_name: "event_reminders", status: "success", completed_at: new Date(), rows_affected: sent + attendeesNotified } }).catch((e) => console.error("[cron] record", e));
-  return NextResponse.json({ window: { from: t24, to: t26 }, candidates: events.length, sent, attendeesNotified });
+  return NextResponse.json({ window: { from: now, to: t48 }, candidates: events.length, sent, attendeesNotified });
 }
