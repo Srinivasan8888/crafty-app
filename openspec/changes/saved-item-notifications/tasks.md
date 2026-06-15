@@ -32,5 +32,5 @@
 - [x] 6.1 `bun run typecheck` clean.
 - [x] 6.2 `DEV_AUTH=false bun run build` succeeds.
 - [x] 6.3 Apply the migration to the database (`prisma migrate deploy` / `db push` against Neon).
-- [ ] 6.4 Commit on `demo-launch-pass`, deploy to Vercel prod, push to `origin`.
-- [ ] 6.5 Smoke: hit each cron with the `CRON_SECRET` (e.g. `?token=`) and confirm a 200 + `CronRun` recorded; verify `/admin/health` shows the new job; confirm no email fires when there is no fresh activity.
+- [x] 6.4 Commit on `demo-launch-pass`, deploy to Vercel prod, push to `origin`.
+- [x] 6.5 Smoke: hit each cron with the `CRON_SECRET` (e.g. `?token=`) and confirm a 200 + `CronRun` recorded; verify `/admin/health` shows the new job; confirm no email fires when there is no fresh activity.
