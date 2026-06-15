@@ -1,7 +1,13 @@
-// Descope component theme overrides. The majority of branding lives in the
-// Descope dashboard's Flow Editor (Phase 0 founder work) — we only ship the
-// primary-color values here so the default flows match Crafty's magenta /
-// cream palette before any dashboard customization happens.
+// Crafty brand colour intent for the Descope auth widget.
+//
+// IMPORTANT (verified at runtime 2026-06): this object is NOT currently applied
+// by the Descope <Descope themeOverride=...> web component. The component expects
+// a Descope-shaped override ({ light: { global: {...}, components: {...} }, dark: {...} })
+// and ignores this MUI-style { primary, background, text } shape, so the rendered
+// flow still uses the project's default (unbranded) theme — a white card with a
+// blue primary button. The actual fix lives in the Descope console Flow Editor
+// (Styles), or in rebuilding this override against Descope's real token schema.
+// Keep the intended values here as a reference until that branding is done.
 //
 // PRD §17.6 token mirror (sRGB hex):
 //   --magenta: #B5365B   (Crafty primary accent)

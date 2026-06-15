@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown, Search, Heart } from "lucide-react";
+import { ChevronDown, Search, Heart, User } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
@@ -118,11 +118,22 @@ export async function AppHeader({ city }: { city: string }) {
                 redirect_url brings signed-out buyers back here after sign-in. */}
             <Link
               href="/dashboard/saved?redirect_url=/dashboard/saved"
-              className="icon-btn hidden md:inline-flex"
+              className="icon-btn max-md:!hidden"
               aria-label={t("saved")}
               title={t("saved")}
             >
               <Heart size={16} aria-hidden="true" />
+            </Link>
+
+            {/* Profile / account: desktop parity with the mobile bottom nav's
+                Profile tab. Signed-out users get 307'd to sign-in then back. */}
+            <Link
+              href="/dashboard?redirect_url=/dashboard"
+              className="icon-btn max-md:!hidden"
+              aria-label={t("profile")}
+              title={t("profile")}
+            >
+              <User size={16} aria-hidden="true" />
             </Link>
 
             <LocaleSwitcher current={locale} />
@@ -132,13 +143,13 @@ export async function AppHeader({ city }: { city: string }) {
             {/* Desktop-only auth + CTA */}
             <Link
               href="/sign-in"
-              className="hidden md:inline-flex btn btn-ghost btn-sm"
+              className="btn btn-ghost btn-sm max-md:!hidden"
             >
               {t("signIn")}
             </Link>
             <Link
               href="/list-your-profile"
-              className="hidden md:inline-flex btn btn-primary btn-sm"
+              className="btn btn-primary btn-sm max-md:!hidden"
             >
               {t("listProfile")}
             </Link>

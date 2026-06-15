@@ -17,3 +17,4 @@ coverage/
 var/
 .vercel
 .env*
+.verify-*.mjs
