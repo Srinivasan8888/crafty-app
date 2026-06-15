@@ -22,6 +22,7 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { StudioFilters, type AppliedFilter } from "./_components/Filters";
 import { isPro } from "@/lib/subscription-gates";
+import { buildStudioListingQuery, normalizeStudioSort } from "@/lib/studio-listing";
 
 export const revalidate = 60;
 
@@ -36,19 +37,13 @@ export default async function LearnListing({
   const disciplines = await prisma.discipline.findMany({ where: { is_active: true }, orderBy: { display_order: "asc" } });
   const active = searchParams.discipline;
   const onlineOnly = searchParams.online === "1";
-  const sort = searchParams.sort === "newest" ? "newest" : "featured";
-  const where = {
-    city_id: city.id,
-    status: "PUBLISHED" as const,
-    ...(active ? { craft_disciplines: { some: { discipline: { slug: active } } } } : {}),
-    ...(onlineOnly ? { is_online_only: true } : {}),
-  };
-  // "Featured first" (default) floats paid/featured studios up; "Newest" sorts
-  // purely by recency.
-  const orderBy =
-    sort === "newest"
-      ? [{ created_at: "desc" as const }]
-      : [{ is_featured: "desc" as const }, { created_at: "desc" as const }];
+  const sort = normalizeStudioSort(searchParams.sort);
+  const { where, orderBy } = buildStudioListingQuery({
+    cityId: city.id,
+    discipline: active,
+    online: onlineOnly,
+    sort,
+  });
   const studios = await prisma.studio.findMany({
     where, take: PAGE_SIZE,
     orderBy,
@@ -134,6 +129,8 @@ export default async function LearnListing({
         cityDisplayName={city.display_name}
         disciplines={disciplines.map((d) => ({ slug: d.slug, display_name: d.display_name }))}
         activeDisciplineSlug={active}
+        activeOnline={onlineOnly}
+        activeSort={sort}
         appliedFilters={appliedFilters}
         total={totalCount}
       />

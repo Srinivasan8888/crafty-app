@@ -84,7 +84,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Issue 2.2 — enforce 1-per-type cap in app code (schema dropped @unique).
-  const existing = await prisma.crafter.count({ where: { owner_user_id: user.id } });
+  // Exclude soft-deleted rows (parity with stores/studios) so deleting a
+  // crafter profile doesn't permanently lock the user out of creating a new one.
+  const existing = await prisma.crafter.count({ where: { owner_user_id: user.id, status: { not: "DELETED" } } });
   if (existing >= 1) {
     return NextResponse.json({ error: "already_have_crafter" }, { status: 409 });
   }

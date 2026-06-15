@@ -15,38 +15,24 @@ export type AppliedFilter = {
   label: string;
 };
 
-type SortOption = "newest" | "popular" | "featured" | "saves";
+type SortOption = "featured" | "newest";
 
 type Props = {
   city: string;
   cityDisplayName: string;
   disciplines: StudioDisciplineOption[];
   activeDisciplineSlug?: string;
+  activeOnline?: boolean;
+  activeSort?: SortOption;
   appliedFilters: AppliedFilter[];
   total: number;
 };
 
-const NEIGHBOURHOODS: { slug: string; label: string; count: number }[] = [
-  { slug: "indiranagar", label: "Indiranagar", count: 12 },
-  { slug: "koramangala", label: "Koramangala", count: 14 },
-  { slug: "jayanagar", label: "Jayanagar", count: 9 },
-  { slug: "hsr-layout", label: "HSR Layout", count: 7 },
-  { slug: "whitefield", label: "Whitefield", count: 6 },
-  { slug: "malleshwaram", label: "Malleshwaram", count: 5 },
-];
-
-const AGE_GROUPS: { slug: string; label: string }[] = [
-  { slug: "kids", label: "Kids" },
-  { slug: "teens", label: "Teens" },
-  { slug: "adults", label: "Adults" },
-  { slug: "all-ages", label: "All ages" },
-];
-
+// Only sorts the listing page actually supports. "Featured first" is the
+// default ordering; "Newest" sorts purely by recency.
 const SORTS: { id: SortOption; label: string }[] = [
-  { id: "newest", label: "Newest" },
-  { id: "popular", label: "Popular" },
   { id: "featured", label: "Featured first" },
-  { id: "saves", label: "Most saves" },
+  { id: "newest", label: "Newest" },
 ];
 
 export function StudioFilters({
@@ -54,6 +40,8 @@ export function StudioFilters({
   cityDisplayName,
   disciplines,
   activeDisciplineSlug,
+  activeOnline = false,
+  activeSort = "featured",
   appliedFilters,
   total,
 }: Props) {
@@ -61,62 +49,33 @@ export function StudioFilters({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [draftDiscipline, setDraftDiscipline] = useState<string | undefined>(activeDisciplineSlug);
-  const [draftNbhds, setDraftNbhds] = useState<Set<string>>(new Set());
-  const [draftAges, setDraftAges] = useState<Set<string>>(new Set());
-  const [draftFlags, setDraftFlags] = useState<{ online: boolean; trial: boolean; featured: boolean }>({
-    online: false,
-    trial: false,
-    featured: true,
-  });
-  const [draftSort, setDraftSort] = useState<SortOption>("newest");
+  const [draftOnline, setDraftOnline] = useState<boolean>(activeOnline);
+  const [draftSort, setDraftSort] = useState<SortOption>(activeSort);
 
   const baseHref = `/${city}/learn`;
 
   const onSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (activeDisciplineSlug) params.set("discipline", activeDisciplineSlug);
-    router.push(`${baseHref}${params.toString() ? `?${params.toString()}` : ""}`);
-  };
-
-  const toggleNbhd = (slug: string) => {
-    setDraftNbhds((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
-      return next;
-    });
-  };
-
-  const toggleAge = (slug: string) => {
-    setDraftAges((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
-      return next;
-    });
+    // Search is city-wide and handled by the search page (parity with the
+    // Crafters and Stores listings) — the Learn listing has no `q` handling.
+    const q = query.trim();
+    router.push(`/${city}/search${q ? `?q=${encodeURIComponent(q)}` : ""}`);
   };
 
   const onApply = () => {
     const params = new URLSearchParams();
     if (draftDiscipline) params.set("discipline", draftDiscipline);
-    if (draftNbhds.size > 0) params.set("nbhd", Array.from(draftNbhds).join(","));
-    if (draftAges.size > 0) params.set("age", Array.from(draftAges).join(","));
-    if (draftFlags.online) params.set("online", "1");
-    if (draftFlags.trial) params.set("trial", "1");
-    if (draftFlags.featured) params.set("featured", "1");
-    if (draftSort !== "newest") params.set("sort", draftSort);
+    if (draftOnline) params.set("online", "1");
+    // Only the non-default sort needs a param.
+    if (draftSort === "newest") params.set("sort", "newest");
     setOpen(false);
     router.push(`${baseHref}${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
   const clearDrafts = () => {
     setDraftDiscipline(undefined);
-    setDraftNbhds(new Set());
-    setDraftAges(new Set());
-    setDraftFlags({ online: false, trial: false, featured: false });
-    setDraftSort("newest");
+    setDraftOnline(false);
+    setDraftSort("featured");
   };
 
   const sheetFooter = (
@@ -231,56 +190,8 @@ export function StudioFilters({
             })}
           </div>
 
-          <SheetGroup title="Age group">
-            <div className="grid grid-cols-2 gap-1.5">
-              {AGE_GROUPS.map((a) => {
-                const checked = draftAges.has(a.slug);
-                return (
-                  <button
-                    key={a.slug}
-                    type="button"
-                    onClick={() => toggleAge(a.slug)}
-                    className={`pill w-full${checked ? " active" : ""}`}
-                    style={{ padding: "9px 8px", fontSize: 12 }}
-                  >
-                    {a.label}
-                  </button>
-                );
-              })}
-            </div>
-          </SheetGroup>
-
-          <SheetGroup title="Neighbourhood">
-            {NEIGHBOURHOODS.map((n) => {
-              const checked = draftNbhds.has(n.slug);
-              return (
-                <label
-                  key={n.slug}
-                  className="flex items-center justify-between border-b py-3 last:border-b-0"
-                  style={{ borderColor: "var(--line)" }}
-                >
-                  <span className="text-sm font-medium text-ink">
-                    {n.label}{" "}
-                    <span className="text-subtle" style={{ fontSize: 11.5, fontWeight: 500 }}>{n.count}</span>
-                  </span>
-                  <span className="toggle">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleNbhd(n.slug)}
-                      aria-label={`Toggle ${n.label}`}
-                    />
-                    <span className="slider" />
-                  </span>
-                </label>
-              );
-            })}
-          </SheetGroup>
-
           <SheetGroup title="Other">
-            <ToggleRow label="Online classes" checked={draftFlags.online} onChange={(v) => setDraftFlags((f) => ({ ...f, online: v }))} />
-            <ToggleRow label="Free trial" checked={draftFlags.trial} onChange={(v) => setDraftFlags((f) => ({ ...f, trial: v }))} />
-            <ToggleRow label="Featured first" checked={draftFlags.featured} onChange={(v) => setDraftFlags((f) => ({ ...f, featured: v }))} />
+            <ToggleRow label="Online only" checked={draftOnline} onChange={setDraftOnline} />
           </SheetGroup>
 
           <SheetGroup title="Sort by">

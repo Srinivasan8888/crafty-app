@@ -16,6 +16,7 @@ const internalUploadPath = uploadedImageUrl;
 const PatchSchema = z.object({
   name: z.string().min(3).max(80).optional(),
   logo_photo: internalUploadPath.optional(),
+  logo_photo_blurhash: z.string().max(500).nullable().optional(),
   city_id: z.string().min(1).max(30).optional(),
   address: z.string().max(200).optional(),
   is_online_only: z.boolean().optional(),
@@ -80,6 +81,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(data.name !== undefined && { name: data.name }),
       ...(newSlug !== existing.slug && { slug: newSlug }),
       ...(data.logo_photo !== undefined && { logo_photo: data.logo_photo }),
+      ...(data.logo_photo_blurhash !== undefined && { logo_photo_blurhash: data.logo_photo_blurhash || null }),
       ...(data.city_id !== undefined && { city_id: data.city_id }),
       ...(data.address !== undefined && { address: data.address }),
       ...(data.is_online_only !== undefined && { is_online_only: data.is_online_only }),

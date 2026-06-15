@@ -43,6 +43,7 @@ export default async function EditStore() {
         initialValues={{
           name: store.name,
           logo_photo: store.logo_photo,
+          logo_photo_blurhash: store.logo_photo_blurhash ?? "",
           city_id: store.city_id,
           address: store.address,
           is_online_only: store.is_online_only,

@@ -78,6 +78,7 @@ export default async function EditEvent({ params }: { params: { id: string } }) 
           name: ev.name,
           description: ev.description,
           cover_image: ev.cover_image,
+          cover_image_blurhash: ev.cover_image_blurhash ?? "",
           organizer: currentOrganizer,
           start_at: toLocalDatetime(ev.start_at),
           end_at: toLocalDatetime(ev.end_at),

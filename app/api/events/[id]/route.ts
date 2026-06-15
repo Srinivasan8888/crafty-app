@@ -17,6 +17,7 @@ const PatchSchema = z.object({
   name: z.string().min(3).max(100).optional(),
   description: z.string().min(20).max(2000).optional(),
   cover_image: internalUploadPath.optional(),
+  cover_image_blurhash: z.string().max(500).nullable().optional(),
   start_at: z.string().datetime().optional(),
   end_at: z.string().datetime().optional(),
   city_id: z.string().min(1).max(30).optional(),
@@ -26,7 +27,8 @@ const PatchSchema = z.object({
   event_type: z.enum(["WORKSHOP", "FAIR", "EXHIBITION", "CLASS", "POPUP", "OTHER"]).optional(),
   craft_category_id: z.string().max(30).nullable().optional(),
   is_free: z.boolean().optional(),
-  price_amount: z.number().nonnegative().nullable().optional(),
+  // Match the create path's constraint (events/route.ts): integer rupees.
+  price_amount: z.number().int().nonnegative().nullable().optional(),
   registration_url: z.string().url().max(500).optional(),
   recurrence_rule: z.string().max(200).nullable().optional(),
 });
@@ -103,6 +105,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(newSlug !== existing.slug && { slug: newSlug }),
       ...(data.description !== undefined && { description: data.description }),
       ...(data.cover_image !== undefined && { cover_image: data.cover_image }),
+      ...(data.cover_image_blurhash !== undefined && { cover_image_blurhash: data.cover_image_blurhash || null }),
       ...(data.start_at !== undefined && { start_at: new Date(data.start_at) }),
       ...(data.end_at !== undefined && { end_at: new Date(data.end_at) }),
       ...(data.city_id !== undefined && { city_id: data.city_id }),

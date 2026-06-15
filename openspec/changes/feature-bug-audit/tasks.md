@@ -15,18 +15,18 @@
 
 ## 3. Learn discovery filters
 
-- [ ] 3.1 Wire the real filter/sort params into `app/[city]/learn/page.tsx` query (`online`/`trial`/`featured` and `sort`), so the Learn filter sheet controls affect results.
-- [ ] 3.2 Remove the fabricated neighbourhood facet and its hardcoded counts from `app/[city]/learn/_components/Filters.tsx` (or back it with real per-city data).
-- [ ] 3.3 Default the "Featured first" toggle to off and stop appending spurious params to the URL on first Apply.
-- [ ] 3.4 Route the Learn page mobile search box to `/{city}/search?q=…` (parity with Crafters/Stores), removing the dead `/learn?q=` route.
-- [ ] 3.5 Add a test asserting an applied Learn filter narrows/reorders the result set.
+- [x] 3.1 Wire the real filter/sort params into `app/[city]/learn/page.tsx` query (`online` and `sort`), so the Learn filter sheet controls affect results. (`trial`/`age`/`nbhd` removed — no backing columns; see 3.2.)
+- [x] 3.2 Remove the fabricated neighbourhood facet and its hardcoded counts from `app/[city]/learn/_components/Filters.tsx` — also removed the unbacked age-group, free-trial, and popular/saves-sort controls.
+- [x] 3.3 Default the "Featured first" toggle to off and stop appending spurious params to the URL on first Apply. (Replaced the toggle with a real `sort`; default "featured" appends no param.)
+- [x] 3.4 Route the Learn page mobile search box to `/{city}/search?q=…` (parity with Crafters/Stores), removing the dead `/learn?q=` route.
+- [x] 3.5 Add a test asserting an applied Learn filter narrows/reorders the result set.
 
 ## 4. Listing edit integrity
 
-- [ ] 4.1 Add the `*_blurhash` fields to the PATCH zod schemas in `app/api/{crafters,stores,studios,events}/[id]/route.ts` and persist them alongside the replaced image.
-- [ ] 4.2 Pass stored blurhash values into `initialValues` on the crafter/store/studio/event edit pages so unchanged images keep their placeholders.
-- [ ] 4.3 Exclude `status = "DELETED"` from the crafter 1-per-type cap count in `app/api/crafters/route.ts` (parity with stores/studios) so re-creation after soft delete works.
-- [ ] 4.4 Tighten event PATCH `price_amount` validation in `app/api/events/[id]/route.ts` to `int().nonnegative()` to match the create path.
+- [x] 4.1 Add the `*_blurhash` fields to the PATCH zod schemas in `app/api/{crafters,stores,studios,events}/[id]/route.ts` and persist them alongside the replaced image.
+- [x] 4.2 Pass stored blurhash values into `initialValues` on the crafter/store/studio/event edit pages so unchanged images keep their placeholders.
+- [x] 4.3 Exclude `status = "DELETED"` from the crafter 1-per-type cap count in `app/api/crafters/route.ts` (parity with stores/studios) so re-creation after soft delete works.
+- [x] 4.4 Tighten event PATCH `price_amount` validation in `app/api/events/[id]/route.ts` to `int().nonnegative()` to match the create path.
 
 ## 5. Admin state integrity
 

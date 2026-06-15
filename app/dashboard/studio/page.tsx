@@ -43,6 +43,7 @@ export default async function EditStudio() {
         initialValues={{
           name: studio.name,
           logo_photo: studio.logo_photo,
+          logo_photo_blurhash: studio.logo_photo_blurhash ?? "",
           city_id: studio.city_id,
           address: studio.address,
           is_online_only: studio.is_online_only,
