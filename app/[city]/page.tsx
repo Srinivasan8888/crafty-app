@@ -280,7 +280,10 @@ export default async function CityHome({ params }: { params: { city: string } })
               src={heroTiles[0]}
               alt=""
               fill
-              sizes="100vw"
+              // Mobile-only tile (md:hidden). On desktop it's display:none, so a
+              // "100vw" hint mismatches the 0px render and Next warns; scope the
+              // 100vw to the viewport range where it's actually visible.
+              sizes="(min-width: 768px) 1px, 100vw"
               className="object-cover"
               priority
               fetchPriority="high"
@@ -471,7 +474,9 @@ export default async function CityHome({ params }: { params: { city: string } })
               categories={c.craft_categories.map((j) => j.category.display_name)}
               is_featured={c.is_featured}
               offers_classes={c.offers_classes}
-              priority={false}
+              // First card of the primary rail is the most common LCP element
+              // on the city homepage — prioritize it.
+              priority={idx === 0}
             />
           </div>
         ))}

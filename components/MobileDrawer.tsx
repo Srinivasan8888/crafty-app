@@ -27,9 +27,10 @@ type Props = {
   cities: { slug: string; display_name: string }[];
   currentCity: string;
   locale: Locale;
+  isAuthed?: boolean;
 };
 
-export function MobileDrawer({ cities, currentCity, locale }: Props) {
+export function MobileDrawer({ cities, currentCity, locale, isAuthed = false }: Props) {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLElement | null>(null);
   const router = useRouter();
@@ -99,8 +100,13 @@ export function MobileDrawer({ cities, currentCity, locale }: Props) {
     { href: `/${currentCity}/events`, label: "Events", icon: <Calendar size={16} aria-hidden="true" /> },
     { href: `/${currentCity}/search`, label: "Search", icon: <Search size={16} aria-hidden="true" /> },
     { href: "/dashboard/saved?redirect_url=/dashboard/saved", label: "Saved", icon: <Heart size={16} aria-hidden="true" /> },
-    { href: "/list-your-profile", label: "List your profile", icon: <UserPlus size={16} aria-hidden="true" /> },
-    { href: "/sign-in", label: "Sign in", icon: <LogIn size={16} aria-hidden="true" /> },
+    // Sign-in / List-your-profile are signed-out affordances only.
+    ...(isAuthed
+      ? []
+      : [
+          { href: "/list-your-profile", label: "List your profile", icon: <UserPlus size={16} aria-hidden="true" /> },
+          { href: "/sign-in", label: "Sign in", icon: <LogIn size={16} aria-hidden="true" /> },
+        ]),
   ];
 
   return (

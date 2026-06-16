@@ -124,7 +124,7 @@ export default async function CommunityPage() {
             >
               <div className="grid md:grid-cols-[1.1fr_1fr]">
                 <div className="relative aspect-[4/3] md:aspect-auto md:min-h-[320px]">
-                  <SafeImage src={featured.profile_photo} alt={featured.name} fill sizes="(min-width:768px) 55vw, 100vw" className="object-cover" />
+                  <SafeImage src={featured.profile_photo} alt={featured.name} fill priority sizes="(min-width:768px) 55vw, 100vw" className="object-cover" />
                 </div>
                 <div className="p-7 md:p-10">
                   <p className="font-display text-xs font-bold uppercase tracking-[3px] text-forest">

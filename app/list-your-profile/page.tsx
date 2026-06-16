@@ -48,6 +48,7 @@ export default async function ListYourProfile() {
                   src={CRAFTER_HERO_PHOTO}
                   alt=""
                   fill
+                  priority
                   sizes="(min-width:768px) 55vw, 100vw"
                   className="object-cover"
                 />

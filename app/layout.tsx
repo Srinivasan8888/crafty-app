@@ -47,6 +47,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   // V3 — PWA manifest.
   manifest: "/manifest.webmanifest",
+  // Declare an icon so browsers stop probing the (nonexistent) /favicon.ico.
+  // Reuses the PWA SVGs already in public/icons.
+  icons: {
+    icon: [{ url: "/icons/icon-192.svg", type: "image/svg+xml" }],
+    shortcut: "/icons/icon-192.svg",
+    apple: "/icons/icon-192.svg",
+  },
   openGraph: {
     title: "Crafty: India's craft community, one city at a time",
     description: "Crafters, supply stores, studios, and events near you.",

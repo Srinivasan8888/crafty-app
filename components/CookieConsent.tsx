@@ -47,7 +47,10 @@ export function CookieConsent() {
     <div
       role="dialog"
       aria-labelledby="consent-title"
-      className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-2xl rounded-lg border border-line-strong bg-canvas-raised p-4 shadow-soft-lg"
+      // Sit above the mobile bottom nav (~56px + safe area; .bottom-nav is
+      // md:hidden) so the banner never covers the Home/Saved/Profile tabs.
+      // On md+ there's no bottom nav, so fall back to the normal 1rem inset.
+      className="fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] md:bottom-4 left-4 right-4 z-50 mx-auto max-w-2xl rounded-lg border border-line-strong bg-canvas-raised p-4 shadow-soft-lg"
     >
       <p id="consent-title" className="text-sm text-ink">
         We use a small set of cookies for sign-in and (with your consent) anonymous analytics

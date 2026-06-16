@@ -8,12 +8,18 @@ import { PrimaryNavIsland } from "./BottomNav";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { getCities } from "@/lib/cities";
 import { readLocaleCookie } from "@/lib/i18n/request";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function AppHeader({ city }: { city: string }) {
   const cities = await getCities();
   const current = cities.find((c) => c.slug === city) ?? cities[0];
   const t = await getTranslations("nav");
   const locale = readLocaleCookie();
+  // Header must reflect auth state: signed-in users should never see the
+  // Sign-in / List-your-profile CTAs. Saved/Profile stay always-on by design
+  // (they 307 signed-out buyers to sign-in and back).
+  const user = await getCurrentUser();
+  const isAuthed = !!user;
 
   const navLinks: Array<[string, string]> = [
     [t("crafters"), `/${current.slug}/crafters`],
@@ -51,6 +57,7 @@ export async function AppHeader({ city }: { city: string }) {
               cities={drawerCities}
               currentCity={current.slug}
               locale={locale}
+              isAuthed={isAuthed}
             />
           </div>
 
@@ -140,19 +147,23 @@ export async function AppHeader({ city }: { city: string }) {
 
             <ThemeToggle />
 
-            {/* Desktop-only auth + CTA */}
-            <Link
-              href="/sign-in"
-              className="btn btn-ghost btn-sm max-md:!hidden"
-            >
-              {t("signIn")}
-            </Link>
-            <Link
-              href="/list-your-profile"
-              className="btn btn-primary btn-sm max-md:!hidden"
-            >
-              {t("listProfile")}
-            </Link>
+            {/* Desktop-only auth + CTA — only for signed-out visitors. */}
+            {!isAuthed && (
+              <>
+                <Link
+                  href="/sign-in"
+                  className="btn btn-ghost btn-sm max-md:!hidden"
+                >
+                  {t("signIn")}
+                </Link>
+                <Link
+                  href="/list-your-profile"
+                  className="btn btn-primary btn-sm max-md:!hidden"
+                >
+                  {t("listProfile")}
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
