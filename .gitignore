@@ -18,3 +18,6 @@ var/
 .vercel
 .env*
 .verify-*.mjs
+
+# dev-only design comment queue
+.design-comments.jsonl

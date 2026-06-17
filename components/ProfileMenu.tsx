@@ -4,6 +4,11 @@
 // folds in what used to be separate header chips: Saved, the language switcher,
 // plus account links and Log out. Signed-out users get Sign in + language.
 //
+// This is a disclosure (button toggles a popover of links/buttons), NOT an ARIA
+// `menu` — a real menu requires arrow-key roving focus, which a popover of mixed
+// links + radios doesn't need. Using disclosure semantics keeps it correct
+// without that machinery. Focus returns to the trigger on Escape.
+//
 // The global header is NOT wrapped in Descope's <AuthProvider> (that only mounts
 // on dashboard/admin routes), so we can't call the client logout() hook here.
 // Log out is a plain link to /logout, a route handler that clears the session
@@ -37,15 +42,20 @@ export function ProfileMenu({ isAuthed, locale, userName, userEmail }: Props) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Close on outside click or Escape.
+  // Close on outside click or Escape. Escape also restores focus to the trigger
+  // so keyboard users don't lose their place.
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
     };
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
@@ -66,9 +76,9 @@ export function ProfileMenu({ isAuthed, locale, userName, userEmail }: Props) {
   return (
     <div ref={ref} className="max-md:!hidden" style={{ position: "relative" }}>
       <button
+        ref={buttonRef}
         type="button"
         className="icon-btn"
-        aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
         title="Account"
@@ -78,7 +88,7 @@ export function ProfileMenu({ isAuthed, locale, userName, userEmail }: Props) {
       </button>
 
       {open && (
-        <div className="pm-panel" role="menu">
+        <div className="pm-panel">
           {isAuthed && (userName || userEmail) && (
             <div className="pm-id">
               <div className="pm-name">{userName ?? "Your account"}</div>
@@ -90,7 +100,6 @@ export function ProfileMenu({ isAuthed, locale, userName, userEmail }: Props) {
             <>
               <Link
                 href="/dashboard?redirect_url=/dashboard"
-                role="menuitem"
                 className="pm-item"
                 onClick={() => setOpen(false)}
               >
@@ -99,7 +108,6 @@ export function ProfileMenu({ isAuthed, locale, userName, userEmail }: Props) {
               </Link>
               <Link
                 href="/dashboard/saved?redirect_url=/dashboard/saved"
-                role="menuitem"
                 className="pm-item"
                 onClick={() => setOpen(false)}
               >
@@ -108,7 +116,6 @@ export function ProfileMenu({ isAuthed, locale, userName, userEmail }: Props) {
               </Link>
               <Link
                 href="/dashboard/subscription"
-                role="menuitem"
                 className="pm-item"
                 onClick={() => setOpen(false)}
               >
@@ -117,12 +124,7 @@ export function ProfileMenu({ isAuthed, locale, userName, userEmail }: Props) {
               </Link>
             </>
           ) : (
-            <Link
-              href="/sign-in"
-              role="menuitem"
-              className="pm-item"
-              onClick={() => setOpen(false)}
-            >
+            <Link href="/sign-in" className="pm-item" onClick={() => setOpen(false)}>
               <LogIn size={16} aria-hidden="true" />
               Sign in
             </Link>
@@ -137,8 +139,7 @@ export function ProfileMenu({ isAuthed, locale, userName, userEmail }: Props) {
             <button
               key={loc}
               type="button"
-              role="menuitemradio"
-              aria-checked={loc === locale}
+              aria-current={loc === locale ? "true" : undefined}
               disabled={isPending}
               className="pm-item pm-lang"
               onClick={() => changeLocale(loc)}
@@ -151,7 +152,7 @@ export function ProfileMenu({ isAuthed, locale, userName, userEmail }: Props) {
           {isAuthed && (
             <>
               <div className="pm-divider" />
-              <a href="/logout" role="menuitem" className="pm-item pm-logout">
+              <a href="/logout" className="pm-item pm-logout">
                 <LogOut size={16} aria-hidden="true" />
                 Log out
               </a>

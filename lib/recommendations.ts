@@ -90,6 +90,11 @@ export async function getForYou(
 ): Promise<RecHit[]> {
   const cap = Math.min(Math.max(limit, 1), 36);
   const cityId = opts?.cityId;
+  // When scoping to a city, the city filter is applied AFTER this SQL LIMIT
+  // (in hydrate), so the top global co-saves can all be out-of-city and leave
+  // the rail under-filled. Pull a wider candidate set when cityId is set;
+  // merged results are still trimmed to `cap` below.
+  const sqlLimit = cityId ? Math.min(cap * 6, 200) : cap;
 
   // We fan out per entity_type so we can hydrate cheaply (one query per type
   // rather than four conditional joins). Each per-type query mirrors getCoSaves
@@ -118,7 +123,7 @@ export async function getForYou(
           )
         GROUP BY s2.entity_id
         ORDER BY COUNT(*) DESC, MAX(s2.created_at) DESC
-        LIMIT ${cap}
+        LIMIT ${sqlLimit}
       `;
       return { type: t, rows };
     }),

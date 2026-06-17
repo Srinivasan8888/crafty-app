@@ -17,9 +17,14 @@ import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
+// Self-service keys are limited to the public read scope. Validating against an
+// allowlist (rather than accepting any string) blocks wildcards like "read:*"
+// and stops a future privileged scope from being self-granted.
+const ALLOWED_SCOPES = ["read:public"] as const;
+
 const CreateSchema = z.object({
   name: z.string().min(1).max(80),
-  scopes: z.array(z.string().min(1).max(40)).max(8).optional(),
+  scopes: z.array(z.enum(ALLOWED_SCOPES)).max(8).optional(),
   rate_limit_per_min: z.number().int().min(10).max(600).optional(),
 });
 

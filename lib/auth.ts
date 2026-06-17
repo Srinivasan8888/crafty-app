@@ -115,6 +115,15 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
         where: { id: existing.id },
         data: { role: "CREATOR" },
       });
+      // Consume the intent so a later, unrelated sign-in in the same browser
+      // can't be auto-promoted within the cookie's TTL. Best-effort: cookies()
+      // is read-only during a Server Component render, so guard it (it clears
+      // when getCurrentUser runs in a Server Action / Route Handler).
+      try {
+        cookies().delete(SIGNUP_INTENT_COOKIE);
+      } catch {
+        /* read-only cookie context (render) — leave it to expire via TTL */
+      }
       return {
         id: promoted.id, descope_id: promoted.descope_id, email: promoted.email,
         display_name: promoted.display_name, role: promoted.role, is_admin: promoted.is_admin,

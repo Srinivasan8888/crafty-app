@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { cronSecretMatches } from "@/lib/cron";
 import { revalidatePath } from "next/cache";
 
 export const runtime = "nodejs";
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const provided = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || req.nextUrl.searchParams.get("token");
   if (!secret || secret === "placeholder") return NextResponse.json({ error: "cron_not_configured" }, { status: 503 });
-  if (provided !== secret) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!cronSecretMatches(provided, secret)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const now = new Date();
   const expired = await prisma.featureOrder.findMany({

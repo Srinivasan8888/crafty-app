@@ -50,20 +50,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "forbidden_not_seller" }, { status: 403 });
   }
 
-  // Without a per-item fulfilled flag, treat any fulfill action as "this
-  // seller is done with their share" — flip the whole order to FULFILLED
-  // since the dashboard already groups by order and the seller wouldn't
-  // hit this button until they've shipped their lines.
-  // (Multi-seller orders: founder can update OrderItem rows manually in
-  // admin for now; per-item flags arrive in V3.1.)
-  await prisma.order.update({
-    where: { id: order.id },
-    data: { status: "FULFILLED", fulfilled_at: new Date() },
-  });
+  // Flip the whole order to FULFILLED only when this action covers EVERY item
+  // in the order (single-seller order, or admin marking all). There is no
+  // per-item fulfilled flag yet (V3.1), so a single seller in a MULTI-seller
+  // order must NOT flip the entire order — doing so hid the other sellers'
+  // fulfill action and showed the buyer "shipped" before they had shipped.
+  const coversWholeOrder = order.items.every((i) =>
+    parsed.data.item_ids.includes(i.id),
+  );
+
+  if (coversWholeOrder) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { status: "FULFILLED", fulfilled_at: new Date() },
+    });
+  }
 
   void logAudit({
     actorUserId: user.id,
-    action: "order.fulfill",
+    action: coversWholeOrder ? "order.fulfill" : "order.fulfill.partial",
     entityType: "USER",
     entityId: order.id,
     metadata: { item_ids: parsed.data.item_ids },
@@ -73,5 +78,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   revalidatePath(`/dashboard/sales/${order.id}`);
   revalidatePath(`/dashboard/orders/${order.id}`);
 
-  return NextResponse.json({ ok: true, status: "FULFILLED" });
+  // partial=true means the seller's items were acknowledged but the order has
+  // other sellers' items still outstanding, so it stays PAID.
+  return NextResponse.json({
+    ok: true,
+    status: coversWholeOrder ? "FULFILLED" : order.status,
+    partial: !coversWholeOrder,
+  });
 }

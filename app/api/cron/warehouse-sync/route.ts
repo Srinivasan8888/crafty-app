@@ -14,6 +14,7 @@
 // created_at into multiple runs.
 
 import { NextRequest, NextResponse } from "next/server";
+import { cronSecretMatches } from "@/lib/cron";
 import { prisma } from "@/lib/db";
 import { createWriteStream, existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
   if (!secret || secret === "placeholder") {
     return NextResponse.json({ error: "cron_not_configured" }, { status: 503 });
   }
-  if (provided !== secret) {
+  if (!cronSecretMatches(provided, secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

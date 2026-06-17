@@ -80,6 +80,21 @@ describe("ensureUniqueSlug", () => {
     expect(result.length).toBeLessThanOrEqual(60);
     expect(result.endsWith("-999")).toBe(true);
   });
+
+  it("re-slices the base so the cap holds past 999 collisions (4-digit suffix)", async () => {
+    // Regression: the old code reserved only 4 chars for "-NNN", so a 5-char
+    // suffix like "-1001" pushed a 56-char base to 61 chars (>60). The fix
+    // re-slices the base per suffix length.
+    const longBase = "a".repeat(200);
+    let calls = 0;
+    const exists = async () => {
+      calls += 1;
+      return calls <= 1000; // forces suffix to "-1001" (5 chars)
+    };
+    const result = await ensureUniqueSlug(longBase, exists);
+    expect(result.length).toBeLessThanOrEqual(60);
+    expect(result.endsWith("-1001")).toBe(true);
+  });
 });
 
 describe("formatINR", () => {

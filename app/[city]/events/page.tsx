@@ -22,6 +22,7 @@ import { EventsDateFilter } from "./_components/EventsDateFilter";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDateShort, formatINR } from "@/lib/util";
+import { whenWindow } from "@/lib/event-windows";
 
 export const revalidate = 60;
 
@@ -34,48 +35,6 @@ const TYPE_PILLS: Array<{ id: string; label: string }> = [
   { id: "POPUP", label: "Pop-ups" },
   { id: "EXHIBITION", label: "Exhibitions" },
 ];
-
-// IST is UTC+5:30. Compute a [start, end) window in real (UTC) time that
-// corresponds to the given `when` bucket evaluated in Asia/Kolkata.
-const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
-
-function whenWindow(when: string, now: Date): { start: Date; end: Date } | null {
-  // Wall-clock "now" in IST, expressed as a Date whose UTC fields read as IST.
-  const ist = new Date(now.getTime() + IST_OFFSET_MS);
-  // Convert an IST wall-clock Date (UTC fields = IST) back to a real instant.
-  const toReal = (d: Date) => new Date(d.getTime() - IST_OFFSET_MS);
-  const istMidnight = (d: Date) =>
-    new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-
-  switch (when) {
-    case "today": {
-      const startIst = istMidnight(ist);
-      const endIst = new Date(startIst.getTime() + 24 * 60 * 60 * 1000);
-      return { start: toReal(startIst), end: toReal(endIst) };
-    }
-    case "weekend": {
-      // Upcoming Sat 00:00 .. Mon 00:00 (Sun 23:59) in IST.
-      const day = ist.getUTCDay(); // 0=Sun..6=Sat
-      const daysUntilSat = (6 - day + 7) % 7;
-      const satIst = new Date(
-        istMidnight(ist).getTime() + daysUntilSat * 24 * 60 * 60 * 1000,
-      );
-      const monIst = new Date(satIst.getTime() + 2 * 24 * 60 * 60 * 1000);
-      return { start: toReal(satIst), end: toReal(monIst) };
-    }
-    case "next7": {
-      return { start: now, end: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) };
-    }
-    case "month": {
-      const endIst = new Date(
-        Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth() + 1, 1),
-      );
-      return { start: now, end: toReal(endIst) };
-    }
-    default:
-      return null;
-  }
-}
 
 export default async function EventsListing({
   params,

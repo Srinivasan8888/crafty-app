@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { cronSecretMatches } from "@/lib/cron";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const provided = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || req.nextUrl.searchParams.get("token");
   if (!secret || secret === "placeholder") return NextResponse.json({ error: "cron_not_configured" }, { status: 503 });
-  if (provided !== secret) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!cronSecretMatches(provided, secret)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   // Pull every conversation with activity in the last 24h. Filter in-app for
   // unread-per-user — simpler than two parallel queries on different read

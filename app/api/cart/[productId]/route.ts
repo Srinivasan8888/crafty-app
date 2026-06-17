@@ -47,11 +47,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { productId:
     return NextResponse.json({ error: "insufficient_inventory", available: product.inventory }, { status: 409 });
   }
 
-  await prisma.cartItem.upsert({
-    where: { buyer_user_id_product_id: { buyer_user_id: user.id, product_id: params.productId } },
-    create: { buyer_user_id: user.id, product_id: params.productId, quantity },
-    update: { quantity },
+  // PATCH sets the quantity of an EXISTING line — it must not create one.
+  // upsert turned "set quantity" into "add", which also skipped the
+  // cannot-buy-own-product guard that the POST /cart path enforces. Update only
+  // the user's own line; 404 if it isn't in the cart.
+  const updated = await prisma.cartItem.updateMany({
+    where: { buyer_user_id: user.id, product_id: params.productId },
+    data: { quantity },
   });
+  if (updated.count === 0) {
+    return NextResponse.json({ error: "not_in_cart" }, { status: 404 });
+  }
 
   return NextResponse.json({ ok: true, quantity });
 }

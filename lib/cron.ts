@@ -21,3 +21,18 @@ export const CRON_JOBS = [
 // run is older than this. Daily jobs should run every 24h; 25h gives an hour
 // of scheduler drift before alerting. (§10.5)
 export const CRON_STALE_MS = 25 * 60 * 60 * 1000;
+
+import crypto from "node:crypto";
+
+// Constant-time comparison of a request-provided cron token against the
+// configured CRON_SECRET. Avoids the timing side-channel of `provided !== secret`
+// (string `!==` short-circuits at the first differing byte). Shared by all cron
+// route handlers.
+export function cronSecretMatches(
+  provided: string | null | undefined,
+  secret: string,
+): boolean {
+  const a = Buffer.from(provided ?? "");
+  const b = Buffer.from(secret);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}

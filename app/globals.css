@@ -622,7 +622,7 @@ html, body {
   margin: 6px 4px;
 }
 .pm-lang { justify-content: space-between; }
-.pm-lang[aria-checked="true"] {
+.pm-lang[aria-current="true"] {
   color: rgb(var(--forest));
   font-weight: 600;
 }

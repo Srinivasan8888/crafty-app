@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { cronSecretMatches } from "@/lib/cron";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
   if (!secret || secret === "placeholder") {
     return NextResponse.json({ error: "cron_not_configured" }, { status: 503 });
   }
-  if (provided !== secret) {
+  if (!cronSecretMatches(provided, secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

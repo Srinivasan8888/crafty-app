@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { cronSecretMatches } from "@/lib/cron";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
   if (!secret || secret.startsWith("placeholder")) {
     return NextResponse.json({ error: "cron_not_configured" }, { status: 503 });
   }
-  if (provided !== secret) {
+  if (!cronSecretMatches(provided, secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
       reminder_sent_at: null,
       start_at: { gte: now, lt: t48 },
     },
-    include: { organizer: { select: { email: true, display_name: true } }, city: true },
+    include: { organizer: { select: { email: true, display_name: true, email_bounced: true } }, city: true },
   });
 
   // Avoid pulling in the email module unless we actually have work.
@@ -48,14 +49,21 @@ export async function GET(req: NextRequest) {
   if (events.length > 0) {
     const { sendListingLive, sendEventReminderAttendee } = await import("@/lib/email");
     for (const e of events) {
-      // Organizer reminder (unchanged).
-      void sendListingLive({
-        to: e.organizer.email,
-        firstName: e.organizer.display_name,
-        kind: "event",
-        name: `Reminder: ${e.name} starts in 24h`,
-        publicUrl: `${SITE_URL}/${e.city.slug}/events/${e.slug}`,
-      });
+      // Organizer reminder — skip bounced / placeholder addresses, matching the
+      // attendee guard below and every other cron (protects sender reputation).
+      if (
+        e.organizer.email &&
+        !e.organizer.email_bounced &&
+        !e.organizer.email.endsWith("@noreply.crafty.app")
+      ) {
+        void sendListingLive({
+          to: e.organizer.email,
+          firstName: e.organizer.display_name,
+          kind: "event",
+          name: `Reminder: ${e.name} starts in 24h`,
+          publicUrl: `${SITE_URL}/${e.city.slug}/events/${e.slug}`,
+        });
+      }
 
       // RSVP-lite: also remind everyone who SAVED this event. The event-level
       // reminder_sent_at guard (set below, once) means organizer + all savers

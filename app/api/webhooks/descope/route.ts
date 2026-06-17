@@ -41,18 +41,30 @@ type DescopeAuditEvent = {
   };
 };
 
-function verifySignature(secret: string, payload: unknown, sentSig: string | null): boolean {
+function verifySignature(
+  secret: string,
+  rawBody: string,
+  parsed: unknown,
+  sentSig: string | null,
+): boolean {
   if (!sentSig) return false;
-  const computed = crypto
-    .createHmac("sha256", secret)
-    .update(JSON.stringify(payload))
-    .digest("base64");
-  // Constant-time comparison.
-  try {
-    return crypto.timingSafeEqual(Buffer.from(sentSig), Buffer.from(computed));
-  } catch {
-    return false;
+  const sent = Buffer.from(sentSig);
+  // HMAC should be over the raw transmitted bytes, but this integration was
+  // originally written to verify JSON.stringify(payload). Whichever form Descope
+  // actually signs, accept it — both still require the shared secret, so this
+  // closes the "valid webhook silently rejected" risk without breaking a
+  // working config. (Raw is checked first.)
+  for (const candidate of [rawBody, JSON.stringify(parsed)]) {
+    const buf = Buffer.from(
+      crypto.createHmac("sha256", secret).update(candidate).digest("base64"),
+    );
+    try {
+      if (sent.length === buf.length && crypto.timingSafeEqual(sent, buf)) return true;
+    } catch {
+      // length mismatch / bad encoding — try the next candidate
+    }
   }
+  return false;
 }
 
 export async function POST(req: NextRequest) {
@@ -64,10 +76,17 @@ export async function POST(req: NextRequest) {
   }
 
   const sig = req.headers.get("x-descope-webhook-s256");
-  const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  // Read the raw body so we can HMAC the exact bytes Descope sent.
+  const raw = await req.text();
+  if (!raw) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  let body: unknown;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
 
-  if (!verifySignature(secret, body, sig)) {
+  if (!verifySignature(secret, raw, body, sig)) {
     console.error("[descope-webhook] signature verification failed");
     return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
   }
@@ -99,10 +118,13 @@ export async function POST(req: NextRequest) {
     } else if (action.includes("user deleted")) {
       const userId = evt.data?.user?.userId ?? evt.data?.userId;
       if (!userId) return NextResponse.json({ ok: true, skipped: "no_userid" });
-      // Soft-detach to preserve owned listings (cascade hard-delete would orphan them).
+      // Soft-detach to preserve owned listings (cascade hard-delete would orphan
+      // them). Do NOT set is_banned here: deletion is not a ban, and reusing the
+      // ban flag as a delete tombstone permanently blocks the same email from
+      // ever signing up again (getCurrentUser treats banned rows as anonymous).
       await prisma.user.updateMany({
         where: { descope_id: userId },
-        data: { descope_id: null, is_banned: true },
+        data: { descope_id: null },
       });
     }
     // Other audit events (sign-in, sign-up flow steps, etc.) are accepted

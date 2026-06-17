@@ -86,7 +86,7 @@ export async function sendListingLive(args: {
     html: wrap(`
       <p>Hi ${escape(args.firstName || "there")},</p>
       <p><strong>${escape(args.name)}</strong> is now live on Crafty.</p>
-      <p><a href="${args.publicUrl}" class="cta">View your ${kindLabel}</a></p>
+      <p><a href="${escape(args.publicUrl)}" class="cta">View your ${kindLabel}</a></p>
       <p>Share the link via WhatsApp or Instagram to start getting discovered locally.</p>
       <p>— The Crafty team</p>
     `),
@@ -111,7 +111,7 @@ export async function sendOrderConfirmation(args: {
       <p>Hi ${escape(args.firstName || "there")},</p>
       <p>Thanks for your order — payment received.</p>
       <p><strong>Total:</strong> ₹${args.totalInr.toLocaleString("en-IN")}${args.invoiceNumber ? `<br/><strong>Invoice:</strong> ${escape(args.invoiceNumber)}` : ""}</p>
-      <p><a href="${orderUrl}" class="cta">View order</a></p>
+      <p><a href="${escape(orderUrl)}" class="cta">View order</a></p>
       <p>— The Crafty team</p>
     `),
     text: `Hi ${args.firstName || "there"},\n\nThanks for your order — payment received.\nTotal: ₹${args.totalInr}\n\nView: ${orderUrl}\n\n— The Crafty team`,
@@ -134,7 +134,7 @@ export async function sendSellerNewOrder(args: {
       <p>Hi ${escape(args.firstName || "there")},</p>
       <p>You have a new order — ${args.itemCount} item${args.itemCount === 1 ? "" : "s"} to fulfill.</p>
       <p><strong>Your payout:</strong> ₹${args.payoutInr.toLocaleString("en-IN")}</p>
-      <p><a href="${salesUrl}" class="cta">View order</a></p>
+      <p><a href="${escape(salesUrl)}" class="cta">View order</a></p>
       <p>— The Crafty team</p>
     `),
     text: `Hi ${args.firstName || "there"},\n\nYou have a new order — ${args.itemCount} item(s) to fulfill.\nPayout: ₹${args.payoutInr}\n\nView: ${salesUrl}\n\n— The Crafty team`,
@@ -157,7 +157,7 @@ export async function sendNewMessageNotice(args: {
     html: wrap(`
       <p>Hi ${escape(args.firstName || "there")},</p>
       <p>Someone is interested in <strong>${escape(args.listingName)}</strong> and sent you a message on Crafty.</p>
-      <p><a href="${threadUrl}" class="cta">Read &amp; reply</a></p>
+      <p><a href="${escape(threadUrl)}" class="cta">Read &amp; reply</a></p>
       <p>Replying quickly is the best way to turn interest into a sale.</p>
       <p>— The Crafty team</p>
     `),
@@ -177,7 +177,7 @@ export async function sendClaimConfirm(args: {
       <p>Hi there,</p>
       <p>An admin has linked the listing for <strong>${escape(args.storeName)}</strong> to your Crafty account.</p>
       <p>You can now manage it from your dashboard.</p>
-      <p><a href="${args.publicUrl}" class="cta">View your listing</a></p>
+      <p><a href="${escape(args.publicUrl)}" class="cta">View your listing</a></p>
       <p>— The Crafty team</p>
     `),
     text: `An admin has linked the listing for ${args.storeName} to your Crafty account.\n\nView: ${args.publicUrl}\n\n— The Crafty team`,
@@ -195,7 +195,7 @@ export async function sendSavedUpdatesDigest(args: {
   const rows = args.items
     .map(
       (i) =>
-        `<p style="margin:10px 0;"><a href="${i.url}"><strong>${escape(i.name)}</strong></a><br><span style="color:#6B5A3E;">${escape(i.what)}</span></p>`,
+        `<p style="margin:10px 0;"><a href="${escape(i.url)}"><strong>${escape(i.name)}</strong></a><br><span style="color:#6B5A3E;">${escape(i.what)}</span></p>`,
     )
     .join("");
   const count = args.items.length;
@@ -235,7 +235,7 @@ export async function sendEventReminderAttendee(args: {
     html: wrap(`
       <p>Hi ${escape(args.firstName || "there")},</p>
       <p>An event you saved is happening tomorrow: <strong>${escape(args.eventName)}</strong>${escape(where)} in ${escape(args.cityName)}.</p>
-      <p><a href="${args.publicUrl}" class="cta">See details &amp; add to calendar</a></p>
+      <p><a href="${escape(args.publicUrl)}" class="cta">See details &amp; add to calendar</a></p>
       <p>— The Crafty team</p>
     `),
     text: `Hi ${args.firstName || "there"},\n\nAn event you saved is tomorrow: ${args.eventName}${where} in ${args.cityName}.\n\nDetails: ${args.publicUrl}\n\n— The Crafty team`,

@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { cronSecretMatches } from "@/lib/cron";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
   if (!secret || secret === "placeholder") {
     return NextResponse.json({ error: "cron_not_configured" }, { status: 503 });
   }
-  if (provided !== secret) {
+  if (!cronSecretMatches(provided, secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -48,6 +49,10 @@ export async function GET(req: NextRequest) {
   let lapsedCreators = 0;
   let inactiveBuyers = 0;
   let coldSignups = 0;
+  // IDs we actually emailed this run. We bump their updated_at at the end so
+  // the next daily run's `updated_at < cutoff` filters exclude them — this is
+  // the dedup watermark the header documents but the original code never wrote.
+  const sentIds: string[] = [];
 
   // ─── Segment 1: lapsed creators ──────────────────────────────────
   // Anyone who owns at least one PUBLISHED listing where every listing's
@@ -93,6 +98,7 @@ export async function GET(req: NextRequest) {
       daysSinceListing: days,
     });
     lapsedCreators++;
+    sentIds.push(u.id);
   }
 
   // ─── Segment 2: inactive buyers ──────────────────────────────────
@@ -114,6 +120,7 @@ export async function GET(req: NextRequest) {
       lastSeenDate: u.updated_at,
     });
     inactiveBuyers++;
+    sentIds.push(u.id);
   }
 
   // ─── Segment 3: cold signups (>7 days, no listings) ──────────────
@@ -135,6 +142,16 @@ export async function GET(req: NextRequest) {
     if (u.email.endsWith("@noreply.crafty.app")) continue;
     void sendCreatorNoListing({ to: u.email, firstName: u.display_name });
     coldSignups++;
+    sentIds.push(u.id);
+  }
+
+  // Dedup watermark: bump updated_at for everyone we emailed so they fall
+  // outside the segment windows on the next run (no re-blast). Without this the
+  // same users match every day — the bug this fix closes.
+  if (sentIds.length > 0) {
+    await prisma.user
+      .updateMany({ where: { id: { in: sentIds } }, data: { updated_at: new Date() } })
+      .catch((e) => console.error("[cron] lifecycle watermark", e));
   }
 
   await prisma.cronRun.create({ data: { job_name: "lifecycle_emails", status: "success", completed_at: new Date(), rows_affected: lapsedCreators + inactiveBuyers + coldSignups } }).catch((e) => console.error("[cron] record", e));

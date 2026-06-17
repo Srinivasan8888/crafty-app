@@ -13,6 +13,9 @@ import { getCurrentUser } from "@/lib/auth";
 export async function AppHeader({ city }: { city: string }) {
   const cities = await getCities();
   const current = cities.find((c) => c.slug === city) ?? cities[0];
+  // Degenerate "no active cities" data state — bail rather than deref undefined
+  // (current.slug/display_name are used throughout below).
+  if (!current) return null;
   const t = await getTranslations("nav");
   const locale = readLocaleCookie();
   // Header must reflect auth state: signed-in users should never see the

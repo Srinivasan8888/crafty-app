@@ -45,12 +45,20 @@ export async function ensureUniqueSlug(
   const BASE_MAX = 60 - SUFFIX_BUDGET; // 56
   const sluggedBase = slugify(base, BASE_MAX) || "untitled";
 
+  // Build "<base>-<n>" but re-slice the base so the final slug never exceeds 60
+  // chars even when the suffix grows past 3 digits (e.g. "-1000" after 1000
+  // collisions). SUFFIX_BUDGET only reserved room for "-NNN".
+  const withSuffix = (n: number) => {
+    const suffix = `-${n}`;
+    return `${sluggedBase.slice(0, 60 - suffix.length)}${suffix}`;
+  };
+
   let candidate = sluggedBase;
-  if (RESERVED.has(candidate)) candidate = `${sluggedBase}-1`;
+  if (RESERVED.has(candidate)) candidate = withSuffix(1);
   let i = 1;
   while (await exists(candidate)) {
     i += 1;
-    candidate = `${sluggedBase}-${i}`;
+    candidate = withSuffix(i);
   }
   return candidate;
 }

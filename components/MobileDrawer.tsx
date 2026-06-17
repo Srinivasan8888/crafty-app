@@ -141,7 +141,10 @@ export function MobileDrawer({ cities, currentCity, locale, isAuthed = false }: 
             aria-label="Navigation"
           >
             <div className="flex items-start justify-between">
-              <div className="me">
+              {/* No `.me` class here: `.drawer .me` is avatar-row styling
+                  (flex + border-bottom) meant for an avatar+name and drew an
+                  unintended divider under the logo. */}
+              <div>
                 <div>
                   <div className="text-xs text-muted">
                     Welcome to

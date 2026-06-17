@@ -14,6 +14,7 @@ export async function setLocale(value: string) {
     path: "/",
     sameSite: "lax",
     httpOnly: false, // readable client-side for hydration debug; not sensitive
+    secure: process.env.NODE_ENV === "production", // HTTPS-only in prod
   });
   revalidatePath("/", "layout");
 }

@@ -39,6 +39,17 @@ const InstallPrompt = dynamic(
   () => import("@/components/InstallPrompt").then((m) => m.InstallPrompt),
   { ssr: false },
 );
+// DEV-ONLY click-to-comment design tool. Never loaded in production builds.
+const DesignCommentOverlay =
+  process.env.NODE_ENV !== "production"
+    ? dynamic(
+        () =>
+          import("@/components/DesignCommentOverlay").then(
+            (m) => m.DesignCommentOverlay,
+          ),
+        { ssr: false },
+      )
+    : () => null;
 
 export const metadata: Metadata = {
   title: "Crafty: discover India's craft community",
@@ -101,6 +112,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               {children}
               <CookieConsent />
               <InstallPrompt />
+              <DesignCommentOverlay />
             </SavedStateProvider>
           </ToastProvider>
         </NextIntlClientProvider>
