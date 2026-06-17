@@ -181,7 +181,10 @@ export default function SignUpPage({
                   </div>
                 ) : (
                   <Descope
-                    flowId="sign-up"
+                    // Combined create-or-sign-in flow so an existing user who
+                    // lands here and uses Google isn't rejected for already
+                    // existing — same flow as /sign-in (Descope default).
+                    flowId="sign-up-or-in"
                     theme="light"
                     themeOverride={craftyDescopeTheme as any}
                     redirectAfterSuccess={after}

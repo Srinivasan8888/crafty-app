@@ -184,7 +184,10 @@ export default function SignInPage({
                   </div>
                 ) : (
                   <Descope
-                    flowId="sign-in"
+                    // Combined create-or-sign-in flow. A plain "sign-in" flow
+                    // rejects unknown users on the OAuth callback (Descope
+                    // E062108), blocking every first-time Google/email user.
+                    flowId="sign-up-or-in"
                     theme="light"
                     themeOverride={craftyDescopeTheme as any}
                     redirectAfterSuccess={after}
