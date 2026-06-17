@@ -33,8 +33,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <MaybeAuthProvider>
       <AppHeader city={process.env.NEXT_PUBLIC_DEFAULT_CITY ?? "bengaluru"} />
-      <main id="main" className="container my-8 grid gap-8 lg:grid-cols-[220px_1fr]">
-        <aside className="lg:sticky lg:top-20 lg:self-start">
+      <main id="main" className="container mt-10 mb-12 md:mt-14 md:mb-16 grid gap-8 lg:grid-cols-[220px_1fr]">
+        <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="card p-4">
             <p className="text-xs uppercase tracking-wider text-ink-subtle">Signed in as</p>
             <div className="mt-1 flex items-center gap-2">
