@@ -10,9 +10,13 @@
 // SKIP rules: anything personal or mutating (dashboard, admin, sign-in,
 // cart, orders, messages) is NEVER cached. We pass straight to the network.
 
-const SHELL_CACHE = "crafty-shell-v1";
-const RUNTIME_CACHE = "crafty-runtime-v1";
-const OFFLINE_CACHE = "crafty-offline-v1";
+// Bump these on any SW behavior change. The activate handler deletes every
+// cache not in the kept-set, so bumping versions purges stale precached chunks
+// from already-installed clients (the browser fetches /sw.js fresh on update
+// checks, so a changed file here propagates even past the SW's own cache).
+const SHELL_CACHE = "crafty-shell-v2";
+const RUNTIME_CACHE = "crafty-runtime-v2";
+const OFFLINE_CACHE = "crafty-offline-v2";
 const OFFLINE_URL = "/offline";
 
 const PRECACHE_URLS = [
