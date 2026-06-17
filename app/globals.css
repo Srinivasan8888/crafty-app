@@ -541,18 +541,101 @@ html, body {
 .rail {
   display: flex;
   gap: 14px;
-  padding: 4px 18px 18px;
+  /* Align the card row to the same centered container as the hero instead of
+     bleeding full-width. First card's left edge lines up with the hero. */
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 4px var(--container-pad) 18px;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  /* proximity (not mandatory) so the rail doesn't force-snap the first card to
+     the scrollport edge on load, which was eating the left padding and pulling
+     cards left of their section title. scroll-padding keeps snaps aligned. */
+  scroll-snap-type: x proximity;
+  scroll-padding-left: var(--container-pad);
   scrollbar-width: none;
 }
 .rail::-webkit-scrollbar { display: none; }
 .rail .card { flex: 0 0 230px; scroll-snap-align: start; }
 .rail .card.wide { flex: 0 0 280px; }
 
+/* === PROFILE / ACCOUNT DROPDOWN === */
+.pm-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 252px;
+  background: rgb(var(--cream));
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
+  padding: 6px;
+  z-index: 60;
+}
+.pm-id {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 6px;
+}
+.pm-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: rgb(var(--ink));
+}
+.pm-email {
+  font-size: 12px;
+  color: rgb(var(--muted));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: rgb(var(--ink));
+  text-align: left;
+  cursor: pointer;
+}
+.pm-item:hover { background: rgb(var(--cream-2)); }
+.pm-item:disabled { cursor: default; opacity: 0.6; }
+.pm-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgb(var(--muted));
+}
+.pm-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 6px 4px;
+}
+.pm-lang { justify-content: space-between; }
+.pm-lang[aria-checked="true"] {
+  color: rgb(var(--forest));
+  font-weight: 600;
+}
+.pm-logout { color: rgb(var(--magenta)); }
+.pm-logout:hover { background: rgba(181, 54, 91, 0.08); }
+
 /* === SECTION TITLE BAR === */
 .sec-title-bar {
-  padding: 22px 18px 10px;
+  /* Match the rail/hero container so section headings line up with the cards
+     below them and the rest of the page, not the screen edge. */
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 22px var(--container-pad) 10px;
   display: flex;
   align-items: baseline;
   justify-content: space-between;

@@ -118,7 +118,7 @@ export default async function CraftersListing({
         total={totalCount}
       />
 
-      <div className="container pb-10">
+      <div className="container pt-6 md:pt-8 pb-10">
         {crafters.length === 0 ? (
           <EmptyState
             title="No crafters yet"

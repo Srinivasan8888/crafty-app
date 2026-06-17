@@ -250,7 +250,7 @@ export default async function CityHome({ params }: { params: { city: string } })
 
   return (
     <>
-      <section className="hero md:py-16 lg:py-24 md:text-left">
+      <section className="hero md:py-16 lg:py-24">
         <div className="md:grid md:grid-cols-[1.2fr_1fr] md:items-center md:gap-16 md:max-w-[var(--container-max)] md:mx-auto md:px-[var(--container-pad)]">
           <div>
             <span className="inline-block font-display text-xs font-bold uppercase tracking-[3px] text-forest mb-4 pb-1.5 border-b border-mustard">
@@ -262,11 +262,11 @@ export default async function CityHome({ params }: { params: { city: string } })
                 {tHero("headlineEm")}
               </em>
             </h1>
-            <p className="md:text-[17px] md:max-w-[520px] md:mt-6">
+            <p className="md:text-[17px] md:max-w-[520px] md:mt-6 md:mx-auto">
               {tHero("subtitleA")} {city.display_name}. {tHero("subtitleB")}
               <span className="hidden md:inline"> {tHero("subtitleExtended")}</span>
             </p>
-            <div className="ctas md:justify-start">
+            <div className="ctas">
               <Link href={`/${city.slug}/crafters`} className="btn btn-primary md:btn-lg">
                 {tHero("exploreCta")} {city.display_name}
               </Link>
@@ -356,8 +356,8 @@ export default async function CityHome({ params }: { params: { city: string } })
         </div>
       </section>
 
-      <div className="container py-4">
-        <div className="text-xs uppercase tracking-wider text-forest font-display font-semibold mb-2">
+      <div className="container py-8 md:py-12">
+        <div className="text-xs uppercase tracking-wider text-forest font-display font-semibold mb-4">
           {tHero("pickCity")}
         </div>
         <CitySelector cities={cities} current={city.slug} />

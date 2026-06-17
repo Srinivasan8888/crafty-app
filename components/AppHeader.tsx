@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { ChevronDown, Search, Heart, User } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { MobileDrawer } from "./MobileDrawer";
 import { PrimaryNavIsland } from "./BottomNav";
-import { LocaleSwitcher } from "./LocaleSwitcher";
+import { ProfileMenu } from "./ProfileMenu";
 import { getCities } from "@/lib/cities";
 import { readLocaleCookie } from "@/lib/i18n/request";
 import { getCurrentUser } from "@/lib/auth";
@@ -121,48 +121,26 @@ export async function AppHeader({ city }: { city: string }) {
               <ChevronDown size={14} aria-hidden="true" />
             </Link>
 
-            {/* Saved: reachable while browsing, not just the mobile bottom nav.
-                redirect_url brings signed-out buyers back here after sign-in. */}
-            <Link
-              href="/dashboard/saved?redirect_url=/dashboard/saved"
-              className="icon-btn max-md:!hidden"
-              aria-label={t("saved")}
-              title={t("saved")}
-            >
-              <Heart size={16} aria-hidden="true" />
-            </Link>
-
-            {/* Profile / account: desktop parity with the mobile bottom nav's
-                Profile tab. Signed-out users get 307'd to sign-in then back. */}
-            <Link
-              href="/dashboard?redirect_url=/dashboard"
-              className="icon-btn max-md:!hidden"
-              aria-label={t("profile")}
-              title={t("profile")}
-            >
-              <User size={16} aria-hidden="true" />
-            </Link>
-
-            <LocaleSwitcher current={locale} />
+            {/* Account dropdown (desktop). Folds in Saved, the language
+                switcher, account links and Log out. Signed-out users get
+                Sign in + language inside the same menu. */}
+            <ProfileMenu
+              isAuthed={isAuthed}
+              locale={locale}
+              userName={user?.display_name}
+              userEmail={user?.email}
+            />
 
             <ThemeToggle />
 
-            {/* Desktop-only auth + CTA — only for signed-out visitors. */}
+            {/* Desktop-only auth — only for signed-out visitors. */}
             {!isAuthed && (
-              <>
-                <Link
-                  href="/sign-in"
-                  className="btn btn-ghost btn-sm max-md:!hidden"
-                >
-                  {t("signIn")}
-                </Link>
-                <Link
-                  href="/list-your-profile"
-                  className="btn btn-primary btn-sm max-md:!hidden"
-                >
-                  {t("listProfile")}
-                </Link>
-              </>
+              <Link
+                href="/sign-in"
+                className="btn btn-ghost btn-sm max-md:!hidden"
+              >
+                {t("signIn")}
+              </Link>
             )}
           </div>
         </div>
