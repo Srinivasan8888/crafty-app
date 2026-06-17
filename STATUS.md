@@ -2,6 +2,16 @@
 
 Quick handoff note. Read `README.md` for setup; this file is for "where are we right now."
 
+## Production status (updated 2026-06-16)
+
+- **Stack**: Vercel (hosting) + Descope (auth) + Neon (Postgres). The old PRD assumed Replit/Clerk — that swap is done; ignore stale Replit/Clerk references below.
+- **Deployed & live**: production builds and serves on Vercel (`crafty-app-five.vercel.app`); root → `/bengaluru`, sign-in renders the Descope flow. Preview deploys are env-seeded for the `demo-launch-pass` branch.
+- **Auth**: sign-in/sign-up use Descope's combined `sign-up-or-in` flow so first-time Google/email users are created (previously the sign-in-only flow rejected new users with `E062108`).
+- **Credentials**: real values are set in the Vercel **Production** environment (Descope, Upstash, Resend, Sentry, PostHog, `CRON_SECRET`, `DATABASE_URL`); `DEV_AUTH=false` in prod. Local `.env` carries real Descope + Neon.
+- **Scope note (PRD)**: the build is well past PRD V1 — payments, messaging, recurring events, i18n, recommendations, PWA, and a mobile scaffold all already exist. "Production-ready" here means *operational hardening*, not new features.
+
+This file is for "where are we right now."
+
 ## The PRD
 
 The full V1 product requirements doc lives in [`PRD/Crafty-PRD-v1.md`](PRD/Crafty-PRD-v1.md). It's the source of truth for scope, data model, URLs, design system, and Day-90 success gates. Read it before touching anything structural.
@@ -23,8 +33,8 @@ The full V1 product requirements doc lives in [`PRD/Crafty-PRD-v1.md`](PRD/Craft
 - **Cron schedules** — 8 endpoints now need a scheduler: `/api/cron/event-reminders` (hourly), `/api/cron/saved-search-alerts` (daily), `/api/cron/message-digest` (daily), `/api/cron/expire-featured` (daily), `/api/cron/for-you-digest` (weekly Sun), `/api/cron/materialize-recurring-events` (daily), `/api/cron/lifecycle-emails` (daily), `/api/cron/warehouse-sync` (daily). All bearer-auth via `CRON_SECRET`.
 - **V3 Tier 4 infra creds** — `REDIS_URL` (BullMQ queue flip), `ANTHROPIC_API_KEY` (AI moderation), `ADMIN_EMAIL` (claim queue notifications) — all placeholders, no-op cleanly.
 - **Razorpay setup**: create account at https://razorpay.com, paste test keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`) into `.env`, configure webhook → `/api/webhooks/razorpay` with `RAZORPAY_WEBHOOK_SECRET`. For V3 subscriptions, also create Razorpay Plans for monthly (₹299) and annual (₹2999) tiers and paste IDs as `RAZORPAY_PLAN_MONTHLY` / `RAZORPAY_PLAN_ANNUAL`.
-- **Pluggable storage** — `lib/storage.ts` already supports `local` and `s3` drivers. For prod set `STORAGE_DRIVER=s3` + `STORAGE_S3_*` env vars + `bun add @aws-sdk/client-s3`.
-- **pgbouncer config** for Replit's serverless Postgres pool.
+- **Pluggable storage** — `lib/storage.ts` supports `local` (dev), `s3`, and `blob` (Vercel Blob) drivers. **Production uses Vercel Blob** — `@vercel/blob` is installed, `BLOB_READ_WRITE_TOKEN` is set in all Vercel environments, and `*.public.blob.vercel-storage.com` is whitelisted in `next.config`. Activate with `STORAGE_DRIVER=blob` (no extra bucket/keys). Verify: `STORAGE_DRIVER=blob bunx tsx --env-file=.env scripts/check-storage.ts`. (The `s3`/R2 path still exists as an alternative but needs `bun add @aws-sdk/client-s3` + `STORAGE_S3_*`.)
+- **DB connection pooling** — Prisma `datasource` now has `directUrl` (migrations) alongside `url` (runtime). On Vercel/Neon, point `DATABASE_URL` at Neon's **pooled** endpoint (`-pooler` host, `?pgbouncer=true&connection_limit=1`) and set `DIRECT_URL` to the non-pooled endpoint.
 - **Brand mark / logo icon** (PRD §17.3) and real commissioned photography (PRD §28.2 J) — founder/designer work.
 
 V1.0 launch-blockers (T1, T5, T7) closed 2026-05-23. V1.0 polish + V1.5 scope (CityRequest, IP geo, per-city CommunityMoment, walkthrough, contrast guard) also shipped 2026-05-23. See `TODOS.md` for the full closed-out backlog.

@@ -9,7 +9,14 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Runtime: point at Neon's POOLED endpoint (-pooler host) with
+  // ?pgbouncer=true&connection_limit=1 so Vercel's many short-lived serverless
+  // instances don't exhaust Postgres max_connections under the launch spike.
+  url       = env("DATABASE_URL")
+  // Migrations (prisma migrate / db push) can't run through PgBouncer's
+  // transaction pool, so they use a DIRECT (non-pooled) connection via
+  // DIRECT_URL. Locally it can equal DATABASE_URL.
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── Lifecycle (Issue 1.4) ───────────────────────────────────────────

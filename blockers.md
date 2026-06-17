@@ -1,6 +1,16 @@
 What's still pending — honest categorization
 The engineering work is essentially done. What remains is mostly operational + content + a small polish backlog.
 
+✅ Resolved 2026-06-16 (production-launch-readiness)
+- Production deploy is live + verified on Vercel (was previously failing / unverified) — Vercel/Descope/Neon stack, not Replit/Clerk.
+- Descope auth works for new users — switched sign-in/sign-up to the combined `sign-up-or-in` flow (sign-in-only flow was rejecting first-time users with E062108).
+- Durable media storage → use Vercel Blob (`STORAGE_DRIVER=blob`); token already present in all envs, `@vercel/blob` installed, domain whitelisted. No R2/S3 bucket needed. Smoke: `scripts/check-storage.ts`.
+- DB pooling prepared — Prisma `directUrl` added; founder to point `DATABASE_URL` at Neon's pooled endpoint + set `DIRECT_URL` (below).
+- Favicon — real icon declared via `metadata.icons` (was a 404 placeholder).
+- Real creds set in Vercel Production (Descope, Upstash, Resend, Sentry, PostHog, CRON_SECRET, DATABASE_URL); `DEV_AUTH=false` in prod.
+
+Remaining founder ops to fully harden (see below): set `STORAGE_DRIVER=blob` in prod + redeploy, set pooled `DATABASE_URL`/`DIRECT_URL`, replace `SIC_ADMIN_EMAIL`, point the Descope webhook at the prod URL, legal copy, DNS/domain.
+
 🔴 Blocks first soft launch (paste keys, ~1 day)
 Item	Type
 Descope project setup — paste NEXT_PUBLIC_DESCOPE_PROJECT_ID + DESCOPE_MANAGEMENT_KEY + DESCOPE_WEBHOOK_SECRET, run bun run descope:setup, then Flow Editor styling	Founder ops
