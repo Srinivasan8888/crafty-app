@@ -10,6 +10,8 @@ import {
   Heart,
   Home,
   Languages,
+  LayoutDashboard,
+  LogOut,
   Menu,
   Search,
   Store,
@@ -100,9 +102,12 @@ export function MobileDrawer({ cities, currentCity, locale, isAuthed = false }: 
     { href: `/${currentCity}/events`, label: "Events", icon: <Calendar size={16} aria-hidden="true" /> },
     { href: `/${currentCity}/search`, label: "Search", icon: <Search size={16} aria-hidden="true" /> },
     { href: "/dashboard/saved?redirect_url=/dashboard/saved", label: "Saved", icon: <Heart size={16} aria-hidden="true" /> },
-    // Sign-in / List-your-profile are signed-out affordances only.
+    // Signed-in users get Dashboard parity with the desktop account menu;
+    // signed-out users get the Sign-in / List-your-profile affordances.
     ...(isAuthed
-      ? []
+      ? [
+          { href: "/dashboard?redirect_url=/dashboard", label: "Dashboard", icon: <LayoutDashboard size={16} aria-hidden="true" /> },
+        ]
       : [
           { href: "/list-your-profile", label: "List your profile", icon: <UserPlus size={16} aria-hidden="true" /> },
           { href: "/sign-in", label: "Sign in", icon: <LogIn size={16} aria-hidden="true" /> },
@@ -265,6 +270,18 @@ export function MobileDrawer({ cities, currentCity, locale, isAuthed = false }: 
                 );
               })}
             </div>
+
+            {/* Log out: plain <a> for a full navigation so /logout's cookie-
+                clearing redirect runs (a client Link would skip the Set-Cookie). */}
+            {isAuthed && (
+              <a
+                href="/logout"
+                style={{ marginTop: 18, color: "rgb(var(--magenta))", fontWeight: 600 }}
+              >
+                <LogOut size={16} aria-hidden="true" />
+                <span>Log out</span>
+              </a>
+            )}
           </aside>
         </>
       )}
