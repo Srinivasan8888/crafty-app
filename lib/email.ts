@@ -242,6 +242,31 @@ export async function sendEventReminderAttendee(args: {
   });
 }
 
+// superadmin-god-mode — invite a person to become an admin/superadmin. The
+// invite is consumed on their next sign-in (email match), so the email just
+// needs to get them to sign in; no token in the link is required for trust.
+export async function sendAdminInvite(args: {
+  to: string;
+  role: "ADMIN" | "SUPERADMIN";
+  inviterName?: string | null;
+}) {
+  const roleLabel = args.role === "SUPERADMIN" ? "owner (superadmin)" : "admin";
+  const by = args.inviterName ? ` by ${escape(args.inviterName)}` : "";
+  return sendEmail({
+    to: args.to,
+    subject: `You've been invited as ${roleLabel} on Crafty`,
+    html: wrap(`
+      <p>Hi there,</p>
+      <p>You've been invited${by} to join the Crafty team as <strong>${roleLabel}</strong>.</p>
+      <p>Just sign in with <strong>this email address</strong> and your access is applied automatically.</p>
+      <p><a href="${SITE_URL}/sign-in" class="cta">Sign in to Crafty</a></p>
+      <p>This invitation expires in 14 days. If you weren't expecting it, you can ignore this email.</p>
+      <p>— The Crafty team</p>
+    `),
+    text: `Hi there,\n\nYou've been invited${args.inviterName ? ` by ${args.inviterName}` : ""} to join the Crafty team as ${roleLabel}.\n\nSign in with this email address and your access is applied automatically:\n${SITE_URL}/sign-in\n\nThis invitation expires in 14 days.\n\n— The Crafty team`,
+  });
+}
+
 // ─── HTML helpers ──────────────────────────────────────────────────
 
 function wrap(body: string): string {

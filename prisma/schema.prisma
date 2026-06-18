@@ -37,6 +37,31 @@ enum UserRole {
   VISITOR
   CREATOR
   ADMIN
+  SUPERADMIN   // owner / god-mode — ranks above ADMIN (superadmin-god-mode change)
+}
+
+// Admin invitations (superadmin-god-mode). A superadmin invites a person by
+// email to become ADMIN/SUPERADMIN; the invite is consumed on that email's next
+// authenticated request. Single-use, expiring, token hashed at rest.
+enum AdminInviteStatus {
+  PENDING
+  CONSUMED
+  REVOKED
+  EXPIRED
+}
+
+model AdminInvite {
+  id                 String            @id @default(cuid())
+  email              String
+  role               UserRole          // ADMIN | SUPERADMIN — enforced in app code
+  token_hash         String
+  invited_by_user_id String            // User.id of the inviting superadmin (audit ref)
+  status             AdminInviteStatus @default(PENDING)
+  expires_at         DateTime
+  consumed_at        DateTime?
+  created_at         DateTime          @default(now())
+
+  @@index([email, status])
 }
 
 // ─── Core models ─────────────────────────────────────────────────────
