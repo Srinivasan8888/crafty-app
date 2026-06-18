@@ -13,13 +13,21 @@ export default async function EditStudio() {
 
   const studio = await prisma.studio.findFirst({
     where: { owner_user_id: user.id, status: { not: "DELETED" } },
-    include: { craft_disciplines: true, city: true },
+    include: { craft_disciplines: true, tagged_crafters: true, city: true },
   });
   if (!studio) redirect("/dashboard/studio/new");
 
-  const [cities, disciplines] = await Promise.all([
+  const [cities, disciplines, crafters] = await Promise.all([
     prisma.city.findMany({ where: { is_active: true }, orderBy: { display_order: "asc" } }),
     prisma.discipline.findMany({ where: { is_active: true }, orderBy: { display_order: "asc" } }),
+    // storefront-completeness — published crafters in this studio's city, as
+    // tag candidates ("crafters who teach here").
+    prisma.crafter.findMany({
+      where: { city_id: studio.city_id, status: "PUBLISHED" },
+      orderBy: { name: "asc" },
+      take: 100,
+      select: { id: true, name: true },
+    }),
   ]);
 
   return (
@@ -39,6 +47,7 @@ export default async function EditStudio() {
       <StudioForm
         cities={cities}
         disciplines={disciplines}
+        crafters={crafters}
         entityId={studio.id}
         initialValues={{
           name: studio.name,
@@ -52,6 +61,7 @@ export default async function EditStudio() {
           contact_whatsapp: studio.contact_whatsapp ?? "",
           contact_website: studio.contact_website ?? "",
           discipline_ids: studio.craft_disciplines.map((j) => j.discipline_id),
+          crafter_ids: studio.tagged_crafters.map((j) => j.crafter_id),
         }}
       />
     </div>

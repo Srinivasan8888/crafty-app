@@ -15,9 +15,12 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { CommunityMoment } from "@/components/CommunityMoment";
+import { CommunityComments } from "@/components/CommunityComments";
+import { toCommentView } from "@/lib/community-comments";
 import { SafeImage } from "@/components/SafeImage";
 import { buildAmbient } from "./_ambient";
 
@@ -92,6 +95,19 @@ export default async function CommunityPage() {
     take: 500,
   });
   const ambient = await buildAmbient(recentSaves);
+
+  // storefront-completeness — community notes (replaces the read-only teaser).
+  // Privacy: select display_name only, never the author's email.
+  const [viewer, recentComments] = await Promise.all([
+    getCurrentUser(),
+    prisma.communityComment.findMany({
+      where: { status: "VISIBLE" },
+      orderBy: { created_at: "desc" },
+      take: 50,
+      select: { id: true, body: true, created_at: true, author: { select: { display_name: true } } },
+    }),
+  ]);
+  const commentViews = recentComments.map(toCommentView);
 
   const moments = cities
     .map((c) => ({ city: c, moment: (c.community_moment as Moment) ?? null }))
@@ -190,8 +206,23 @@ export default async function CommunityPage() {
           )}
         </section>
 
-        <section className="container pb-12">
-          <p className="font-display italic text-sm text-muted text-center">{t("commentsTeaser")}</p>
+        <section className="container py-8 md:py-12 pb-16">
+          <CommunityComments
+            initialComments={commentViews}
+            canPost={Boolean(viewer)}
+            labels={{
+              title: t("commentsTitle"),
+              empty: t("commentsEmpty"),
+              placeholder: t("commentPlaceholder"),
+              post: t("commentPost"),
+              posting: t("commentPosting"),
+              signIn: t("commentSignIn"),
+              report: t("commentReport"),
+              reported: t("commentReported"),
+              errorLength: t("commentErrorLength"),
+              errorGeneric: t("commentErrorGeneric"),
+            }}
+          />
         </section>
       </main>
       <AppFooter />

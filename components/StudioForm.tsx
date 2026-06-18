@@ -34,6 +34,7 @@ function looksLikeUrl(v: string) {
 }
 
 type Option = { id: string; display_name: string; slug: string };
+type CrafterOption = { id: string; name: string };
 type StudioFormValues = {
   name: string;
   logo_photo: string;
@@ -46,15 +47,19 @@ type StudioFormValues = {
   contact_whatsapp: string;
   contact_website: string;
   discipline_ids: string[];
+  crafter_ids: string[];
 };
 type Props = {
   cities: Option[];
   disciplines: Option[];
+  // storefront-completeness — taggable crafters (edit flow only; the new flow
+  // has no city/studio yet). Omitted → the tag selector is hidden.
+  crafters?: CrafterOption[];
   entityId?: string;
   initialValues?: Partial<StudioFormValues>;
 };
 
-export function StudioForm({ cities, disciplines, entityId, initialValues }: Props) {
+export function StudioForm({ cities, disciplines, crafters, entityId, initialValues }: Props) {
   const router = useRouter();
   const isEdit = Boolean(entityId);
   const [submitting, setSubmitting] = useState(false);
@@ -73,6 +78,7 @@ export function StudioForm({ cities, disciplines, entityId, initialValues }: Pro
     contact_whatsapp: initialValues?.contact_whatsapp ?? "",
     contact_website: initialValues?.contact_website ?? "",
     discipline_ids: initialValues?.discipline_ids ?? [],
+    crafter_ids: initialValues?.crafter_ids ?? [],
   });
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
@@ -107,6 +113,14 @@ export function StudioForm({ cities, disciplines, entityId, initialValues }: Pro
       set("discipline_ids", form.discipline_ids.filter((x) => x !== id));
     } else if (form.discipline_ids.length < 5) {
       set("discipline_ids", [...form.discipline_ids, id]);
+    }
+  }
+
+  function toggleCrafter(id: string) {
+    if (form.crafter_ids.includes(id)) {
+      set("crafter_ids", form.crafter_ids.filter((x) => x !== id));
+    } else if (form.crafter_ids.length < 20) {
+      set("crafter_ids", [...form.crafter_ids, id]);
     }
   }
 
@@ -299,6 +313,27 @@ export function StudioForm({ cities, disciplines, entityId, initialValues }: Pro
           })}
         </div>
       </Field>
+
+      {crafters && crafters.length > 0 && (
+        <Field label="Crafters who teach here" hint="Optional — tag crafters who run classes at your studio (up to 20). Shown on your public page.">
+          <div className="flex flex-wrap gap-2">
+            {crafters.map((c) => {
+              const selected = form.crafter_ids.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`pill sm${selected ? " active" : ""}`}
+                  aria-pressed={selected}
+                  onClick={() => toggleCrafter(c.id)}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+      )}
 
       <Field label="Contact" hint="At least one is required.">
         <div className="space-y-3">

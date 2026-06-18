@@ -13,13 +13,21 @@ export default async function EditStore() {
 
   const store = await prisma.store.findFirst({
     where: { owner_user_id: user.id, status: { not: "DELETED" } },
-    include: { supply_categories: true, city: true },
+    include: { supply_categories: true, tagged_crafters: true, city: true },
   });
   if (!store) redirect("/dashboard/store/new");
 
-  const [cities, categories] = await Promise.all([
+  const [cities, categories, crafters] = await Promise.all([
     prisma.city.findMany({ where: { is_active: true }, orderBy: { display_order: "asc" } }),
     prisma.supplyCategory.findMany({ where: { is_active: true }, orderBy: { display_order: "asc" } }),
+    // storefront-completeness — published crafters in this store's city, as tag
+    // candidates ("crafters sourced here").
+    prisma.crafter.findMany({
+      where: { city_id: store.city_id, status: "PUBLISHED" },
+      orderBy: { name: "asc" },
+      take: 100,
+      select: { id: true, name: true },
+    }),
   ]);
 
   return (
@@ -39,6 +47,7 @@ export default async function EditStore() {
       <StoreForm
         cities={cities}
         categories={categories}
+        crafters={crafters}
         entityId={store.id}
         initialValues={{
           name: store.name,
@@ -51,6 +60,7 @@ export default async function EditStore() {
           contact_whatsapp: store.contact_whatsapp ?? "",
           contact_website: store.contact_website ?? "",
           category_ids: store.supply_categories.map((j) => j.category_id),
+          crafter_ids: store.tagged_crafters.map((j) => j.crafter_id),
         }}
       />
     </div>

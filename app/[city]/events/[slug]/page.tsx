@@ -58,6 +58,22 @@ function liveRegistrationUrl(url: string | null | undefined): string | undefined
   return url;
 }
 
+// Build a keyless Google Maps embed + external link from the venue. Returns null
+// when there's no usable address (empty/whitespace) — seed/placeholder events
+// carry no address, and an empty iframe reads worse than the address block.
+// `?output=embed` needs no API key; the `api=1` link is the official, stable
+// form and always works even if the embed iframe ever breaks.
+function venueMap(venueName: string, venueAddress: string | null | undefined) {
+  const addr = (venueAddress ?? "").trim();
+  if (!addr) return null;
+  const name = (venueName ?? "").trim();
+  const enc = encodeURIComponent(name ? `${name}, ${addr}` : addr);
+  return {
+    src: `https://www.google.com/maps?q=${enc}&output=embed`,
+    href: `https://www.google.com/maps/search/?api=1&query=${enc}`,
+  };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -435,56 +451,48 @@ export default async function EventDetail({
                 </strong>
                 {e.venue_address ? ` — ${e.venue_address}` : ""}
               </p>
-              <div
-                aria-label="Map embed coming soon"
-                className="bg-cream-2 text-muted"
-                style={{
-                  marginTop: 12,
-                  aspectRatio: "16 / 8",
-                  border: "1px solid var(--line)",
-                  borderRadius: "var(--r-lg)",
-                  display: "grid",
-                  placeItems: "center",
-                  padding: "16px 20px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="bg-cream text-forest"
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: "50%",
-                      border: "1px solid var(--line)",
-                      display: "grid",
-                      placeItems: "center",
-                    }}
-                  >
-                    <MapPin size={18} />
-                  </span>
-                  <p
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontStyle: "italic",
-                      fontSize: 13.5,
-                      lineHeight: 1.45,
-                      maxWidth: 320,
-                      color: "rgb(var(--muted))",
-                    }}
-                  >
-                    Map embed coming soon — see venue address above.
-                  </p>
-                </div>
-              </div>
+              {(() => {
+                const m = venueMap(e.venue_name, e.venue_address);
+                if (!m) return null;
+                return (
+                  <>
+                    <iframe
+                      title={`Map showing ${e.venue_name}`}
+                      src={m.src}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      allowFullScreen
+                      className="bg-cream-2"
+                      style={{
+                        marginTop: 12,
+                        width: "100%",
+                        aspectRatio: "16 / 8",
+                        border: "1px solid var(--line)",
+                        borderRadius: "var(--r-lg)",
+                        display: "block",
+                      }}
+                    />
+                    <a
+                      href={m.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-forest"
+                      style={{
+                        marginTop: 10,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        borderBottom: "1px solid currentColor",
+                      }}
+                    >
+                      <MapPin size={14} aria-hidden="true" />
+                      Open in Google Maps
+                    </a>
+                  </>
+                );
+              })()}
             </section>
 
             <section

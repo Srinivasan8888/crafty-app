@@ -34,6 +34,7 @@ function looksLikeUrl(v: string) {
 }
 
 type Option = { id: string; display_name: string; slug: string };
+type CrafterOption = { id: string; name: string };
 type StoreFormValues = {
   name: string;
   logo_photo: string;
@@ -45,15 +46,19 @@ type StoreFormValues = {
   contact_whatsapp: string;
   contact_website: string;
   category_ids: string[];
+  crafter_ids: string[];
 };
 type Props = {
   cities: Option[];
   categories: Option[];
+  // storefront-completeness — taggable crafters (edit flow only; omitted → the
+  // tag selector is hidden, e.g. on the create page before a city exists).
+  crafters?: CrafterOption[];
   entityId?: string;
   initialValues?: Partial<StoreFormValues>;
 };
 
-export function StoreForm({ cities, categories, entityId, initialValues }: Props) {
+export function StoreForm({ cities, categories, crafters, entityId, initialValues }: Props) {
   const router = useRouter();
   const isEdit = Boolean(entityId);
   const [submitting, setSubmitting] = useState(false);
@@ -71,6 +76,7 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
     contact_whatsapp: initialValues?.contact_whatsapp ?? "",
     contact_website: initialValues?.contact_website ?? "",
     category_ids: initialValues?.category_ids ?? [],
+    crafter_ids: initialValues?.crafter_ids ?? [],
   });
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
@@ -105,6 +111,14 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
       set("category_ids", form.category_ids.filter((x) => x !== id));
     } else if (form.category_ids.length < 5) {
       set("category_ids", [...form.category_ids, id]);
+    }
+  }
+
+  function toggleCrafter(id: string) {
+    if (form.crafter_ids.includes(id)) {
+      set("crafter_ids", form.crafter_ids.filter((x) => x !== id));
+    } else if (form.crafter_ids.length < 20) {
+      set("crafter_ids", [...form.crafter_ids, id]);
     }
   }
 
@@ -285,6 +299,27 @@ export function StoreForm({ cities, categories, entityId, initialValues }: Props
           })}
         </div>
       </Field>
+
+      {crafters && crafters.length > 0 && (
+        <Field label="Crafters sourced here" hint="Optional — tag crafters whose work you stock or source (up to 20). Shown on your public page.">
+          <div className="flex flex-wrap gap-2">
+            {crafters.map((c) => {
+              const selected = form.crafter_ids.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`pill sm${selected ? " active" : ""}`}
+                  aria-pressed={selected}
+                  onClick={() => toggleCrafter(c.id)}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+      )}
 
       <Field label="Contact" hint="At least one is required.">
         <div className="space-y-3">

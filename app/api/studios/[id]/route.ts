@@ -26,6 +26,9 @@ const PatchSchema = z.object({
   contact_whatsapp: phoneNumber.nullable().optional(),
   contact_website: z.string().url().max(500).nullable().optional(),
   discipline_ids: z.array(z.string().max(30)).min(1).max(5).optional(),
+  // storefront-completeness — crafters who teach at this studio. Empty array
+  // clears all tags; omitted leaves them untouched.
+  crafter_ids: z.array(z.string().max(30)).max(20).optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -57,6 +60,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (data.discipline_ids) {
     const ok = await prisma.discipline.count({ where: { id: { in: data.discipline_ids }, is_active: true } });
     if (ok !== data.discipline_ids.length) return NextResponse.json({ error: "invalid_discipline" }, { status: 400 });
+  }
+  if (data.crafter_ids && data.crafter_ids.length > 0) {
+    const ok = await prisma.crafter.count({ where: { id: { in: data.crafter_ids }, status: "PUBLISHED" } });
+    if (ok !== new Set(data.crafter_ids).size) return NextResponse.json({ error: "invalid_crafter" }, { status: 400 });
   }
   if (data.city_id) {
     const c = await prisma.city.findUnique({ where: { id: data.city_id }, select: { is_active: true } });
@@ -95,6 +102,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         craft_disciplines: {
           deleteMany: {},
           create: data.discipline_ids.map((did) => ({ discipline_id: did })),
+        },
+      }),
+      ...(data.crafter_ids && {
+        tagged_crafters: {
+          deleteMany: {},
+          create: [...new Set(data.crafter_ids)].map((cid) => ({ crafter_id: cid })),
         },
       }),
     },

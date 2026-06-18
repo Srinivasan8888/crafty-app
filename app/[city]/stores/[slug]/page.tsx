@@ -112,12 +112,25 @@ export default async function StoreDetail({ params }: { params: { city: string; 
     getCurrentUser(),
   ]);
 
-  const sampleCrafters = await prisma.crafter.findMany({
-    where: { city_id: s.city_id, status: "PUBLISHED" },
-    orderBy: { is_featured: "desc" },
-    take: 3,
-    select: { id: true, slug: true, name: true, profile_photo: true, tagline: true },
-  });
+  // storefront-completeness — crafters the owner tagged as sourced here win over
+  // the generic city sample. Same select shape so the render loop is shared.
+  const crafterCardSelect = { id: true, slug: true, name: true, profile_photo: true, tagline: true } as const;
+  const [taggedCrafters, sampleCrafters] = await Promise.all([
+    prisma.crafter.findMany({
+      where: { status: "PUBLISHED", tagged_in_stores: { some: { store_id: s.id } } },
+      orderBy: [{ is_featured: "desc" }, { name: "asc" }],
+      take: 12,
+      select: crafterCardSelect,
+    }),
+    prisma.crafter.findMany({
+      where: { city_id: s.city_id, status: "PUBLISHED" },
+      orderBy: { is_featured: "desc" },
+      take: 3,
+      select: crafterCardSelect,
+    }),
+  ]);
+  const hasTagged = taggedCrafters.length > 0;
+  const displayCrafters = hasTagged ? taggedCrafters : sampleCrafters;
 
   // Cross-links: other listings the same owner runs (real pages only).
   const [ownerCrafter, ownerStudio] = s.owner_user_id
@@ -417,12 +430,14 @@ export default async function StoreDetail({ params }: { params: { city: string; 
             )}
 
             <section className="detail-section" style={{ borderTop: "1px solid var(--line)", paddingTop: 24, marginTop: 24 }}>
-              <h2 style={{ fontSize: 22, marginBottom: 14 }}>Crafters in {s.city.display_name}</h2>
-              {sampleCrafters.length === 0 ? (
+              <h2 style={{ fontSize: 22, marginBottom: 14 }}>
+                {hasTagged ? "Crafters sourced here" : `Crafters in ${s.city.display_name}`}
+              </h2>
+              {displayCrafters.length === 0 ? (
                 <p className="text-muted" style={{ fontSize: 14 }}>No crafters listed in {s.city.display_name} yet.</p>
               ) : (
                 <ul style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {sampleCrafters.map((c) => (
+                  {displayCrafters.map((c) => (
                     <li key={c.id}>
                       <HCard
                         href={`/${s.city.slug}/crafters/${c.slug}`}
@@ -434,9 +449,11 @@ export default async function StoreDetail({ params }: { params: { city: string; 
                   ))}
                 </ul>
               )}
-              <p className="text-subtle" style={{ marginTop: 10, fontSize: 12, fontStyle: "italic" }}>
-                Other crafters in {s.city.display_name} — sourcing tags coming soon.
-              </p>
+              {!hasTagged && displayCrafters.length > 0 && (
+                <p className="text-subtle" style={{ marginTop: 10, fontSize: 12, fontStyle: "italic" }}>
+                  Crafters based in {s.city.display_name}.
+                </p>
+              )}
             </section>
 
             <section

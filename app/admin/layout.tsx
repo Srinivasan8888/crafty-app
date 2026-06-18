@@ -24,6 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       : []),
     ["Flags", "/admin"],
     ["Listings", "/admin/listings"],
+    ["Comments", "/admin/community-comments"],
     ["Metrics", "/admin/metrics"],
     ["Cron health", "/admin/health"],
     ["Users", "/admin/users"],

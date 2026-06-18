@@ -29,6 +29,7 @@ const Schema = z.object({
   contact_whatsapp: phoneNumber.optional().nullable(),
   contact_website: z.string().url().max(500).optional().nullable(),
   category_ids: z.array(z.string().max(30)).min(1).max(5),
+  crafter_ids: z.array(z.string().max(30)).max(20).optional(),
 })
   .refine(
     (v) => Boolean(v.contact_phone || v.contact_whatsapp || v.contact_website),
@@ -89,6 +90,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_category" }, { status: 400 });
   }
 
+  const crafterIds = data.crafter_ids ? [...new Set(data.crafter_ids)] : [];
+  if (crafterIds.length > 0) {
+    const matched = await prisma.crafter.count({ where: { id: { in: crafterIds }, status: "PUBLISHED" } });
+    if (matched !== crafterIds.length) {
+      return NextResponse.json({ error: "invalid_crafter" }, { status: 400 });
+    }
+  }
+
   const slug = await ensureUniqueSlug(data.name, async (s) =>
     !!(await prisma.store.findUnique({ where: { slug: s } })),
   );
@@ -107,6 +116,9 @@ export async function POST(req: NextRequest) {
       contact_whatsapp: data.contact_whatsapp ?? null,
       contact_website: data.contact_website ?? null,
       supply_categories: { create: data.category_ids.map((cid) => ({ category_id: cid })) },
+      ...(crafterIds.length > 0 && {
+        tagged_crafters: { create: crafterIds.map((cid) => ({ crafter_id: cid })) },
+      }),
     },
   });
 
