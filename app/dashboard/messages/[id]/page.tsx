@@ -4,10 +4,13 @@
 
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { safeCounterpartyName } from "@/lib/messaging";
+import { formatDateTime } from "@/lib/util";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ReplyComposer } from "./ReplyComposer";
+import { MessagesAutoRefresh } from "./MessagesAutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +22,8 @@ export default async function ConversationPage({ params }: { params: { id: strin
   const conv = await prisma.conversation.findUnique({
     where: { id: params.id },
     include: {
-      owner: { select: { id: true, display_name: true, email: true } },
-      buyer: { select: { id: true, display_name: true, email: true } },
+      owner: { select: { id: true, display_name: true } },
+      buyer: { select: { id: true, display_name: true } },
       messages: { orderBy: { created_at: "asc" } },
     },
   });
@@ -56,8 +59,15 @@ export default async function ConversationPage({ params }: { params: { id: strin
       <Link href="/dashboard/messages" className="inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink">
         <ArrowLeft size={14} /> All conversations
       </Link>
+      <MessagesAutoRefresh />
       <header className="mt-3 flex items-baseline gap-2">
-        <h1 className="text-xl font-bold text-ink">{them.display_name ?? them.email}</h1>
+        <h1 className="text-xl font-bold text-ink">
+          {safeCounterpartyName({
+            viewerIsBuyer: meIsBuyer,
+            displayName: them.display_name,
+            entityName: entity?.name,
+          })}
+        </h1>
         {entity && (
           <Link
             href={`/${entity.citySlug}/${SEGMENT[conv.entity_type]}/${entity.slug}`}
@@ -82,7 +92,7 @@ export default async function ConversationPage({ params }: { params: { id: strin
               >
                 <p className="whitespace-pre-wrap text-sm">{m.body}</p>
                 <p className="mt-1 text-[10px] text-ink-subtle">
-                  {m.created_at.toISOString().replace("T", " ").slice(0, 16)}
+                  {formatDateTime(m.created_at)}
                 </p>
               </div>
             </div>

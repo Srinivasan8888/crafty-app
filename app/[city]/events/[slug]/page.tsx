@@ -5,7 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { ArrowLeft, MapPin, Share2, Heart } from "lucide-react";
+import { ArrowLeft, MapPin, Share2 } from "lucide-react";
 import { formatINR } from "@/lib/util";
 import { EventCard } from "@/components/Cards";
 import { HCard } from "@/components/HCard";
@@ -58,20 +58,19 @@ function liveRegistrationUrl(url: string | null | undefined): string | undefined
   return url;
 }
 
-// Build a keyless Google Maps embed + external link from the venue. Returns null
-// when there's no usable address (empty/whitespace) — seed/placeholder events
-// carry no address, and an empty iframe reads worse than the address block.
-// `?output=embed` needs no API key; the `api=1` link is the official, stable
-// form and always works even if the embed iframe ever breaks.
-function venueMap(venueName: string, venueAddress: string | null | undefined) {
-  const addr = (venueAddress ?? "").trim();
-  if (!addr) return null;
-  const name = (venueName ?? "").trim();
-  const enc = encodeURIComponent(name ? `${name}, ${addr}` : addr);
-  return {
-    src: `https://www.google.com/maps?q=${enc}&output=embed`,
-    href: `https://www.google.com/maps/search/?api=1&query=${enc}`,
-  };
+// Build an external Google Maps search link from whatever venue info we have.
+// This is a normal outbound anchor, not an <iframe>: the page CSP only allows
+// framing 'self' and Descope, so a Maps embed renders as a dead grey box, and a
+// heavy map iframe is the wrong cost on the slow 4G our buyers are on. The
+// keyless `api=1` search form is the official, always-stable link and resolves
+// from a venue name alone, so seed events with no street address still map.
+function mapsSearchHref(venueName: string, venueAddress: string | null | undefined) {
+  const query = [venueName, venueAddress]
+    .map((s) => (s ?? "").trim())
+    .filter(Boolean)
+    .join(", ");
+  if (!query) return null;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
 export async function generateMetadata({
@@ -105,6 +104,7 @@ export default async function EventDetail({
   }
   const { city, event: e } = loaded;
   const registrationUrl = liveRegistrationUrl(e.registration_url);
+  const mapsHref = mapsSearchHref(e.venue_name, e.venue_address);
 
   const moreEvents = await prisma.event.findMany({
     where: {
@@ -202,100 +202,117 @@ export default async function EventDetail({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildEventJsonLd({ ...e, city })) }}
       />
-      <div
-        className="cover-wrap bg-cream-2"
-        style={{
-          position: "relative",
-          aspectRatio: "16 / 9",
-          overflow: "hidden",
-        }}
-      >
-        <Image
-          src={e.cover_image}
-          alt={`${e.name} event cover`}
-          fill
-          sizes="100vw"
-          priority
-          className="object-cover"
-        />
+      <div className="container" style={{ paddingTop: 18 }}>
         <div
-          className="nav-photo md:hidden"
+          className="cover-wrap bg-cream-2 aspect-[16/9] md:aspect-auto md:h-[400px]"
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            display: "flex",
-            justifyContent: "space-between",
-            padding: "14px 16px",
-            pointerEvents: "none",
+            position: "relative",
+            overflow: "hidden",
+            borderRadius: "var(--r-xl)",
+            border: "1px solid var(--line-strong)",
+            boxShadow: "var(--soft-shadow)",
           }}
         >
-          <Link
-            href={`/${city.slug}/events`}
-            className="icon-btn back"
-            aria-label="Back"
-            style={{ pointerEvents: "auto" }}
-          >
-            <ArrowLeft size={18} />
-          </Link>
-          <ShareButton
-            title={e.name}
-            text={e.name}
-            className="icon-btn right"
-            style={{ pointerEvents: "auto" }}
-          >
-            <Share2 size={18} aria-hidden="true" />
-          </ShareButton>
-        </div>
+          <Image
+            src={e.cover_image}
+            alt={`${e.name} event cover`}
+            fill
+            sizes="(min-width: 1200px) 1152px, 100vw"
+            priority
+            className="object-cover"
+          />
 
-        <div
-          className="date-badge"
-          style={{
-            position: "absolute",
-            top: 14,
-            left: 14,
-            background: "rgb(var(--mustard))",
-            color: "rgb(var(--ink))",
-            padding: "9px 14px",
-            borderRadius: "var(--r-pill)",
-            fontFamily: "var(--font-display)",
-            fontSize: 11,
-            fontWeight: 700,
-            textAlign: "center",
-            lineHeight: 1.15,
-            letterSpacing: "0.6px",
-            boxShadow: "0 4px 12px rgba(180,80,40,0.18)",
-          }}
-        >
-          <span
-            className="d"
+          {/* Controls split across the hero: navigation on the top row, event
+              metadata on the bottom row. One chip per corner means nothing can
+              overlap at any width (the old layout stacked the back button on top
+              of the date badge). Opaque cream buttons read crisply over any
+              cover photo and stay inside the warm theme. */}
+          <div
             style={{
-              fontSize: 20,
-              fontWeight: 800,
-              display: "block",
-              lineHeight: 1,
-              marginBottom: 2,
+              position: "absolute",
+              top: 14,
+              left: 14,
+              right: 14,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              pointerEvents: "none",
+              zIndex: 2,
             }}
           >
-            {dayNum}
-          </span>
-          {dayShort} {monthShort}
-        </div>
+            <Link
+              href={`/${city.slug}/events`}
+              className="icon-btn"
+              aria-label="Back to events"
+              style={{ pointerEvents: "auto", boxShadow: "var(--soft-shadow)" }}
+            >
+              <ArrowLeft size={18} aria-hidden="true" />
+            </Link>
+            <ShareButton
+              title={e.name}
+              text={e.name}
+              className="icon-btn"
+              style={{ pointerEvents: "auto", boxShadow: "var(--soft-shadow)" }}
+            >
+              <Share2 size={18} aria-hidden="true" />
+            </ShareButton>
+          </div>
 
-        <span
-          className={priceClass}
-          style={{
-            position: "absolute",
-            top: 14,
-            right: 14,
-            padding: "7px 14px",
-            fontSize: 12,
-            boxShadow: "0 4px 12px rgba(180,80,40,0.18)",
-          }}
-        >
-          {priceLabel}
-        </span>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 14,
+              left: 14,
+              right: 14,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              gap: 10,
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          >
+            <div
+              style={{
+                background: "rgb(var(--mustard))",
+                color: "rgb(var(--ink))",
+                padding: "8px 15px",
+                borderRadius: "var(--r-pill)",
+                fontFamily: "var(--font-display)",
+                fontSize: 11,
+                fontWeight: 700,
+                textAlign: "center",
+                lineHeight: 1.1,
+                letterSpacing: "0.6px",
+                boxShadow: "var(--soft-shadow)",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  display: "block",
+                  lineHeight: 1,
+                  marginBottom: 1,
+                }}
+              >
+                {dayNum}
+              </span>
+              {dayShort} {monthShort}
+            </div>
+            <span
+              className={priceClass}
+              style={{
+                background: "rgb(var(--cream))",
+                padding: "7px 14px",
+                fontSize: 12,
+                boxShadow: "var(--soft-shadow)",
+              }}
+            >
+              {priceLabel}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="container py-6">
@@ -439,60 +456,107 @@ export default async function EventDetail({
               >
                 Getting there
               </h2>
-              <p
+
+              <div
                 style={{
-                  color: "rgb(var(--muted))",
-                  lineHeight: 1.6,
-                  fontSize: 15,
+                  border: "1px solid var(--line-strong)",
+                  borderRadius: "var(--r-lg)",
+                  overflow: "hidden",
+                  background: "rgb(var(--cream))",
+                  boxShadow: "0 4px 12px rgba(180,80,40,0.08)",
                 }}
               >
-                <strong className="text-forest">
-                  {e.venue_name}
-                </strong>
-                {e.venue_address ? ` — ${e.venue_address}` : ""}
-              </p>
-              {(() => {
-                const m = venueMap(e.venue_name, e.venue_address);
-                if (!m) return null;
-                return (
-                  <>
-                    <iframe
-                      title={`Map showing ${e.venue_name}`}
-                      src={m.src}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      allowFullScreen
-                      className="bg-cream-2"
+                {/* Stylised map field: a faint banana-leaf street grid with two
+                    crossing roads and a marigold pin. Purely ornamental (we hold
+                    no coordinates), so it signals "a place" without faking a
+                    location, stays inside our frame-src CSP, and weighs nothing
+                    on 4G. The real map is one tap away below. */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: "relative",
+                    height: 128,
+                    display: "grid",
+                    placeItems: "center",
+                    background:
+                      "linear-gradient(116deg, transparent 45.6%, rgba(230,168,23,0.20) 46%, rgba(230,168,23,0.20) 48.4%, transparent 48.8%)," +
+                      "linear-gradient(22deg, transparent 61.5%, rgba(31,95,60,0.13) 61.9%, rgba(31,95,60,0.13) 63.2%, transparent 63.6%)," +
+                      "repeating-linear-gradient(0deg, transparent 0 24px, rgba(31,95,60,0.05) 24px 25px)," +
+                      "repeating-linear-gradient(90deg, transparent 0 24px, rgba(31,95,60,0.05) 24px 25px)," +
+                      "rgb(var(--cream-2))",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 54,
+                      height: 54,
+                      borderRadius: "var(--r-pill)",
+                      background: "rgb(var(--mustard))",
+                      color: "rgb(var(--ink))",
+                      display: "grid",
+                      placeItems: "center",
+                      border: "2px solid rgb(var(--cream))",
+                      boxShadow: "0 4px 12px rgba(180,80,40,0.20)",
+                    }}
+                  >
+                    <MapPin size={26} strokeWidth={2.2} aria-hidden="true" />
+                  </span>
+                </div>
+
+                <div style={{ padding: "16px 18px 18px" }}>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: "rgb(var(--forest))",
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {e.venue_name}
+                  </div>
+                  {e.venue_address ? (
+                    <p
                       style={{
-                        marginTop: 12,
-                        width: "100%",
-                        aspectRatio: "16 / 8",
-                        border: "1px solid var(--line)",
-                        borderRadius: "var(--r-lg)",
-                        display: "block",
-                      }}
-                    />
-                    <a
-                      href={m.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-forest"
-                      style={{
-                        marginTop: 10,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        fontSize: 13.5,
-                        fontWeight: 600,
-                        borderBottom: "1px solid currentColor",
+                        color: "rgb(var(--muted))",
+                        fontSize: 14,
+                        lineHeight: 1.55,
+                        marginTop: 4,
                       }}
                     >
-                      <MapPin size={14} aria-hidden="true" />
+                      {e.venue_address}
+                    </p>
+                  ) : (
+                    <p
+                      style={{
+                        color: "rgb(var(--subtle))",
+                        fontSize: 13.5,
+                        lineHeight: 1.55,
+                        marginTop: 4,
+                      }}
+                    >
+                      The organiser shares the exact spot when you register, somewhere in {e.city.display_name}.
+                    </p>
+                  )}
+                  {mapsHref && (
+                    <a
+                      href={mapsHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary btn-sm"
+                      style={{
+                        marginTop: 14,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 7,
+                      }}
+                    >
+                      <MapPin size={15} aria-hidden="true" />
                       Open in Google Maps
                     </a>
-                  </>
-                );
-              })()}
+                  )}
+                </div>
+              </div>
             </section>
 
             <section
@@ -618,7 +682,7 @@ export default async function EventDetail({
                 <div
                   style={{
                     display: "flex",
-                    alignItems: "baseline",
+                    alignItems: "center",
                     gap: 12,
                     marginBottom: 6,
                   }}
@@ -628,7 +692,7 @@ export default async function EventDetail({
                       fontFamily: "var(--font-display)",
                       fontWeight: 800,
                       fontSize: 60,
-                      lineHeight: 0.9,
+                      lineHeight: 1,
                       color: "rgb(var(--ink))",
                       letterSpacing: "-2.5px",
                     }}

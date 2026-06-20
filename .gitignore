@@ -21,3 +21,4 @@ var/
 
 # dev-only design comment queue
 .design-comments.jsonl
+.gstack/

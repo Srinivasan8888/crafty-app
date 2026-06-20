@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Send, Loader2 } from "lucide-react";
+import { useToast } from "@/components/Toast";
 
 export function ReplyComposer({ conversationId }: { conversationId: string }) {
   const router = useRouter();
+  const { show } = useToast();
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -22,7 +24,12 @@ export function ReplyComposer({ conversationId }: { conversationId: string }) {
       if (res.ok) {
         setBody("");
         router.refresh();
+      } else {
+        // Keep the typed text so nothing is lost on a failed send.
+        show("Couldn't send your message. Please try again.", "error");
       }
+    } catch {
+      show("Couldn't send your message. Please try again.", "error");
     } finally {
       setBusy(false);
     }

@@ -4,6 +4,8 @@
 
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { safeCounterpartyName } from "@/lib/messaging";
+import { formatDateTime } from "@/lib/util";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 
@@ -21,8 +23,8 @@ export default async function MessagesInboxPage() {
     orderBy: { last_message_at: "desc" },
     take: 100,
     include: {
-      owner: { select: { id: true, display_name: true, email: true } },
-      buyer: { select: { id: true, display_name: true, email: true } },
+      owner: { select: { id: true, display_name: true } },
+      buyer: { select: { id: true, display_name: true } },
       messages: {
         orderBy: { created_at: "desc" },
         take: 1,
@@ -76,7 +78,11 @@ export default async function MessagesInboxPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
                       <p className="truncate font-semibold text-ink">
-                        {them.display_name ?? them.email}
+                        {safeCounterpartyName({
+                          viewerIsBuyer: meIsBuyer,
+                          displayName: them.display_name,
+                          entityName: entity?.name,
+                        })}
                       </p>
                       {entity && (
                         <p className="truncate text-xs text-ink-muted">
@@ -91,7 +97,7 @@ export default async function MessagesInboxPage() {
                       </p>
                     )}
                     <p className="mt-1 text-xs text-ink-subtle">
-                      {c.last_message_at.toISOString().replace("T", " ").slice(0, 16)}
+                      {formatDateTime(c.last_message_at)}
                     </p>
                   </div>
                 </Link>

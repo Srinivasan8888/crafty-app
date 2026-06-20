@@ -30,7 +30,7 @@ export default async function CraftersListing({
   searchParams,
 }: {
   params: { city: string };
-  searchParams: { category?: string };
+  searchParams: { category?: string; page?: string };
 }) {
   const city = await getCityBySlug(params.city);
   if (!city) notFound();
@@ -49,9 +49,14 @@ export default async function CraftersListing({
       : {}),
   };
 
+  const PAGE_SIZE = 24;
+  const page = Math.max(1, Number.parseInt(searchParams.page ?? "1", 10) || 1);
+  const skip = (page - 1) * PAGE_SIZE;
+
   const crafters = await prisma.crafter.findMany({
     where,
-    take: 24,
+    take: PAGE_SIZE,
+    skip,
     orderBy: [{ is_featured: "desc" }, { created_at: "desc" }],
     include: {
       craft_categories: { include: { category: true } },
@@ -70,9 +75,18 @@ export default async function CraftersListing({
     ? [{ key: `category-${activeCat.slug}`, label: activeCat.display_name }]
     : [];
 
-  const featured = crafters.find((c) => c.is_featured);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  // Only the first page shows the featured hero; later pages are a plain grid.
+  const featured = page === 1 ? crafters.find((c) => c.is_featured) : undefined;
   const rest = featured ? crafters.filter((c) => c.id !== featured.id) : crafters;
   const cityHref = `/${city.slug}/crafters`;
+  const pageHref = (p: number) => {
+    const sp = new URLSearchParams();
+    if (activeCatSlug) sp.set("category", activeCatSlug);
+    if (p > 1) sp.set("page", String(p));
+    const qs = sp.toString();
+    return qs ? `${cityHref}?${qs}` : cityHref;
+  };
 
   return (
     <>
@@ -187,8 +201,33 @@ export default async function CraftersListing({
                   fontStyle: "italic",
                 }}
               >
-                Showing {crafters.length} of {totalCount} crafters
+                Showing {skip + 1}&ndash;{skip + crafters.length} of {totalCount} crafters
               </p>
+              {totalPages > 1 && (
+                <nav className="flex items-center gap-3" aria-label="Pagination">
+                  {page > 1 ? (
+                    <Link href={pageHref(page - 1)} className="btn btn-ghost btn-sm" rel="prev">
+                      &larr; Previous
+                    </Link>
+                  ) : (
+                    <span className="btn btn-ghost btn-sm" aria-disabled="true" style={{ opacity: 0.4, pointerEvents: "none" }}>
+                      &larr; Previous
+                    </span>
+                  )}
+                  <span className="text-sm text-muted">
+                    Page {page} of {totalPages}
+                  </span>
+                  {page < totalPages ? (
+                    <Link href={pageHref(page + 1)} className="btn btn-ghost btn-sm" rel="next">
+                      Next &rarr;
+                    </Link>
+                  ) : (
+                    <span className="btn btn-ghost btn-sm" aria-disabled="true" style={{ opacity: 0.4, pointerEvents: "none" }}>
+                      Next &rarr;
+                    </span>
+                  )}
+                </nav>
+              )}
             </div>
           </>
         )}

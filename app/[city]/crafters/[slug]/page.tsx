@@ -282,7 +282,8 @@ export default async function CrafterDetail({
           {upcomingEvents.map((e) => {
             const date = new Date(e.start_at);
             const dow = date.toLocaleDateString("en-IN", { weekday: "short" }).toUpperCase();
-            const day = `${date.getDate()} ${date.toLocaleDateString("en-IN", { month: "short" }).toUpperCase()}`;
+            const dayNum = date.getDate();
+            const month = date.toLocaleDateString("en-IN", { month: "short" }).toUpperCase();
             return (
               <Link
                 key={e.id}
@@ -291,7 +292,8 @@ export default async function CrafterDetail({
               >
                 <div className="date-pill">
                   {dow}
-                  <span className="d">{day}</span>
+                  <span className="d">{dayNum}</span>
+                  <span className="m">{month}</span>
                 </div>
                 <div className="img relative overflow-hidden">
                   <Image
@@ -361,14 +363,14 @@ export default async function CrafterDetail({
           />
         </div>
         <header className="nav-photo">
-          <Link href={`/${c.city.slug}/crafters`} className="icon-btn dark" aria-label="Back">
+          <Link href={`/${c.city.slug}/crafters`} className="icon-btn" aria-label="Back">
             <ArrowLeft size={16} />
           </Link>
           <div className="spacer flex-1" />
           <ShareButton
             title={c.name}
             text={c.tagline ?? c.bio ?? c.name}
-            className="icon-btn dark"
+            className="icon-btn"
           >
             <Share2 size={16} aria-hidden="true" />
           </ShareButton>
@@ -376,7 +378,7 @@ export default async function CrafterDetail({
             entityType="crafter"
             entityId={c.id}
             variant="icon"
-            className="icon-btn dark"
+            className="icon-btn"
           />
           {/* trailing-anchor for layout parity */}
         </header>
@@ -465,22 +467,27 @@ export default async function CrafterDetail({
       </div>
 
       <div className="hidden md:block">
-        <section
-          className="profile-hero"
-          style={{ position: "relative" }}
-        >
-          <div className="cover relative" style={{ aspectRatio: "16/7" }}>
-            <Image
-              src={c.profile_photo}
-              alt={c.name}
-              fill
-              sizes="100vw"
-              priority
-              fetchPriority="high"
-              className="object-cover"
-            />
-          </div>
-        </section>
+        <div className="container pt-6">
+          <section
+            className="profile-hero"
+            style={{ position: "relative" }}
+          >
+            <div
+              className="cover relative overflow-hidden rounded-xl border border-line-strong"
+              style={{ aspectRatio: "16/7" }}
+            >
+              <Image
+                src={c.profile_photo}
+                alt={c.name}
+                fill
+                sizes="(min-width: 1200px) 1152px, 100vw"
+                priority
+                fetchPriority="high"
+                className="object-cover"
+              />
+            </div>
+          </section>
+        </div>
 
         <div className="container">
           <div className="grid gap-10 pt-8 pb-14 lg:grid-cols-[1.5fr_1fr]">

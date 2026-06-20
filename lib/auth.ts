@@ -20,11 +20,13 @@
 // promoting to CREATOR. ADMIN/SUPERADMIN come from: env bootstrap
 // (SUPERADMIN_EMAIL), a consumed AdminInvite, or an explicit superadmin action.
 
+import { cache } from "react";
 import { prisma } from "./db";
 import { cookies } from "next/headers";
 import type { UserRole } from "@prisma/client";
 import { sendSignupWelcome } from "./email";
 import { logAudit } from "./audit";
+import { provisionSafely } from "./provision";
 
 export type SessionUser = {
   id: string;
@@ -194,7 +196,7 @@ async function readDescopeSession(): Promise<DescopeClaims | null> {
   }
 }
 
-export async function getCurrentUser(): Promise<SessionUser | null> {
+const resolveCurrentUser = async (): Promise<SessionUser | null> => {
   if (DEV) {
     const email = process.env.DEV_USER_EMAIL || "dev@crafty.app";
     const name = process.env.DEV_USER_NAME || "Dev User";
@@ -202,11 +204,15 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     // Create as ADMIN (safe pre-migration), then best-effort elevate so a
     // not-yet-migrated DB (no SUPERADMIN enum value) still yields a working
     // admin dev user instead of crashing.
-    const user = await prisma.user.upsert({
-      where: { email },
-      create: { email, display_name: name, role: "ADMIN", is_admin: true },
-      update: {},
-    });
+    const user = await provisionSafely(
+      () =>
+        prisma.user.upsert({
+          where: { email },
+          create: { email, display_name: name, role: "ADMIN", is_admin: true },
+          update: {},
+        }),
+      () => prisma.user.findUnique({ where: { email } }),
+    );
     if (user.is_banned) return null;
     let row: UserRow = user;
     if (user.role !== "SUPERADMIN") {
@@ -255,17 +261,25 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
   const preExisting = await prisma.user.findUnique({ where: { email }, select: { id: true } });
 
-  const created = await prisma.user.upsert({
-    where: { email },
-    create: {
-      descope_id: claims.sub,
-      email,
-      display_name: claims.name ?? null,
-      profile_photo_url: claims.picture ?? null,
-      role,
-    },
-    update: { descope_id: claims.sub },
-  });
+  const created = await provisionSafely(
+    () =>
+      prisma.user.upsert({
+        where: { email },
+        create: {
+          descope_id: claims.sub,
+          email,
+          display_name: claims.name ?? null,
+          profile_photo_url: claims.picture ?? null,
+          role,
+        },
+        update: { descope_id: claims.sub },
+      }),
+    // Re-read the winner by whichever unique key it raced on: descope_id first
+    // (set on every create/link), then email.
+    async () =>
+      (await prisma.user.findUnique({ where: { descope_id: claims.sub } })) ??
+      (await prisma.user.findUnique({ where: { email } })),
+  );
 
   if (!preExisting && !email.endsWith("@noreply.crafty.app")) {
     void sendSignupWelcome({ to: email, firstName: created.display_name });
@@ -275,7 +289,19 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
   const row = await applyElevations(created);
   return toSession(row);
-}
+};
+
+// fix-signup-provisioning-race — deduplicate per server request. A single render
+// resolves the current user from the layout, the page (via requireUser), and
+// AppHeader; cache() collapses those to one invocation + one provisioning attempt,
+// removing the in-render race and the redundant DB round-trips. Cross-request
+// races remain covered by provisionSafely above.
+//
+// `cache` only exists in React's Server Components runtime (Next.js). Outside it
+// (e.g. the vitest unit runner) it's undefined, so degrade to the raw resolver —
+// dedup is a per-request optimization, not a correctness requirement.
+export const getCurrentUser =
+  typeof cache === "function" ? cache(resolveCurrentUser) : resolveCurrentUser;
 
 export async function requireUser(): Promise<SessionUser> {
   const u = await getCurrentUser();

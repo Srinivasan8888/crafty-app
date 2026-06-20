@@ -337,14 +337,14 @@ export default async function StudioDetail({ params }: { params: { city: string;
           <Image src={s.logo_photo} alt={`${s.name} studio`} fill priority sizes="100vw" className="object-cover" />
         </div>
         <header className="nav-photo md:hidden">
-          <Link href={`/${s.city.slug}/learn`} className="icon-btn dark" aria-label="Back">
+          <Link href={`/${s.city.slug}/learn`} className="icon-btn" aria-label="Back">
             ←
           </Link>
           <div style={{ flex: 1 }} />
           <ShareButton
             title={s.name}
             text={s.name}
-            className="icon-btn dark"
+            className="icon-btn"
           >
             <Share2 size={16} aria-hidden="true" />
           </ShareButton>
@@ -352,7 +352,7 @@ export default async function StudioDetail({ params }: { params: { city: string;
             entityType="studio"
             entityId={s.id}
             variant="icon"
-            className="icon-btn dark"
+            className="icon-btn"
           />
         </header>
 

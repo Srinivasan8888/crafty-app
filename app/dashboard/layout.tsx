@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { MaybeAuthProvider } from "@/components/MaybeAuthProvider";
+import { DashboardNav } from "@/components/DashboardNav";
 import { AppHeader } from "@/components/AppHeader";
 import dynamic from "next/dynamic";
 
@@ -33,7 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <MaybeAuthProvider>
       <AppHeader city={process.env.NEXT_PUBLIC_DEFAULT_CITY ?? "bengaluru"} />
-      <main id="main" className="container mt-10 mb-12 md:mt-14 md:mb-16 grid gap-8 lg:grid-cols-[220px_1fr]">
+      <main id="main" className="container mt-14 mb-12 md:mt-20 md:mb-16 grid gap-8 lg:grid-cols-[220px_1fr]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="card p-4">
             <p className="text-xs uppercase tracking-wider text-ink-subtle">Signed in as</p>
@@ -44,46 +44,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </div>
             {user.is_admin && <p className="text-xs text-accent">admin</p>}
           </div>
-          <nav className="mt-3 grid gap-1 text-sm">
-            {[
-              ["Overview", "/dashboard"],
-              ["My crafter", "/dashboard/crafter"],
-              ["My store", "/dashboard/store"],
-              ["My studio", "/dashboard/studio"],
-              ["My events", "/dashboard/events"],
-              ["Saved", "/dashboard/saved"],
-              ["Saved searches", "/dashboard/saved-searches"],
-              ["Products", "/dashboard/products"],
-              ["Cart", "/dashboard/cart"],
-              ["Orders", "/dashboard/orders"],
-              ["Sales", "/dashboard/sales"],
-              ["Messages", "/dashboard/messages"],
-              ["Crafty Pro", "/dashboard/subscription"],
-              ["API keys", "/dashboard/api-keys"],
-            ].map(([label, href]) => {
-              const showBadge = href === "/dashboard/messages" && unreadMessages > 0;
-              return (
-                <Link
-                  key={href as string}
-                  href={href as string}
-                  className="flex items-center justify-between gap-2 rounded-md px-3 py-2 hover:bg-canvas-sunken"
-                >
-                  <span>{label}</span>
-                  {showBadge && (
-                    <span
-                      className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-fg"
-                      aria-label={`${unreadMessages} unread ${unreadMessages === 1 ? "conversation" : "conversations"}`}
-                    >
-                      {unreadMessages > 9 ? "9+" : unreadMessages}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-            {user.is_admin && (
-              <Link href="/admin" className="mt-3 rounded-md px-3 py-2 text-accent hover:bg-canvas-sunken">Admin →</Link>
-            )}
-          </nav>
+          <DashboardNav unreadMessages={unreadMessages} isAdmin={user.is_admin} />
         </aside>
         <section className="min-w-0">{children}</section>
       </main>
